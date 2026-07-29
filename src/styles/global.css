@@ -240,11 +240,14 @@
 .swatch-grid{display:flex;gap:0;margin-top:4px;}
 .swatch-grid .swatch{flex:1;min-width:0;}
 .swatch{position:relative;height:200px;border-radius:var(--radius);overflow:hidden;isolation:isolate;}
-.swatch-hover{position:absolute;inset:0;display:grid;place-items:center;opacity:0;transition:opacity .1s ease;z-index:2;}
+.swatch-hover{position:absolute;inset:0;display:grid;place-items:center;opacity:0;
+  background:var(--swatch-scrim);transition:opacity .1s ease;z-index:2;}
 .swatch:hover .swatch-hover{opacity:1;}
-.swatch-copy{background:#FFFFFF;color:#010812;font-family:var(--display);font-size:11px;font-weight:600;
-  padding:5px 11px;border-radius:999px;box-shadow:0 3px 10px rgba(1,8,18,.18);cursor:pointer;white-space:nowrap;}
-.swatch-copy:hover{background:#FFFFFF;box-shadow:0 4px 14px rgba(1,8,18,.26);}
+/* `.app button` resets background/color, so these need matching specificity. */
+.app button.swatch-copy{background:var(--pill-bg);color:var(--pill-fg);font-family:var(--display);font-size:11px;font-weight:600;
+  padding:5px 11px;border-radius:999px;box-shadow:0 3px 10px rgba(1,8,18,.22),inset 0 0 0 1px var(--pill-ring);
+  cursor:pointer;white-space:nowrap;transition:box-shadow .12s ease,transform .12s ease;}
+.app button.swatch-copy:hover{box-shadow:0 5px 16px rgba(1,8,18,.32),inset 0 0 0 1px var(--pill-ring);transform:translateY(-1px);}
 .swatch-meta{position:absolute;left:0;right:0;bottom:0;padding:12px 13px;display:flex;flex-direction:column;gap:1px;z-index:1;}
 .swatch-name{font-size:13px;font-weight:600;letter-spacing:-.005em;}
 .swatch-hex{font-family:var(--mono);font-size:11.5px;letter-spacing:.01em;}
