@@ -6,9 +6,11 @@ import { PgToggle } from "./controls/PgToggle.jsx";
 import { ButtonPreview } from "./previews/ButtonPreview.jsx";
 import { AccordionPreview } from "./previews/AccordionPreview.jsx";
 import { AvatarsPreview } from "./previews/AvatarsPreview.jsx";
+import { InputFieldPreview, inputFieldSnippet } from "./previews/InputFieldPreview.jsx";
 import { ArrowLeft, ArrowRight, ChevronToggle, CheckIcon, CopyIcon } from "../common/Icon.jsx";
 
 const BUTTON_VARIANTS = ["Primary", "Secondary", "Outline", "Ghost"];
+const FIELD_TYPES = ["Text", "Email", "Textarea", "Select"];
 
 // The component documentation surface: a live preview canvas, a prev/next
 // cycler, per-component property controls, and a copyable code snippet.
@@ -16,6 +18,7 @@ const BUTTON_VARIANTS = ["Primary", "Secondary", "Outline", "Ghost"];
 export function ComponentPlayground({ copied, onCopy, selected, setSelected, theme }) {
   const dark = theme === "dark";
   const isButton = selected === "Button";
+  const isInputField = selected === "Input Field";
 
   const [variant, setVariant] = useState("Primary");
   const [size, setSize] = useState("40px");
@@ -26,13 +29,21 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
   const [showCode, setShowCode] = useState(false);
   const [btnState, setBtnState] = useState("default"); // default | hover | pressed
 
+  const [fieldType, setFieldType] = useState("Text");
+  const [fieldDisabled, setFieldDisabled] = useState(false);
+  const [fieldError, setFieldError] = useState(false);
+
   const cycle = (dir) => {
     const i = COMPONENT_LIST.indexOf(selected);
     const next = (i + dir + COMPONENT_LIST.length) % COMPONENT_LIST.length;
     setSelected(COMPONENT_LIST[next]);
   };
 
-  const code = buttonSnippet({ variant, size, leadingIcon, disabled });
+  const code = isButton
+    ? buttonSnippet({ variant, size, leadingIcon, disabled })
+    : isInputField
+      ? inputFieldSnippet({ type: fieldType, disabled: fieldDisabled, error: fieldError })
+      : "";
   const stateLabel = disabled
     ? "Disabled"
     : btnState === "hover"
@@ -59,6 +70,9 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
     }
     if (selected === "Accordion") return <AccordionPreview />;
     if (selected === "Avatars") return <AvatarsPreview />;
+    if (isInputField) {
+      return <InputFieldPreview type={fieldType} disabled={fieldDisabled} error={fieldError} />;
+    }
     return (
       <div className="pg-empty">
         <span className="pg-empty-name">{selected}</span>
@@ -104,14 +118,16 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
             ) : (
               <span />
             )}
-            <button className="pg-viewcode" onClick={() => setShowCode((v) => !v)}>
-              {showCode ? "Hide code" : "View code"}
-              <ChevronToggle open={showCode} />
-            </button>
+            {code && (
+              <button className="pg-viewcode" onClick={() => setShowCode((v) => !v)}>
+                {showCode ? "Hide code" : "View code"}
+                <ChevronToggle open={showCode} />
+              </button>
+            )}
           </div>
         </div>
 
-        {showCode && (
+        {showCode && code && (
           <div className="pg-code">
             <div className="pg-code-head">
               <span className="pg-code-file">{selected.toLowerCase().replace(/\s+/g, "_")}.html.erb</span>
@@ -139,11 +155,27 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
         <div className="pg-ctrl-head">
           <span className="pg-ctrl-title">{selected}</span>
         </div>
-        <PgSelect label="Size" value={size} options={Object.keys(SIZE_SPEC)} onChange={setSize} disabled={!isButton} />
-        <PgToggle label="Leading icon" value={leadingIcon} onChange={setLeadingIcon} disabled={!isButton} />
-        <PgToggle label="Disabled" value={disabled} onChange={setDisabled} disabled={!isButton} />
-        <PgToggle label="Best practices" value={bestPractices} onChange={setBestPractices} disabled={!isButton} />
-        <PgToggle label="Show behaviour" value={showBehaviour} onChange={setShowBehaviour} disabled={!isButton} />
+        {isInputField ? (
+          <>
+            <PgSelect label="Type" value={fieldType} options={FIELD_TYPES} onChange={setFieldType} />
+            <PgToggle label="Disabled" value={fieldDisabled} onChange={setFieldDisabled} />
+            <PgToggle label="Error state" value={fieldError} onChange={setFieldError} />
+          </>
+        ) : (
+          <>
+            <PgSelect
+              label="Size"
+              value={size}
+              options={Object.keys(SIZE_SPEC)}
+              onChange={setSize}
+              disabled={!isButton}
+            />
+            <PgToggle label="Leading icon" value={leadingIcon} onChange={setLeadingIcon} disabled={!isButton} />
+            <PgToggle label="Disabled" value={disabled} onChange={setDisabled} disabled={!isButton} />
+            <PgToggle label="Best practices" value={bestPractices} onChange={setBestPractices} disabled={!isButton} />
+            <PgToggle label="Show behaviour" value={showBehaviour} onChange={setShowBehaviour} disabled={!isButton} />
+          </>
+        )}
       </div>
     </div>
   );

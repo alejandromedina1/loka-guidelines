@@ -11,6 +11,7 @@ import { TypographySection } from "./components/sections/TypographySection.jsx";
 import { SpacingSection } from "./components/sections/SpacingSection.jsx";
 import { IconsSection } from "./components/sections/IconsSection.jsx";
 import { GraphicsSection } from "./components/sections/GraphicsSection.jsx";
+import { PatternsSection } from "./components/sections/PatternsSection.jsx";
 import { ComponentsSection } from "./components/sections/ComponentsSection.jsx";
 
 // Maps a possibly-nested active section id to the top-level nav id, so a parent
@@ -102,6 +103,7 @@ export default function App() {
           <SpacingSection registerRef={registerRef} copied={copied} onCopy={copy} />
           <IconsSection registerRef={registerRef} copied={copied} onCopy={copy} />
           <GraphicsSection registerRef={registerRef} />
+          <PatternsSection registerRef={registerRef} copied={copied} onCopy={copy} theme={theme} />
           <ComponentsSection
             registerRef={registerRef}
             copied={copied}

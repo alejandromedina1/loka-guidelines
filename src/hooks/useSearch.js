@@ -5,6 +5,7 @@ import { TYPE_SCALE } from "../data/typeScale.js";
 import { SPACING } from "../data/spacing.js";
 import { ICON_CATEGORIES } from "../data/icons.js";
 import { GRAPHICS } from "../data/graphics.js";
+import { PATTERNS } from "../data/patterns.js";
 
 // Builds a flat, searchable index spanning every part of the system: nav
 // sections, color/type/spacing tokens, icons, and graphics. Computed once.
@@ -43,6 +44,8 @@ function buildSearchIndex() {
   );
 
   GRAPHICS.forEach((gr) => idx.push({ label: gr.label, kind: "Graphic", target: "graphics" }));
+
+  PATTERNS.forEach((p) => idx.push({ label: p.name, kind: "Pattern", target: "patterns" }));
 
   return idx;
 }

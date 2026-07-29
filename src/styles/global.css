@@ -8,6 +8,7 @@
 .app {
   --bg:#FFFFFF; --bg-soft:#FAFBFC; --ink:#010812; --ink-2:#2E3F5A; --ink-3:#5C6A82; --ink-4:#828FA5;
   --line:#E7ECF2; --line-2:#EFF1F5; --line-strong:#D6DCE6; --blue:#1957F4; --blue-soft:#EEF2FE;
+  --danger:#D64545; --danger-soft:#FBEAEA;
   --topbar-bg:rgba(255,255,255,.82);
   --mono:'JetBrains Mono',ui-monospace,monospace;
   --sans:'Alliance No.2','Inter',-apple-system,system-ui,sans-serif;
@@ -21,6 +22,7 @@
 .app[data-theme="dark"] {
   --bg:#0A0F17; --bg-soft:#121821; --ink:#F4F6F9; --ink-2:#C3CCDA; --ink-3:#8E9AAE; --ink-4:#6B7688;
   --line:#222B38; --line-2:#1A222E; --line-strong:#2E3947; --blue:#4A85F5; --blue-soft:#16233D;
+  --danger:#F16565; --danger-soft:#3A1E22;
   --topbar-bg:rgba(10,15,23,.82);
 }
 .app *,.app *::before,.app *::after{box-sizing:border-box;}
@@ -303,6 +305,22 @@
 .gfx-card:hover .gfx-art svg{filter:drop-shadow(0 10px 14px rgba(25,87,244,.22));}
 .gfx-label{font-size:13px;font-weight:500;color:var(--ink-2);text-align:center;}
 
+/* Patterns & motifs — live playgrounds, built on the .pg component-playground grid */
+.pat-labs{display:flex;flex-direction:column;gap:20px;width:100%;}
+.pat-lab .pg-canvas-center{padding:0;}
+.pat-swatch{width:100%;height:100%;min-height:280px;background-color:var(--bg-soft);}
+.pg-row-range{flex-direction:column;align-items:stretch;gap:8px;}
+.pg-row-head{display:flex;align-items:center;justify-content:space-between;}
+.pg-row-value{font-family:var(--mono);font-size:12px;color:var(--ink-4);flex:none;display:inline-flex;align-items:center;gap:4px;}
+.pg-row-value-input{width:40px;font-family:var(--mono);font-size:12px;color:var(--ink-2);
+  background:var(--bg-soft);border:1px solid var(--line);border-radius:0;padding:3px 5px;text-align:right;-moz-appearance:textfield;transition:border-color .12s;}
+.pg-row-value-input::-webkit-outer-spin-button,.pg-row-value-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+.pg-row-value-input:focus{outline:none;border-color:var(--blue);}
+.pg-row-value-input:disabled{opacity:.6;}
+.pg-range{-webkit-appearance:none;appearance:none;width:100%;height:2px;background:var(--line-strong);accent-color:var(--blue);cursor:pointer;}
+.pg-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:999px;background:var(--blue);border:2px solid var(--bg);box-shadow:0 0 0 1px var(--blue);}
+.pg-range::-moz-range-thumb{width:14px;height:14px;border-radius:999px;background:var(--blue);border:2px solid var(--bg);box-shadow:0 0 0 1px var(--blue);}
+
 /* Spacing — full-width grid of variable cards */
 .vargrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;width:100%;}
 .varcard{display:flex;flex-direction:column;gap:6px;text-align:left;padding:14px;
@@ -433,6 +451,29 @@
 .pg-toggle[data-on="true"]{background:var(--blue);}
 .pg-toggle-knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:999px;background:#fff;transition:transform .16s;box-shadow:0 1px 3px rgba(1,8,18,.3);}
 .pg-toggle[data-on="true"] .pg-toggle-knob{transform:translateX(16px);}
+
+/* Input Field — label sits a full space-10 above its control; text/textarea/
+   select share one fill+border+radius so the field family reads as one component */
+.field-demo{display:flex;flex-direction:column;gap:22px;width:100%;max-width:380px;}
+.field{display:flex;flex-direction:column;}
+.field-label{font-size:13.5px;font-weight:500;color:var(--ink-2);margin-bottom:10px;}
+.field-input,.field-textarea,.field-select{
+  width:100%;font-family:var(--sans);font-size:14.5px;color:var(--ink);
+  background:var(--bg-soft);border:1px solid var(--line);border-radius:10px;
+  padding:13px 16px;transition:border-color .14s,box-shadow .14s;}
+.field-input::placeholder,.field-textarea::placeholder{color:var(--ink-4);}
+.field-input:focus,.field-textarea:focus,.field-select:focus{
+  outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
+.field-textarea{min-height:110px;resize:vertical;line-height:1.5;font-family:inherit;}
+.field-select-wrap{position:relative;display:flex;}
+.field-select{appearance:none;-webkit-appearance:none;padding-right:40px;cursor:pointer;flex:1;}
+.field-select-placeholder{color:var(--ink-4);}
+.field-select-wrap svg{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--ink-3);pointer-events:none;}
+.field-input:disabled,.field-textarea:disabled,.field-select:disabled{opacity:.55;cursor:not-allowed;}
+.field-input[data-error="true"],.field-textarea[data-error="true"],.field-select[data-error="true"]{border-color:var(--danger);}
+.field-input[data-error="true"]:focus,.field-textarea[data-error="true"]:focus,.field-select[data-error="true"]:focus{
+  box-shadow:0 0 0 3px var(--danger-soft);}
+.field-error-msg{margin-top:8px;font-size:12.5px;color:var(--danger);}
 
 /* Best practices — annotations around the button (button stays put) */
 .bp-anchor{position:relative;display:inline-flex;}

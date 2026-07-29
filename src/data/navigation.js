@@ -33,6 +33,7 @@ export const NAV = [
       { id: "spacing", label: "Spacing" },
       { id: "icons", label: "Icons" },
       { id: "graphics", label: "Graphics" },
+      { id: "patterns", label: "Patterns" },
     ],
   },
   {
@@ -57,5 +58,6 @@ export const SPY_IDS = [
   "spacing",
   "icons",
   "graphics",
+  "patterns",
   "components",
 ];
