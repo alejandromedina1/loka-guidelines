@@ -297,7 +297,7 @@
 .gfx-card{display:flex;flex-direction:column;align-items:center;gap:14px;padding:28px 16px 18px;
   border:1px solid var(--line);border-radius:var(--radius);background:transparent;transition:border-color .16s,background .16s;cursor:pointer;}
 .gfx-card:hover{border-color:var(--line-strong);background:var(--bg-soft);}
-.gfx-art{display:grid;place-items:center;color:#CCD4E0;
+.gfx-art{display:grid;place-items:center;color:#A8B3CA;
   transition:color .18s ease, transform .28s cubic-bezier(.34,1.56,.64,1);}
 .gfx-card:hover .gfx-art{color:#2F85F3;transform:translateY(-8px);}
 .gfx-art svg{width:72px;height:72px;display:block;
