@@ -1,13 +1,11 @@
 import { useState } from "react";
-import { ChevronDown } from "../../common/Icon.jsx";
-
-const SELECT_OPTIONS = ["New project", "Ongoing support", "General question"];
+import { MultiSelectField } from "./MultiSelectField.jsx";
 
 const FIELD_COPY = {
   Text: { label: "Full name", placeholder: "John" },
   Email: { label: "Company Email", placeholder: "john@company.com" },
   Textarea: { label: "What else should we know before responding?", placeholder: "Let us know here…" },
-  Select: { label: "What best describes your need?", placeholder: "Select an option" },
+  Select: { label: "Multi-select — choose up to three", placeholder: "Type to search" },
 };
 
 // Live Input Field preview — label sits a full space-10 above the control, and
@@ -15,7 +13,6 @@ const FIELD_COPY = {
 // so the field family reads as one component.
 export function InputFieldPreview({ type, disabled, error }) {
   const [text, setText] = useState("");
-  const [selected, setSelected] = useState("");
   const copy = FIELD_COPY[type];
 
   return (
@@ -30,25 +27,7 @@ export function InputFieldPreview({ type, disabled, error }) {
             disabled={disabled}
           />
         ) : type === "Select" ? (
-          <span className="field-select-wrap">
-            <select
-              className={`field-select ${selected ? "" : "field-select-placeholder"}`}
-              data-error={error}
-              disabled={disabled}
-              value={selected}
-              onChange={(e) => setSelected(e.target.value)}
-            >
-              <option value="" disabled>
-                {copy.placeholder}
-              </option>
-              {SELECT_OPTIONS.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-            <ChevronDown />
-          </span>
+          <MultiSelectField disabled={disabled} error={error} placeholder={copy.placeholder} />
         ) : (
           <input
             className="field-input"

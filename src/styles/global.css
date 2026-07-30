@@ -410,7 +410,8 @@
 .pg-canvas-center{position:relative;flex:1;display:grid;place-items:center;padding:40px;}
 .btn-variants{display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;justify-content:center;}
 .btn-cell{display:inline-flex;flex-direction:column;align-items:center;}
-.btn-cell.bp-on{padding-bottom:26px;}
+/* room for the redline callouts that sit above, below, and left of the button */
+.btn-cell.bp-on{padding:26px 0 26px 52px;}
 .btn-box{position:relative;display:inline-flex;}
 .pg-canvas-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;}
 .pg-viewcode{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-3);transition:color .12s;}
@@ -457,23 +458,104 @@
 .field-demo{display:flex;flex-direction:column;gap:22px;width:100%;max-width:380px;}
 .field{display:flex;flex-direction:column;}
 .field-label{font-size:13.5px;font-weight:500;color:var(--ink-2);margin-bottom:10px;}
-.field-input,.field-textarea,.field-select{
+/* Box and placeholder colour match the multi-select, so the whole Input Field
+   family reads as one control: 48px tall, 12px radius, #A8B3CA placeholder. */
+.field-input,.field-textarea{
   width:100%;font-family:var(--sans);font-size:14.5px;color:var(--ink);
-  background:var(--bg-soft);border:1px solid var(--line);border-radius:10px;
-  padding:13px 16px;transition:border-color .14s,box-shadow .14s;}
-.field-input::placeholder,.field-textarea::placeholder{color:var(--ink-4);}
-.field-input:focus,.field-textarea:focus,.field-select:focus{
+  background:var(--bg-soft);border:1px solid var(--line);border-radius:12px;
+  padding:0 16px;transition:border-color .14s,box-shadow .14s;}
+.field-input{height:48px;}
+.field-input::placeholder,.field-textarea::placeholder{color:#A8B3CA;}
+.field-input:focus,.field-textarea:focus{
   outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
-.field-textarea{min-height:110px;resize:vertical;line-height:1.5;font-family:inherit;}
-.field-select-wrap{position:relative;display:flex;}
-.field-select{appearance:none;-webkit-appearance:none;padding-right:40px;cursor:pointer;flex:1;}
-.field-select-placeholder{color:var(--ink-4);}
-.field-select-wrap svg{position:absolute;right:16px;top:50%;transform:translateY(-50%);color:var(--ink-3);pointer-events:none;}
-.field-input:disabled,.field-textarea:disabled,.field-select:disabled{opacity:.55;cursor:not-allowed;}
-.field-input[data-error="true"],.field-textarea[data-error="true"],.field-select[data-error="true"]{border-color:var(--danger);}
-.field-input[data-error="true"]:focus,.field-textarea[data-error="true"]:focus,.field-select[data-error="true"]:focus{
+.field-textarea{min-height:110px;padding:12px 16px;resize:vertical;line-height:1.5;font-family:inherit;}
+.field-input:disabled,.field-textarea:disabled{opacity:.55;cursor:not-allowed;}
+.field-input[data-error="true"],.field-textarea[data-error="true"]{border-color:var(--danger);}
+.field-input[data-error="true"]:focus,.field-textarea[data-error="true"]:focus{
   box-shadow:0 0 0 3px var(--danger-soft);}
 .field-error-msg{margin-top:8px;font-size:12.5px;color:var(--danger);}
+
+/* Multi-select dropdown — Loka Figma "Dropdown" (node 6916:50169).
+   Figma tokens: backgroundgrey #F5F6FA, line-stroke #ECECEE, gray-5 #EFF1F5,
+   gray-10 #E7ECF2, gray-30 #CCD4E0, gray-40 #A8B3CA, gray-50 #828FA5,
+   gray-60 #5C6A82, gray-70 #2E3F5A, blue-5 #EEF2FE, blue-10 #D8E2F6,
+   blue-100 #186BF3. Kept as literals: the dropdown is specified against the
+   light surface it ships on, not the app's theme variables.
+
+   One deliberate deviation: Figma sets this component's body text at 16px, but
+   it sits in the Input Field family next to .field-input/.field-textarea, which
+   are 14.5px. Matching the family wins over matching the standalone frame, so
+   every string here tracks 14.5px. The group label keeps its own 12px caps
+   scale, which reads as a label rather than body copy either way. */
+.ms{width:100%;border:1px solid #E7ECF2;border-radius:12px;background:#F5F6FA;}
+.ms[data-open]{background:#EEF2FE;border-color:#EFF1F5;overflow:clip;
+  backdrop-filter:blur(30px);}
+.ms[data-error]{border-color:var(--danger);}
+.ms[data-disabled]{opacity:.55;}
+
+/* closed control */
+/* Height is pinned to the same 48px as .ms-search below: the closed control and
+   the open search row are different elements, so without this the top row would
+   jump a few px the moment the dropdown opens. */
+.app button.ms-control{width:100%;height:48px;display:flex;align-items:center;
+  justify-content:space-between;gap:12px;padding:0 16px;font-family:var(--sans);
+  font-size:14.5px;line-height:1.3;font-weight:400;color:#A8B3CA;cursor:pointer;text-align:left;}
+.app button.ms-control:disabled{cursor:not-allowed;}
+.ms-control-text[data-muted]{color:#CCD4E0;}
+
+/* search row, shown while open */
+.ms-search{display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;
+  background:#F5F6FA;border-bottom:1px solid #ECECEE;border-radius:11px 11px 0 0;}
+.ms-search-input{flex:1;min-width:0;border:none;background:none;outline:none;
+  font-family:var(--sans);font-size:14.5px;font-weight:400;line-height:1.3;color:#186BF3;}
+.ms-search-input::placeholder{color:#A8B3CA;}
+/* Same 20px box closed (a span) and open (a button), so the glyph lands on the
+   identical pixel either way — a bare 12px svg closed would sit ~4px further
+   right than one centred in the open state's 20px hit area. */
+.ms-caret{flex:none;display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;color:#828FA5;}
+/* `.app button{color:inherit}` outranks a bare `.ms-caret`, so the open-state
+   caret needs the class restated on the button or it inherits body ink. */
+.app button.ms-caret{color:#828FA5;cursor:pointer;transition:color .12s;}
+.app button.ms-caret:hover{color:#186BF3;}
+
+/* option list */
+.ms-list{max-height:348px;overflow-y:auto;overscroll-behavior:contain;
+  background:#F5F6FA;border:1px solid #ECECEE;border-radius:0 0 16px 16px;padding:4px;}
+.ms-list[data-empty]{max-height:none;padding:0;}
+.ms-list::-webkit-scrollbar{width:3px;}
+.ms-list::-webkit-scrollbar-track{background:#E7ECF2;}
+.ms-list::-webkit-scrollbar-thumb{background:#CCD4E0;}
+.ms-empty{margin:0;padding:12px 16px;font-size:14.5px;font-weight:400;line-height:1.3;color:#5C6A82;}
+
+.ms-group{display:flex;flex-direction:column;gap:8px;padding:16px 8px 8px;
+  border-bottom:1px solid #EFF1F5;}
+.ms-group:first-child{padding-top:8px;padding-bottom:16px;}
+.ms-group:last-child{border-bottom:none;}
+.ms-group-label{padding:0 4px;font-size:12px;font-weight:500;line-height:1.3;
+  letter-spacing:.06em;text-transform:uppercase;color:#2E3F5A;}
+.ms-options{display:flex;flex-direction:column;gap:4px;}
+
+.app button.ms-option{display:flex;align-items:center;gap:12px;width:100%;height:48px;
+  padding:12px;border-radius:12px;background:#EFF1F5;cursor:pointer;text-align:left;
+  transition:background .12s;}
+.app button.ms-option:hover{background:#E7ECF2;}
+.app button.ms-option[data-selected]{background:#E7ECF2;}
+.ms-option-text{flex:1;min-width:0;font-size:14.5px;font-weight:400;line-height:1.3;color:#5C6A82;}
+.ms-option svg{flex:none;color:#186BF3;}
+
+/* footer: the max-reached note and the chosen tags */
+.ms-foot{display:flex;flex-direction:column;gap:12px;padding:12px;}
+.ms-foot-spacer{display:block;height:12px;}
+.ms-max{margin:0;font-size:14.5px;font-weight:400;line-height:1.3;color:#5C6A82;}
+.ms-tags{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
+.ms-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 4px 4px 8px;
+  border:1px solid #D8E2F6;border-radius:100px;background:#EEF2FE;
+  font-size:14.5px;font-weight:400;line-height:1.3;color:#186BF3;}
+.app button.ms-tag-x{display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;color:#5C6A82;cursor:pointer;transition:color .12s;}
+.app button.ms-tag-x:hover{color:#186BF3;}
+.app button.ms-tag-x:disabled{cursor:not-allowed;}
 
 /* Best practices — annotations around the button (button stays put) */
 .bp-anchor{position:relative;display:inline-flex;}
@@ -484,15 +566,72 @@
 .pg-canvas.dark .btn-state-label{color:rgba(255,255,255,.5);}
 .pg-canvas.dark .btn-state-label[data-state="hover"]{color:#fff;}
 /* green padding highlight INSIDE the button edges */
-.bp-pad-inner{position:absolute;top:1px;bottom:1px;width:16px;background:rgba(22,163,74,.35);pointer-events:none;z-index:2;}
+.bp-pad-inner{position:absolute;top:1px;bottom:1px;background:rgba(22,163,74,.35);pointer-events:none;z-index:2;}
 .bp-pad-inner-left{left:1px;}
 .bp-pad-inner-right{right:1px;}
-.bp-width{position:absolute;top:calc(100% + 10px);left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;}
-.bp-width-line{width:100%;height:0;border-top:1px solid #16A34A;position:relative;}
-.bp-width-line::before,.bp-width-line::after{content:"";position:absolute;top:-4px;width:1px;height:8px;background:#16A34A;}
-.bp-width-line::before{left:0;}
-.bp-width-line::after{right:0;}
-.bp-width-tag{font-family:var(--mono);font-size:10.5px;color:#fff;background:#16A34A;padding:2px 6px;white-space:nowrap;}
+
+/* Ghost is transparent and full-bleed, so the preview stands it inside a stub of
+   the card footer that hosts it — the frame supplies the surface colour. */
+.btn-ghost-frame{display:flex;width:300px;}
+
+/* shared redline tag */
+.bp-tag{font-family:var(--mono);font-size:10px;line-height:1.4;color:#fff;background:#16A34A;padding:2px 5px;white-space:nowrap;}
+.bp-tag-quiet{background:rgba(22,163,74,.85);}
+
+/* width measure, below the button */
+.bp-w{position:absolute;top:calc(100% + 10px);left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;}
+.bp-w-line{width:100%;height:0;border-top:1px solid #16A34A;position:relative;}
+.bp-w-line::before,.bp-w-line::after{content:"";position:absolute;top:-4px;width:1px;height:8px;background:#16A34A;}
+.bp-w-line::before{left:0;}
+.bp-w-line::after{right:0;}
+
+/* height measure, to the left of the button */
+.bp-h{position:absolute;right:calc(100% + 8px);top:0;bottom:0;display:flex;align-items:center;gap:4px;pointer-events:none;}
+.bp-h-line{align-self:stretch;width:0;border-left:1px solid #16A34A;position:relative;}
+.bp-h-line::before,.bp-h-line::after{content:"";position:absolute;left:-4px;width:8px;height:1px;background:#16A34A;}
+.bp-h-line::before{top:0;}
+.bp-h-line::after{bottom:0;}
+
+/* side-padding callout, above the button */
+.bp-pad-note{position:absolute;bottom:calc(100% + 8px);left:0;display:flex;pointer-events:none;}
+
+/* Ghost's trailing icon — wraps the glyph in-flow so the marker and its tag
+   track the icon's real position instead of guessing at it. */
+.bp-icon-hl{position:relative;display:inline-flex;background:rgba(22,163,74,.22);
+  outline:1px dashed #16A34A;}
+.bp-icon-note{position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);
+  display:flex;pointer-events:none;}
+
+/* Fills the canvas centre so the floating panel can dock to the canvas rather
+   than to the button — the button stays centred inside it. */
+.bp-stage{position:relative;place-self:stretch;display:grid;place-items:center;}
+
+/* measured spec sheet — floats over the canvas, draggable by its head */
+.bp-float{position:absolute;top:0;left:0;z-index:6;display:flex;max-height:100%;}
+.bp-panel{display:flex;flex-direction:column;min-height:0;width:212px;
+  border:1px solid var(--line);background:var(--bg);box-shadow:0 12px 32px rgba(1,8,18,.16);}
+.bp-panel-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:6px 8px;border-bottom:1px solid var(--line);background:var(--bg-soft);
+  cursor:move;user-select:none;}
+.bp-panel-badge{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;
+  color:#16A34A;border:1px solid #16A34A;padding:1px 5px;}
+.bp-panel-grip{font-size:11px;line-height:1;color:var(--ink-4);letter-spacing:-.1em;}
+.bp-panel-note{flex:none;margin:0;padding:7px 9px;border-top:1px solid var(--line);
+  background:var(--bg-soft);font-size:10.5px;line-height:1.45;color:var(--ink-3);}
+.pg-canvas.dark .bp-panel-note{background:rgba(255,255,255,.05);border-top-color:rgba(255,255,255,.14);
+  color:rgba(255,255,255,.6);}
+/* scrolls within whatever height the canvas allows; the head stays put */
+.bp-specs{margin:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
+.bp-spec-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:5px 9px;border-bottom:1px solid var(--line);}
+.bp-spec-row:last-child{border-bottom:none;}
+.bp-specs dt{font-size:11px;color:var(--ink-3);white-space:nowrap;}
+.bp-specs dd{margin:0;font-family:var(--mono);font-size:10.5px;color:var(--ink);text-align:right;word-break:break-all;}
+.pg-canvas.dark .bp-panel{background:#121821;border-color:rgba(255,255,255,.14);
+  box-shadow:0 12px 32px rgba(0,0,0,.45);}
+.pg-canvas.dark .bp-panel-head{background:rgba(255,255,255,.05);border-bottom-color:rgba(255,255,255,.14);}
+.pg-canvas.dark .bp-spec-row{border-bottom-color:rgba(255,255,255,.1);}
+.pg-canvas.dark .bp-specs dt{color:rgba(255,255,255,.55);}
+.pg-canvas.dark .bp-specs dd{color:#fff;}
 
 /* behaviour annotation — draggable dark tooltip */
 .bh{position:absolute;top:50%;left:100%;display:flex;align-items:center;z-index:5;}

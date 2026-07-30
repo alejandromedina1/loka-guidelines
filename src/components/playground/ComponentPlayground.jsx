@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { COMPONENT_LIST } from "../../data/components.js";
-import { SIZE_SPEC, buttonSnippet } from "./buttonStyles.js";
+import {
+  BUTTON_VARIANTS,
+  DARK_SURFACE_VARIANTS,
+  DEVICE_SPEC,
+  GHOST_SURFACES,
+  buttonSnippet,
+} from "./buttonStyles.js";
 import { PgSelect } from "./controls/PgSelect.jsx";
 import { PgToggle } from "./controls/PgToggle.jsx";
 import { ButtonPreview } from "./previews/ButtonPreview.jsx";
@@ -9,7 +15,6 @@ import { AvatarsPreview } from "./previews/AvatarsPreview.jsx";
 import { InputFieldPreview, inputFieldSnippet } from "./previews/InputFieldPreview.jsx";
 import { ArrowLeft, ArrowRight, ChevronToggle, CheckIcon, CopyIcon } from "../common/Icon.jsx";
 
-const BUTTON_VARIANTS = ["Primary", "Secondary", "Outline", "Ghost"];
 const FIELD_TYPES = ["Text", "Email", "Textarea", "Select"];
 
 // The component documentation surface: a live preview canvas, a prev/next
@@ -21,8 +26,8 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
   const isInputField = selected === "Input Field";
 
   const [variant, setVariant] = useState("Primary");
-  const [size, setSize] = useState("40px");
-  const [leadingIcon, setLeadingIcon] = useState(false);
+  const [device, setDevice] = useState("Desktop");
+  const [surface, setSurface] = useState("Gray 10");
   const [disabled, setDisabled] = useState(false);
   const [bestPractices, setBestPractices] = useState(false);
   const [showBehaviour, setShowBehaviour] = useState(false);
@@ -39,8 +44,12 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
     setSelected(COMPONENT_LIST[next]);
   };
 
+  // Outline dark is white-on-dark by design, so the canvas follows the variant
+  // rather than the app theme for it. Ghost brings its own surface instead.
+  const darkCanvas = dark || (isButton && DARK_SURFACE_VARIANTS.includes(variant));
+
   const code = isButton
-    ? buttonSnippet({ variant, size, leadingIcon, disabled })
+    ? buttonSnippet({ variant, device, surface, disabled })
     : isInputField
       ? inputFieldSnippet({ type: fieldType, disabled: fieldDisabled, error: fieldError })
       : "";
@@ -57,12 +66,11 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
       return (
         <ButtonPreview
           variant={variant}
-          size={size}
-          leadingIcon={leadingIcon}
+          device={device}
+          surface={surface}
           disabled={disabled}
           bestPractices={bestPractices}
           showBehaviour={showBehaviour}
-          dark={dark}
           btnState={btnState}
           setBtnState={setBtnState}
         />
@@ -84,7 +92,7 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
   return (
     <div className="pg pg-nolist">
       <div className="pg-stage">
-        <div className={`pg-canvas ${dark ? "dark" : ""}`}>
+        <div className={`pg-canvas ${darkCanvas ? "dark" : ""}`}>
           <div className="pg-canvas-nav">
             {isButton && (
               <span className="btn-state-label" data-state={disabled ? "disabled" : btnState}>
@@ -164,13 +172,20 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
         ) : (
           <>
             <PgSelect
-              label="Size"
-              value={size}
-              options={Object.keys(SIZE_SPEC)}
-              onChange={setSize}
+              label="Device"
+              value={device}
+              options={Object.keys(DEVICE_SPEC)}
+              onChange={setDevice}
               disabled={!isButton}
             />
-            <PgToggle label="Leading icon" value={leadingIcon} onChange={setLeadingIcon} disabled={!isButton} />
+            {isButton && variant === "Ghost" && (
+              <PgSelect
+                label="Surface"
+                value={surface}
+                options={Object.keys(GHOST_SURFACES)}
+                onChange={setSurface}
+              />
+            )}
             <PgToggle label="Disabled" value={disabled} onChange={setDisabled} disabled={!isButton} />
             <PgToggle label="Best practices" value={bestPractices} onChange={setBestPractices} disabled={!isButton} />
             <PgToggle label="Show behaviour" value={showBehaviour} onChange={setShowBehaviour} disabled={!isButton} />

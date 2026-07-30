@@ -1,89 +1,186 @@
 // Pure styling logic for the interactive Button preview. Kept out of the React
 // component so the visual rules are easy to read and adjust in one place.
+//
+// Mirrors the "Button" component in the Loka Figma library. Figma models the
+// button on three axes — type, device, state — which map here to variant,
+// device, and state.
 
-// Height / padding / font size for each supported button size.
-export const SIZE_SPEC = {
-  "32px": { height: 32, padding: "0 14px", font: 13 },
-  "40px": { height: 40, padding: "0 18px", font: 14 },
-  "44px": { height: 44, padding: "0 22px", font: 15 },
+// Design-system tokens the button spec references, by their Figma names.
+const BLUE_100 = "#186BF3"; // colors/blue/100
+const BLUE_NEW = "#1957F4"; // colors/blue/newblue
+const GRAY_10 = "#E7ECF2"; // colors/neutral/gray-10
+const GRAY_30 = "#CCD4E0"; // colors/neutral/gray-30
+const GRAY_80 = "#041D3E"; // colors/neutral/gray-80
+const GRAY_90 = "#020F1F"; // colors/neutral/gray-90
+const BORDER_SLATE = "#58697E";
+const BORDER_LIGHT = "#F6F7F9";
+
+export const BUTTON_VARIANTS = ["Primary", "Secondary", "Outline light", "Outline dark", "Ghost"];
+
+// Outline dark has a white label and white border, so the preview canvas has to
+// go dark for it to be legible. Ghost is NOT in this list — it takes its colour
+// from whichever surface hosts it (see GHOST_SURFACES).
+export const DARK_SURFACE_VARIANTS = ["Outline dark"];
+
+// Ghost has no fill of its own: it spans the full width of a container whose
+// background becomes the button's surface, and the label colour follows that
+// surface. These are the two pairings the Figma library actually ships —
+// the podcast card footer (gray-10) and the originals card footer (blue-100).
+export const GHOST_SURFACES = {
+  "Gray 10": { fill: GRAY_10, label: GRAY_90 },
+  "Blue 100": { fill: BLUE_100, label: "#FFFFFF" },
 };
 
-// Base appearance per variant. A few values depend on the active theme.
-function variantStyles(dark) {
-  return {
-    Primary: { background: "var(--blue)", color: "#fff", border: "1px solid var(--blue)" },
-    Secondary: {
-      background: dark ? "#fff" : "var(--ink)",
-      color: dark ? "var(--ink)" : "#fff",
-      border: "1px solid transparent",
-    },
-    Outline: {
-      background: "transparent",
-      color: dark ? "#fff" : "var(--ink)",
-      border: `1px solid ${dark ? "rgba(255,255,255,.3)" : "var(--line-strong)"}`,
-    },
-    Ghost: { background: "transparent", color: dark ? "#fff" : "var(--ink)", border: "1px solid transparent" },
-  };
+// Figma's `device` axis. The box is identical on both; only the label size
+// changes, so this is the type scale rather than a size ramp.
+export const DEVICE_SPEC = {
+  Desktop: { font: 16 },
+  Mobile: { font: 15 },
+};
+
+// Every variant shares one box except Ghost, which is taller, roomier, spans its
+// container, and keeps square corners — it is a full-bleed bar pinned to the
+// bottom of a card, so the container supplies the shape.
+const BOX = { height: 40, padX: 14, radius: 80 };
+const GHOST_BOX = { height: 44, padX: 16, radius: 0 };
+
+// Shared across every variant.
+const BORDER_WIDTH = 1;
+const FONT_WEIGHT = 500; // Alliance No.2 Medium
+const LINE_HEIGHT = 1.3;
+const GAP = 12;
+// Ghost is the only variant that carries an icon, and it sits AFTER the label.
+// No variant in the library uses a leading icon.
+const ICON_SIZE = 18;
+const ICON_POSITION = "trailing";
+// Width is auto-layout hug in Figma — there is no min-width in the spec, so the
+// overlay reports the measured width rather than asserting a floor.
+
+// Figma collapses hover and press into a single appearance: desktop reaches it
+// by hovering, mobile by pressing. So both states resolve to `active` here.
+const VARIANT_SPEC = {
+  Primary: {
+    default: { background: BLUE_100, borderColor: BORDER_SLATE, color: "#FFFFFF" },
+    // The border drops out on active; kept transparent so the box doesn't shift.
+    active: { background: BLUE_NEW, borderColor: "transparent", backdropFilter: "none" },
+  },
+  Secondary: {
+    default: { background: GRAY_10, borderColor: "transparent", color: GRAY_90 },
+    active: { background: GRAY_30 },
+  },
+  "Outline light": {
+    default: { background: "rgba(120,138,161,.03)", borderColor: BORDER_SLATE, color: GRAY_80 },
+    active: { background: "rgba(120,138,161,.1)" },
+  },
+  "Outline dark": {
+    default: { background: "rgba(255,255,255,.1)", borderColor: BORDER_LIGHT, color: "#FFFFFF" },
+    active: { background: "rgba(250,250,251,.2)" },
+  },
+  Ghost: {
+    default: { background: "transparent", borderColor: "transparent", color: "#FFFFFF" },
+    // Ghost has exactly one state, and that is deliberate rather than a gap:
+    // it IS the reveal-on-hover CTA of its parent card. Hovering the card is
+    // what brings it on screen, so it never needs a hover of its own.
+    active: {},
+  },
+};
+
+// Resolves a variant/state pair to its fill, border colour, and label colour.
+function paint(variant, state) {
+  const spec = VARIANT_SPEC[variant];
+  return { ...spec.default, ...(state === "default" ? {} : spec.active) };
 }
 
-// Hover / pressed overrides layered on top of the base variant.
-function stateStyles(dark) {
-  return {
-    Primary: {
-      hover: { background: "#1246C9", border: "1px solid #1246C9" },
-      pressed: { background: "#0E37A0", border: "1px solid #0E37A0" },
-    },
-    Secondary: {
-      hover: { background: dark ? "#E4E8EE" : "#1E2A3D" },
-      pressed: { background: dark ? "#CFD6E0" : "#28374F" },
-    },
-    Outline: {
-      hover: {
-        background: dark ? "rgba(255,255,255,.08)" : "var(--bg-soft)",
-        border: `1px solid ${dark ? "rgba(255,255,255,.5)" : "var(--ink-3)"}`,
-      },
-      pressed: {
-        background: dark ? "rgba(255,255,255,.14)" : "var(--line-2)",
-        border: `1px solid ${dark ? "rgba(255,255,255,.6)" : "var(--ink-2)"}`,
-      },
-    },
-    Ghost: {
-      hover: { background: dark ? "rgba(255,255,255,.08)" : "var(--bg-soft)" },
-      pressed: { background: dark ? "rgba(255,255,255,.14)" : "var(--line-2)" },
-    },
-  };
-}
+// Builds the full inline style for a button in a given variant/device/state.
+// `surface` only applies to Ghost, which inherits its label colour from the
+// container it sits in.
+export function makeButtonStyle({
+  variant,
+  state = "default",
+  device = "Desktop",
+  disabled,
+  surface = "Gray 10",
+}) {
+  const isGhost = variant === "Ghost";
+  const box = isGhost ? GHOST_BOX : BOX;
+  const { background, borderColor, color, backdropFilter } = paint(
+    variant,
+    disabled ? "default" : state,
+  );
 
-// Builds the full inline style for a button in a given variant/size/state.
-export function makeButtonStyle({ variant, state = "default", size, disabled, dark }) {
-  const spec = SIZE_SPEC[size];
-  const base = variantStyles(dark)[variant];
-  const override = disabled || state === "default" ? {} : stateStyles(dark)[variant][state];
   return {
-    ...base,
-    ...override,
-    height: spec.height,
-    padding: spec.padding,
-    fontSize: spec.font,
+    background,
+    color: isGhost ? (GHOST_SURFACES[surface] ?? GHOST_SURFACES["Gray 10"]).label : color,
+    border: `${BORDER_WIDTH}px solid ${borderColor}`,
+    // Ghost stretches to its container; every other variant hugs its label.
+    width: isGhost ? "100%" : undefined,
+    // Figma blurs whatever sits behind the button, so the translucent variants
+    // stay readable over imagery.
+    backdropFilter: backdropFilter ?? "blur(10px)",
+    height: box.height,
+    padding: `0 ${box.padX}px`,
+    borderRadius: box.radius,
+    fontSize: DEVICE_SPEC[device].font,
     fontFamily: "var(--display)",
-    fontWeight: 600,
-    borderRadius: 999,
+    fontWeight: FONT_WEIGHT,
+    lineHeight: LINE_HEIGHT,
     display: "inline-flex",
     alignItems: "center",
-    gap: 8,
+    justifyContent: "center",
+    gap: GAP,
     cursor: disabled ? "not-allowed" : "pointer",
+    // Figma has no disabled variant; this is the project's own convention.
     opacity: disabled ? 0.45 : 1,
-    transform: !disabled && state === "pressed" ? "scale(0.97)" : "scale(1)",
+    // Ghost is a full-bleed bar flush with its container's edges, so scaling it
+    // would pull it away from those edges. Single-state by design, no press.
+    transform: !disabled && !isGhost && state === "pressed" ? "scale(0.97)" : "scale(1)",
     transition: "background .12s, border-color .12s, transform .08s",
   };
 }
 
+// Redline figures for the best-practices overlay. Reads from the same constants
+// makeButtonStyle uses, so the annotations can't drift from the rendered button.
+export function buttonSpec({ variant, device, surface = "Gray 10" }) {
+  const isGhost = variant === "Ghost";
+  const box = isGhost ? GHOST_BOX : BOX;
+  const rest = paint(variant, "default");
+  const active = paint(variant, "hover");
+  const ghost = GHOST_SURFACES[surface] ?? GHOST_SURFACES["Gray 10"];
+
+  return {
+    isGhost,
+    // Ghost fills its container; the rest hug their label.
+    sizing: isGhost ? "fill container" : "hug",
+    surface: isGhost ? `${surface} · ${ghost.fill}` : null,
+    height: box.height,
+    padX: box.padX,
+    radius: box.radius,
+    fontSize: DEVICE_SPEC[device].font,
+    fontWeight: FONT_WEIGHT,
+    lineHeight: LINE_HEIGHT,
+    gap: GAP,
+    // Only Ghost has an icon — everything else is label-only.
+    iconSize: isGhost ? ICON_SIZE : null,
+    iconPosition: isGhost ? ICON_POSITION : null,
+    borderWidth: BORDER_WIDTH,
+    fill: rest.background,
+    fillActive: active.background,
+    borderColor: rest.borderColor,
+    borderColorActive: active.borderColor,
+    label: isGhost ? ghost.label : rest.color,
+    backdrop: rest.backdropFilter ?? "blur(10px)",
+    backdropActive: active.backdropFilter ?? "blur(10px)",
+  };
+}
+
 // The copyable ERB snippet reflecting the current button configuration.
-export function buttonSnippet({ variant, size, leadingIcon, disabled }) {
+export function buttonSnippet({ variant, device, surface, disabled }) {
+  const slug = (s) => s.toLowerCase().replace(/\s+/g, "_");
   return (
     `<%= render ButtonComponent.new(` +
-    `variant: :${variant.toLowerCase()}, size: :${size.replace("px", "")}` +
-    (leadingIcon ? `, icon: "arrow"` : "") +
+    `variant: :${slug(variant)}, device: :${device.toLowerCase()}` +
+    // Ghost's trailing arrow is part of the variant, so it needs no icon arg.
+    (variant === "Ghost" ? `, surface: :${slug(surface)}` : "") +
     (disabled ? `, disabled: true` : "") +
     `, label: "Label") %>`
   );

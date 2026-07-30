@@ -45,3 +45,28 @@ export const FAQ_ITEMS = [
     a: "Yes. The system is designed to grow — new icons slot into their category, and new components follow the same interactive documentation pattern you see here.",
   },
 ];
+
+// Grouped options for the multi-select dropdown documented under "Input Field".
+// Mirrors the Loka Figma "Dropdown" component (node 6916:50169), including its
+// three-selection ceiling.
+//
+// The options deliberately describe the control rather than carrying real
+// content: this is a reference page, so reading the list should teach how the
+// dropdown behaves. Kept short so the tags stay legible and grouping still
+// shows — enough rows that the list scrolls, without a catalogue to wade through.
+export const SELECT_MAX = 3;
+
+export const SELECT_GROUPS = [
+  {
+    label: "Selecting",
+    options: ["Pick up to three", "Checked rows are chosen", "Choices collect as tags"],
+  },
+  {
+    label: "Searching",
+    options: ["Type above to filter", "Groups hide when empty", "No match shows a note"],
+  },
+  {
+    label: "Limits",
+    options: ["The third pick closes this", "Remove a tag to reopen", "Tags clear with the \u00d7"],
+  },
+];
