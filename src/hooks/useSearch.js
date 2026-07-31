@@ -45,14 +45,17 @@ function buildSearchIndex() {
 
   GRAPHICS.forEach((gr) => idx.push({ label: gr.label, kind: "Graphic", target: "graphics" }));
 
-  PATTERNS.forEach((p) => idx.push({ label: p.name, kind: "Pattern", target: "patterns" }));
+  PATTERNS.forEach((p) =>
+    idx.push({ label: p.name, kind: "Pattern", target: "patterns", setPattern: p.id })
+  );
 
   return idx;
 }
 
 // Command-palette search: owns the query, open state, ⌘K/Esc shortcut, and the
 // filtered results. `onRun` is invoked with the chosen result so the caller can
-// navigate and (optionally) select a component.
+// navigate and (optionally) select a component or pattern — both sections show
+// one canvas at a time, so scrolling to them isn't enough on its own.
 export function useSearch(onRun) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");

@@ -306,17 +306,30 @@
 .gfx-label{font-size:13px;font-weight:500;color:var(--ink-2);text-align:center;}
 
 /* Patterns & motifs — live playgrounds, built on the .pg component-playground grid */
-.pat-labs{display:flex;flex-direction:column;gap:20px;width:100%;}
 .pat-lab .pg-canvas-center{padding:0;}
-.pat-swatch{width:100%;height:100%;min-height:280px;background-color:var(--bg-soft);}
-.pg-row-range{flex-direction:column;align-items:stretch;gap:8px;}
-.pg-row-head{display:flex;align-items:center;justify-content:space-between;}
-.pg-row-value{font-family:var(--mono);font-size:12px;color:var(--ink-4);flex:none;display:inline-flex;align-items:center;gap:4px;}
-.pg-row-value-input{width:40px;font-family:var(--mono);font-size:12px;color:var(--ink-2);
-  background:var(--bg-soft);border:1px solid var(--line);border-radius:0;padding:3px 5px;text-align:right;-moz-appearance:textfield;transition:border-color .12s;}
-.pg-row-value-input::-webkit-outer-spin-button,.pg-row-value-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
-.pg-row-value-input:focus{outline:none;border-color:var(--blue);}
-.pg-row-value-input:disabled{opacity:.6;}
+/* Range rows carry their own 16px of vertical padding instead, so the divider
+   between them sits centred in the space rather than offset by a container gap. */
+.pat-lab .pg-controls{gap:0;}
+/* The swatch surface is set inline from PATTERN_BG[theme], with the tile image. */
+.pat-swatch{width:100%;height:100%;min-height:280px;}
+/* Corner markers: the demo frame, plus the copyable .frame-markers rule set. */
+.pat-frame-swatch{display:flex;align-items:center;justify-content:center;padding:48px;}
+.pat-frame-swatch .frame-markers{width:100%;height:100%;outline:1px solid var(--frame-line);}
+.frame-markers{position:relative;}
+.frame-markers>i{position:absolute;width:var(--marker-size);height:var(--marker-size);
+  background:var(--marker-color);}
+.frame-markers>i:nth-child(1){top:calc(var(--marker-size)/-2);left:calc(var(--marker-size)/-2);}
+.frame-markers>i:nth-child(2){top:calc(var(--marker-size)/-2);right:calc(var(--marker-size)/-2);}
+.frame-markers>i:nth-child(3){bottom:calc(var(--marker-size)/-2);left:calc(var(--marker-size)/-2);}
+.frame-markers>i:nth-child(4){bottom:calc(var(--marker-size)/-2);right:calc(var(--marker-size)/-2);}
+/* Compound selector on purpose: `.pg-row` is defined later in this file, so a
+   bare `.pg-row-range` would lose its `align-items` to that rule's `center` and
+   the head would shrink-wrap its text instead of spanning the row. */
+.pg-row.pg-row-range{flex-direction:column;align-items:stretch;gap:12px;padding:16px 0;}
+/* Head stretches to the slider's width, so space-between puts the whole gap
+   between the label on the left and the value on the right. */
+.pg-row-head{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;}
+.pg-row-value{font-family:var(--mono);font-size:12px;color:var(--ink-2);flex:none;}
 .pg-range{-webkit-appearance:none;appearance:none;width:100%;height:2px;background:var(--line-strong);accent-color:var(--blue);cursor:pointer;}
 .pg-range::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:14px;height:14px;border-radius:999px;background:var(--blue);border:2px solid var(--bg);box-shadow:0 0 0 1px var(--blue);}
 .pg-range::-moz-range-thumb{width:14px;height:14px;border-radius:999px;background:var(--blue);border:2px solid var(--bg);box-shadow:0 0 0 1px var(--blue);}
@@ -455,9 +468,17 @@
 
 /* Input Field — label sits a full space-10 above its control; text/textarea/
    select share one fill+border+radius so the field family reads as one component */
-.field-demo{display:flex;flex-direction:column;gap:22px;width:100%;max-width:380px;}
+/* One gap governs both sides of the control — label above, error below — so the
+   message can't drift away from the box. The error is a sibling of .field, so
+   this container gap is the whole distance; it carries no margin of its own. */
+.field-demo{--field-gap:10px;display:flex;flex-direction:column;gap:var(--field-gap);
+  width:100%;max-width:380px;}
+/* Select only: its panel is absolute, so it adds no height and would hang past
+   the canvas bottom from a centred start. The other field types stay centred. */
+.field-demo[data-type="Select"]{align-self:start;}
 .field{display:flex;flex-direction:column;}
-.field-label{font-size:13.5px;font-weight:500;color:var(--ink-2);margin-bottom:10px;}
+.field-label{font-size:13.5px;font-weight:500;color:var(--ink-2);
+  margin-bottom:var(--field-gap,10px);}
 /* Box and placeholder colour match the multi-select, so the whole Input Field
    family reads as one control: 48px tall, 12px radius, #A8B3CA placeholder. */
 .field-input,.field-textarea{
@@ -473,7 +494,7 @@
 .field-input[data-error="true"],.field-textarea[data-error="true"]{border-color:var(--danger);}
 .field-input[data-error="true"]:focus,.field-textarea[data-error="true"]:focus{
   box-shadow:0 0 0 3px var(--danger-soft);}
-.field-error-msg{margin-top:8px;font-size:12.5px;color:var(--danger);}
+.field-error-msg{font-size:12.5px;color:var(--danger);}
 
 /* Multi-select dropdown — Loka Figma "Dropdown" (node 6916:50169).
    Figma tokens: backgroundgrey #F5F6FA, line-stroke #ECECEE, gray-5 #EFF1F5,
@@ -482,13 +503,25 @@
    blue-100 #186BF3. Kept as literals: the dropdown is specified against the
    light surface it ships on, not the app's theme variables.
 
-   One deliberate deviation: Figma sets this component's body text at 16px, but
-   it sits in the Input Field family next to .field-input/.field-textarea, which
-   are 14.5px. Matching the family wins over matching the standalone frame, so
-   every string here tracks 14.5px. The group label keeps its own 12px caps
-   scale, which reads as a label rather than body copy either way. */
-.ms{width:100%;border:1px solid #E7ECF2;border-radius:12px;background:#F5F6FA;}
-.ms[data-open]{background:#EEF2FE;border-color:#EFF1F5;overflow:clip;
+   Two deliberate deviations, both so this reads as part of the Input Field
+   family rather than as the standalone Figma frame:
+
+   1. Figma sets the body text at 16px; .field-input/.field-textarea are 14.5px,
+      so every string here tracks 14.5px. The group label keeps its own 12px
+      caps scale, which reads as a label rather than body copy either way.
+   2. The surface is #FAFBFC, not Figma's backgroundgrey #F5F6FA, so it matches
+      .field-input exactly. It stays a literal rather than var(--bg-soft): every
+      other colour in this block is a light-surface literal, so resolving just
+      the fill against the dark theme would put mid-dark option text on a dark
+      panel. */
+/* Open, the dropdown lifts out of flow and overlays what's below rather than
+   pushing it down. The anchor reserves the closed control's 48px so the field
+   underneath keeps its position; .ms then pins to the anchor's top-left, which
+   lands the search row exactly where the closed control was. */
+.ms-anchor{position:relative;width:100%;min-height:48px;}
+.ms{width:100%;border:1px solid #E7ECF2;border-radius:12px;background:#FAFBFC;}
+.ms[data-open]{position:absolute;top:0;left:0;z-index:20;
+  background:#EEF2FE;border-color:#EFF1F5;overflow:clip;
   backdrop-filter:blur(30px);}
 .ms[data-error]{border-color:var(--danger);}
 .ms[data-disabled]{opacity:.55;}
@@ -505,23 +538,31 @@
 
 /* search row, shown while open */
 .ms-search{display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;
-  background:#F5F6FA;border-bottom:1px solid #ECECEE;border-radius:11px 11px 0 0;}
+  background:#FAFBFC;border-bottom:1px solid #ECECEE;border-radius:11px 11px 0 0;}
 .ms-search-input{flex:1;min-width:0;border:none;background:none;outline:none;
   font-family:var(--sans);font-size:14.5px;font-weight:400;line-height:1.3;color:#186BF3;}
 .ms-search-input::placeholder{color:#A8B3CA;}
 /* Same 20px box closed (a span) and open (a button), so the glyph lands on the
    identical pixel either way — a bare 12px svg closed would sit ~4px further
    right than one centred in the open state's 20px hit area. */
+/* Figma's arrow component colours its two states differently: wrapped (closed,
+   a span here) is gray-40, unwrapped (open, a button) is gray-50. */
+/* padding:0 and a non-shrinking glyph are both load-bearing: `.app button` resets
+   border and background but not the UA's default button padding, so as a <button>
+   this 20px box loses ~12px of content width and the svg — a flex item that
+   shrinks by default — renders smaller open than closed. */
 .ms-caret{flex:none;display:inline-flex;align-items:center;justify-content:center;
-  width:20px;height:20px;color:#828FA5;}
+  width:20px;height:20px;padding:0;color:#A8B3CA;}
+.ms-caret svg{flex:none;}
 /* `.app button{color:inherit}` outranks a bare `.ms-caret`, so the open-state
-   caret needs the class restated on the button or it inherits body ink. */
-.app button.ms-caret{color:#828FA5;cursor:pointer;transition:color .12s;}
-.app button.ms-caret:hover{color:#186BF3;}
+   caret needs the class restated on the button or it inherits body ink. No
+   hover colour: the arrow reads purely as a state indicator here, matching the
+   filter chip's, where the two gray steps are the only thing it ever does. */
+.app button.ms-caret{color:#828FA5;cursor:pointer;}
 
 /* option list */
 .ms-list{max-height:348px;overflow-y:auto;overscroll-behavior:contain;
-  background:#F5F6FA;border:1px solid #ECECEE;border-radius:0 0 16px 16px;padding:4px;}
+  background:#FAFBFC;border:1px solid #ECECEE;border-radius:0 0 16px 16px;padding:4px;}
 .ms-list[data-empty]{max-height:none;padding:0;}
 .ms-list::-webkit-scrollbar{width:3px;}
 .ms-list::-webkit-scrollbar-track{background:#E7ECF2;}
@@ -552,10 +593,79 @@
 .ms-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 4px 4px 8px;
   border:1px solid #D8E2F6;border-radius:100px;background:#EEF2FE;
   font-size:14.5px;font-weight:400;line-height:1.3;color:#186BF3;}
+/* Box tracks the 24px glyph, and padding:0 keeps it that way — see .ms-caret:
+   the UA's button padding would otherwise squeeze the svg well under 24px. */
 .app button.ms-tag-x{display:inline-flex;align-items:center;justify-content:center;
-  width:20px;height:20px;color:#5C6A82;cursor:pointer;transition:color .12s;}
+  width:24px;height:24px;padding:0;color:#5C6A82;cursor:pointer;transition:color .12s;}
+.ms-tag-x svg{flex:none;}
 .app button.ms-tag-x:hover{color:#186BF3;}
 .app button.ms-tag-x:disabled{cursor:not-allowed;}
+
+/* Checkbox — Loka Figma "Checkbox / 40" (node 3692:15296).
+   Tokens: gray-5 #EFF1F5 (pill border), gray-10 #E7ECF2 (empty circle),
+   gray-50 #828FA5 (label), gray-90 #020F1F (checked label), blue-100 #186BF3
+   (checked circle), backgroundgrey #F5F6FA (hover and checked fill), and
+   greyblue #7C92AE for the disabled label — that last one isn't in the
+   documented palette, it comes straight from the Figma variable. Literals for
+   the same reason as the multi-select and filter: specified against the light
+   surface it ships on. */
+.cbx-set{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:420px;}
+.app button.cbx{display:inline-flex;align-items:center;gap:8px;height:40px;padding:8px;
+  border:1px solid #EFF1F5;border-radius:12px;cursor:pointer;
+  font-family:var(--sans);font-size:14px;font-weight:400;line-height:1.45;color:#828FA5;
+  transition:background .12s,color .12s;}
+.app button.cbx:hover{background:#F5F6FA;}
+.app button.cbx[data-checked]{background:#F5F6FA;color:#020F1F;}
+.app button.cbx:disabled{opacity:.5;background:none;color:#7C92AE;cursor:not-allowed;}
+/* 16px measured off the Figma render — the stroke sits inside, so the 12px tick
+   centres with 2px of clearance rather than the box growing to fit it. */
+.cbx-box{flex:none;display:inline-flex;align-items:center;justify-content:center;
+  width:16px;height:16px;border:1px solid #E7ECF2;border-radius:100px;color:#FFFFFF;
+  transition:background .12s,border-color .12s;}
+.cbx[data-checked] .cbx-box{background:#186BF3;border-color:#186BF3;}
+.cbx-box svg{flex:none;}
+
+/* Filter bar — Loka Figma "filter" (node 4866:24030).
+   Figma tokens: gray-5 #EFF1F5 (bar), gray-20 #D6DCE6 (open chip),
+   gray-40 #A8B3CA (counts, closed arrow), gray-50 #828FA5 (open arrow),
+   gray-80 #041D3E (labels), backgroundgrey #F5F6FA (panel). Literals for the
+   same reason as the multi-select above: specified against the light surface it
+   ships on, not the app's theme variables. Body text is Figma's 16px here — the
+   filter is standalone, so it has no Input Field family to track. */
+/* The panel is absolute, so it contributes no height — the bar pins to the top
+   of the canvas rather than centring, or the open panel hangs off the bottom. */
+.filt{position:relative;width:100%;max-width:366px;align-self:start;}
+.filt-bar{display:flex;align-items:center;gap:6px;background:#EFF1F5;border-radius:500px;}
+.app button.filt-toggle{display:flex;align-items:center;justify-content:center;gap:6px;
+  height:36px;padding:12px;border-radius:80px;overflow:clip;cursor:pointer;
+  font-family:var(--sans);font-size:16px;font-weight:400;line-height:1.3;color:#041D3E;
+  transition:background .12s;}
+.app button.filt-toggle[data-open]{background:#D6DCE6;}
+/* Arrow tracks the same two state colours the Figma arrow component ships:
+   gray-40 wrapped (closed), gray-50 unwrapped (open). */
+.filt-toggle svg{flex:none;color:#A8B3CA;}
+.filt-toggle[data-open] svg{color:#828FA5;}
+
+/* 8px below the 36px bar, matching Figma's top:44px. */
+.filt-panel{position:absolute;left:0;top:calc(100% + 8px);z-index:2;width:100%;
+  display:flex;flex-direction:column;gap:2px;padding:4px;
+  background:#F5F6FA;border:1px solid #EFF1F5;border-radius:12px;
+  filter:drop-shadow(0 3px 3px rgba(43,64,92,.05)) drop-shadow(0 11px 5.5px rgba(43,64,92,.04))
+    drop-shadow(0 25px 7.5px rgba(43,64,92,.03)) drop-shadow(0 45px 9px rgba(43,64,92,.01));}
+.filt-search{height:44px;padding:12px;border:none;background:none;outline:none;
+  border-radius:10px;font-family:var(--sans);font-size:16px;font-weight:400;
+  line-height:1.3;color:#041D3E;}
+.filt-search::placeholder{color:#A8B3CA;}
+.app button.filt-option{display:flex;align-items:center;gap:6px;height:44px;padding:12px;
+  border-radius:10px;overflow:clip;cursor:pointer;text-align:left;
+  font-family:var(--sans);font-size:16px;font-weight:400;line-height:1.3;
+  transition:background .12s;}
+.app button.filt-option:hover{background:#EFF1F5;}
+.app button.filt-option[data-picked]{background:#D6DCE6;}
+/* Fixed 22px column so the labels line up whether the count is one or two digits. */
+.filt-count{flex:none;width:22px;color:#A8B3CA;}
+.filt-option-label{color:#041D3E;}
+.filt-empty{margin:0;padding:12px;font-size:16px;line-height:1.3;color:#5C6A82;}
 
 /* Best practices — annotations around the button (button stays put) */
 .bp-anchor{position:relative;display:inline-flex;}

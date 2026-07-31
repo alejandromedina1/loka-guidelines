@@ -1,29 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { makeButtonStyle, buttonSpec, GHOST_SURFACES } from "../buttonStyles.js";
+import { BestPracticesPanel } from "../BestPracticesPanel.jsx";
+import { useDragOffset } from "../useDragOffset.js";
 import { ArrowInline } from "../../common/Icon.jsx";
-
-// Drag-to-reposition for the floating annotation panels. Returns the current
-// offset plus the mousedown handler to wire onto whatever acts as the handle.
-function useDragOffset(initial) {
-  const [pos, setPos] = useState(initial);
-
-  const onMouseDown = (e) => {
-    e.preventDefault();
-    const startX = e.clientX;
-    const startY = e.clientY;
-    const origin = { ...pos };
-    const move = (ev) =>
-      setPos({ x: origin.x + (ev.clientX - startX), y: origin.y + (ev.clientY - startY) });
-    const up = () => {
-      window.removeEventListener("mousemove", move);
-      window.removeEventListener("mouseup", up);
-    };
-    window.addEventListener("mousemove", move);
-    window.addEventListener("mouseup", up);
-  };
-
-  return [pos, onMouseDown];
-}
 
 // Live Button preview with hover/press interaction, a redlined best-practices
 // overlay, and two draggable annotation panels — the spec sheet and the
@@ -39,9 +18,6 @@ export function ButtonPreview({
   setBtnState,
 }) {
   const [bhPos, onBhDown] = useDragOffset({ x: 60, y: 0 });
-  // Docked to the canvas's top-left, not to the button — the button is centred,
-  // so anchoring beside it would push the panel off-canvas on narrow stages.
-  const [specPos, onSpecDown] = useDragOffset({ x: 0, y: 0 });
 
   const isGhost = variant === "Ghost";
   const spec = buttonSpec({ variant, device, surface });
@@ -164,18 +140,14 @@ export function ButtonPreview({
         )}
       </div>
       {bestPractices && (
-        <div
-          className="bp-float"
-          style={{ transform: `translate(${specPos.x}px, ${specPos.y}px)` }}
-        >
-          <SpecSheet
-            spec={spec}
-            measured={measured}
-            variant={variant}
-            device={device}
-            onGrab={onSpecDown}
-          />
-        </div>
+        <BestPracticesPanel
+          rows={buttonRows({ spec, measured, variant, device })}
+          note={
+            spec.iconSize
+              ? "Ghost is the only variant with an icon — an arrow after the label. Never lead with it."
+              : "No icon. Ghost is the only variant that carries one, and it sits after the label."
+          }
+        />
       )}
     </div>
   );
@@ -183,12 +155,12 @@ export function ButtonPreview({
 
 // Measured, copy-ready specs for the selected variant — the numbers a designer
 // would otherwise have to open Figma to read.
-function SpecSheet({ spec, measured, variant, device, onGrab }) {
+function buttonRows({ spec, measured, variant, device }) {
   const pen = (c) => (c === "transparent" ? "none" : `${spec.borderWidth}px ${c}`);
   const border = pen(spec.borderColor);
   const borderActive = pen(spec.borderColorActive);
 
-  const rows = [
+  return [
     ["Variant", `${variant} · ${device}`],
     ...(spec.surface ? [["Surface", spec.surface]] : []),
     ["Width", measured.w ? `${measured.w}px · ${spec.sizing}` : spec.sizing],
@@ -209,30 +181,4 @@ function SpecSheet({ spec, measured, variant, device, onGrab }) {
     ["Backdrop", spec.backdrop],
     ...(spec.backdrop === spec.backdropActive ? [] : [["Backdrop · hover", spec.backdropActive]]),
   ];
-
-  return (
-    <div className="bp-panel">
-      {/* Only the header drags, so the values below stay selectable. */}
-      <div className="bp-panel-head" onMouseDown={onGrab}>
-        <span className="bp-panel-badge">Specs</span>
-        <span className="bp-panel-grip" aria-hidden>
-          ⠿
-        </span>
-      </div>
-      <dl className="bp-specs">
-        {rows.map(([k, v]) => (
-          <div className="bp-spec-row" key={k}>
-            <dt>{k}</dt>
-            <dd>{v}</dd>
-          </div>
-        ))}
-      </dl>
-      {/* Stated outright rather than left to be inferred from the Icon row. */}
-      <p className="bp-panel-note">
-        {spec.iconSize
-          ? "Ghost is the only variant with an icon — an arrow after the label. Never lead with it."
-          : "No icon. Ghost is the only variant that carries one, and it sits after the label."}
-      </p>
-    </div>
-  );
 }

@@ -12,6 +12,8 @@ import { PgToggle } from "./controls/PgToggle.jsx";
 import { ButtonPreview } from "./previews/ButtonPreview.jsx";
 import { AccordionPreview } from "./previews/AccordionPreview.jsx";
 import { AvatarsPreview } from "./previews/AvatarsPreview.jsx";
+import { FilterPreview } from "./previews/FilterPreview.jsx";
+import { CheckboxPreview } from "./previews/CheckboxPreview.jsx";
 import { InputFieldPreview, inputFieldSnippet } from "./previews/InputFieldPreview.jsx";
 import { ArrowLeft, ArrowRight, ChevronToggle, CheckIcon, CopyIcon } from "../common/Icon.jsx";
 
@@ -24,6 +26,10 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
   const dark = theme === "dark";
   const isButton = selected === "Button";
   const isInputField = selected === "Input Field";
+  const isCheckbox = selected === "Checkbox";
+  const isFilter = selected === "Filter";
+  // Every component with a spec sheet written for it.
+  const hasBestPractices = isButton || isCheckbox || isFilter || isInputField;
 
   const [variant, setVariant] = useState("Primary");
   const [device, setDevice] = useState("Desktop");
@@ -78,8 +84,19 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
     }
     if (selected === "Accordion") return <AccordionPreview />;
     if (selected === "Avatars") return <AvatarsPreview />;
+    if (isFilter) return <FilterPreview bestPractices={bestPractices} />;
+    if (isCheckbox) {
+      return <CheckboxPreview disabled={disabled} bestPractices={bestPractices} />;
+    }
     if (isInputField) {
-      return <InputFieldPreview type={fieldType} disabled={fieldDisabled} error={fieldError} />;
+      return (
+        <InputFieldPreview
+          type={fieldType}
+          disabled={fieldDisabled}
+          error={fieldError}
+          bestPractices={bestPractices}
+        />
+      );
     }
     return (
       <div className="pg-empty">
@@ -168,6 +185,7 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
             <PgSelect label="Type" value={fieldType} options={FIELD_TYPES} onChange={setFieldType} />
             <PgToggle label="Disabled" value={fieldDisabled} onChange={setFieldDisabled} />
             <PgToggle label="Error state" value={fieldError} onChange={setFieldError} />
+            <PgToggle label="Best practices" value={bestPractices} onChange={setBestPractices} />
           </>
         ) : (
           <>
@@ -186,8 +204,19 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
                 onChange={setSurface}
               />
             )}
-            <PgToggle label="Disabled" value={disabled} onChange={setDisabled} disabled={!isButton} />
-            <PgToggle label="Best practices" value={bestPractices} onChange={setBestPractices} disabled={!isButton} />
+            {/* Checkbox documents a disabled state too, so the control stays live for it. */}
+            <PgToggle
+              label="Disabled"
+              value={disabled}
+              onChange={setDisabled}
+              disabled={!isButton && !isCheckbox}
+            />
+            <PgToggle
+              label="Best practices"
+              value={bestPractices}
+              onChange={setBestPractices}
+              disabled={!hasBestPractices}
+            />
             <PgToggle label="Show behaviour" value={showBehaviour} onChange={setShowBehaviour} disabled={!isButton} />
           </>
         )}

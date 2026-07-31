@@ -31,6 +31,7 @@ export default function App() {
   const [theme, setTheme] = useState("light");
   const [mobileNav, setMobileNav] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState("Button");
+  const [selectedPattern, setSelectedPattern] = useState("dot-grid");
   const [expandedRow, setExpandedRow] = useState(null);
 
   const toggleRow = useCallback((id) => setExpandedRow((c) => (c === id ? null : id)), []);
@@ -55,6 +56,7 @@ export default function App() {
   const runSearchResult = useCallback(
     (r) => {
       if (r.setComponent) setSelectedComponent(r.setComponent);
+      if (r.setPattern) setSelectedPattern(r.setPattern);
       navigate(r.target);
     },
     [navigate]
@@ -103,7 +105,14 @@ export default function App() {
           <SpacingSection registerRef={registerRef} copied={copied} onCopy={copy} />
           <IconsSection registerRef={registerRef} copied={copied} onCopy={copy} />
           <GraphicsSection registerRef={registerRef} />
-          <PatternsSection registerRef={registerRef} copied={copied} onCopy={copy} theme={theme} />
+          <PatternsSection
+            registerRef={registerRef}
+            copied={copied}
+            onCopy={copy}
+            theme={theme}
+            selectedPattern={selectedPattern}
+            setSelectedPattern={setSelectedPattern}
+          />
           <ComponentsSection
             registerRef={registerRef}
             copied={copied}

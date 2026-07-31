@@ -7,6 +7,7 @@ export const COMPONENT_LIST = [
   "Avatars",
   "Button",
   "Card",
+  "Checkbox",
   "Filter",
   "Input Field",
   "List Item",
@@ -43,6 +44,55 @@ export const FAQ_ITEMS = [
   {
     q: "Can I request new components or icons?",
     a: "Yes. The system is designed to grow — new icons slot into their category, and new components follow the same interactive documentation pattern you see here.",
+  },
+];
+
+// Options for the Checkbox demo — Loka Figma "Checkbox / 40" (node 3692:15296)
+// documents the control with an industry name, so the set reuses the same
+// vocabulary the filter's Industries group uses.
+export const CHECKBOX_OPTIONS = [
+  "Healthcare",
+  "Fintech",
+  "Saas & ISVs",
+  "AdTech & MarTech",
+  "Life Sciences",
+];
+
+// Filter bar groups — Loka Figma "filter" (node 4866:24030). The leading count
+// is part of the design: each option carries how many results match it.
+//
+// Figma only fills in the Industries list; the other two are written to match
+// its shape so all three chips open onto something real.
+export const FILTER_GROUPS = [
+  {
+    label: "Industries",
+    options: [
+      { count: 12, label: "Healthcare" },
+      { count: 9, label: "Fintech" },
+      { count: 12, label: "Saas & ISVs" },
+      { count: 7, label: "AdTech & MarTech" },
+      { count: 8, label: "Life Sciences" },
+    ],
+  },
+  {
+    label: "Solutions",
+    options: [
+      { count: 14, label: "Generative AI" },
+      { count: 11, label: "Data Platforms" },
+      { count: 8, label: "MLOps" },
+      { count: 6, label: "Cloud Migration" },
+      { count: 5, label: "Analytics" },
+    ],
+  },
+  {
+    label: "Tech stack",
+    options: [
+      { count: 18, label: "AWS" },
+      { count: 10, label: "Databricks" },
+      { count: 9, label: "Snowflake" },
+      { count: 13, label: "Python" },
+      { count: 4, label: "Terraform" },
+    ],
   },
 ];
 

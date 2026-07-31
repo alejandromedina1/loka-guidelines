@@ -35,13 +35,34 @@ export function CaretRight({ size = 9 }) {
   );
 }
 
-// Filled caret used by the multi-select control. Distinct from ChevronDown,
-// which is stroked — this is the glyph the Figma dropdown ships with.
-export function CaretDown({ size = 12 }) {
+// Filled caret used by the multi-select control — the Loka Figma "arrow"
+// component (node 4864:23773), which ships as one glyph in two states:
+// wrapped points down, unwrapped points up. Distinct from ChevronDown, which is
+// stroked. The triangle is 6x3 centred at (6, 5.5), and the 1px round-joined
+// stroke is what gives the corners their slight softness at this size.
+export function CaretDown({ open, size = 12 }) {
   return (
     <svg viewBox="0 0 12 12" width={size} height={size} aria-hidden>
       <path
-        d="M10.0156 4.76531L6.26561 8.51531C6.23078 8.55018 6.18942 8.57784 6.1439 8.59671C6.09837 8.61558 6.04958 8.62529 6.0003 8.62529C5.95101 8.62529 5.90222 8.61558 5.85669 8.59671C5.81117 8.57784 5.76981 8.55018 5.73498 8.51531L1.98498 4.76531C1.93248 4.71287 1.89672 4.64602 1.88222 4.57324C1.86773 4.50046 1.87515 4.42501 1.90356 4.35645C1.93197 4.28789 1.98008 4.22931 2.0418 4.1881C2.10352 4.1469 2.17608 4.12494 2.2503 4.125H9.7503C9.82451 4.12494 9.89707 4.1469 9.95879 4.1881C10.0205 4.22931 10.0686 4.28789 10.097 4.35645C10.1254 4.42501 10.1329 4.50046 10.1184 4.57324C10.1039 4.64602 10.0681 4.71287 10.0156 4.76531Z"
+        d={open ? "M9 7H3L6 4L9 7Z" : "M9 4H3L6 7L9 4Z"}
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+// The tick inside the Checkbox control — material-symbols:check, as the Loka
+// Figma checkbox ships it. Figma crops the glyph to the middle 12px of its 24px
+// box rather than scaling it down, so the viewBox is offset instead of resized:
+// shrinking it would thin the stroke.
+export function CheckSmall({ size = 12 }) {
+  return (
+    <svg viewBox="6 6 12 12" width={size} height={size} aria-hidden>
+      <path
+        d="M10.4969 15.3333L7 12.1733L7.87423 11.3832L10.4969 13.7533L16.1258 8.66667L17 9.45669L10.4969 15.3333Z"
         fill="currentColor"
       />
     </svg>
