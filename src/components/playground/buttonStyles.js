@@ -12,8 +12,15 @@ const GRAY_10 = "#E7ECF2"; // colors/neutral/gray-10
 const GRAY_30 = "#CCD4E0"; // colors/neutral/gray-30
 const GRAY_80 = "#041D3E"; // colors/neutral/gray-80
 const GRAY_90 = "#020F1F"; // colors/neutral/gray-90
-const BORDER_SLATE = "#58697E";
-const BORDER_LIGHT = "#F6F7F9";
+
+// Every bordered variant carries the same shape of stroke: 1px, inside-aligned,
+// painted as a left-to-right linear gradient at 10% and blended into whatever
+// sits under it. Only the two stops and the blend mode change between variants.
+// Read off the Figma nodes — the design-context export flattens these to their
+// first stop at full opacity, which is far too dark to be the real edge.
+const STROKE_ALPHA = 0.1;
+const SLATE_STROKE = { from: "#58697E", to: "#406899" };
+const LIGHT_STROKE = { from: "#F6F7F9", to: "#E8EEF5" };
 
 export const BUTTON_VARIANTS = ["Primary", "Secondary", "Outline light", "Outline dark", "Ghost"];
 
@@ -60,24 +67,36 @@ const ICON_POSITION = "trailing";
 // by hovering, mobile by pressing. So both states resolve to `active` here.
 const VARIANT_SPEC = {
   Primary: {
-    default: { background: BLUE_100, borderColor: BORDER_SLATE, color: "#FFFFFF" },
-    // The border drops out on active; kept transparent so the box doesn't shift.
-    active: { background: BLUE_NEW, borderColor: "transparent", backdropFilter: "none" },
+    default: { background: BLUE_100, stroke: { ...SLATE_STROKE, blend: "multiply" }, color: "#FFFFFF" },
+    // Primary is the only variant that drops its stroke on active.
+    active: { background: BLUE_NEW, stroke: null, backdropFilter: "none" },
   },
   Secondary: {
-    default: { background: GRAY_10, borderColor: "transparent", color: GRAY_90 },
+    // Overlay rather than multiply: on a light grey fill it lifts the edge
+    // instead of darkening it, which is why this one reads as almost nothing.
+    default: { background: GRAY_10, stroke: { ...SLATE_STROKE, blend: "overlay" }, color: GRAY_90 },
     active: { background: GRAY_30 },
   },
   "Outline light": {
-    default: { background: "rgba(120,138,161,.03)", borderColor: BORDER_SLATE, color: GRAY_80 },
+    default: {
+      background: "rgba(120,138,161,.03)",
+      stroke: { ...SLATE_STROKE, blend: "multiply" },
+      color: GRAY_80,
+    },
     active: { background: "rgba(120,138,161,.1)" },
   },
   "Outline dark": {
-    default: { background: "rgba(255,255,255,.1)", borderColor: BORDER_LIGHT, color: "#FFFFFF" },
+    // Screen, and near-white stops: this variant sits on dark imagery, so the
+    // edge has to lighten rather than darken.
+    default: {
+      background: "rgba(255,255,255,.1)",
+      stroke: { ...LIGHT_STROKE, blend: "screen" },
+      color: "#FFFFFF",
+    },
     active: { background: "rgba(250,250,251,.2)" },
   },
   Ghost: {
-    default: { background: "transparent", borderColor: "transparent", color: "#FFFFFF" },
+    default: { background: "transparent", stroke: null, color: "#FFFFFF" },
     // Ghost has exactly one state, and that is deliberate rather than a gap:
     // it IS the reveal-on-hover CTA of its parent card. Hovering the card is
     // what brings it on screen, so it never needs a hover of its own.
@@ -85,7 +104,7 @@ const VARIANT_SPEC = {
   },
 };
 
-// Resolves a variant/state pair to its fill, border colour, and label colour.
+// Resolves a variant/state pair to its fill, stroke, and label colour.
 function paint(variant, state) {
   const spec = VARIANT_SPEC[variant];
   return { ...spec.default, ...(state === "default" ? {} : spec.active) };
@@ -103,15 +122,17 @@ export function makeButtonStyle({
 }) {
   const isGhost = variant === "Ghost";
   const box = isGhost ? GHOST_BOX : BOX;
-  const { background, borderColor, color, backdropFilter } = paint(
-    variant,
-    disabled ? "default" : state,
-  );
+  const { background, color, backdropFilter } = paint(variant, disabled ? "default" : state);
 
   return {
     background,
     color: isGhost ? (GHOST_SURFACES[surface] ?? GHOST_SURFACES["Gray 10"]).label : color,
-    border: `${BORDER_WIDTH}px solid ${borderColor}`,
+    // The stroke itself is painted by the .btn-ring overlay — a CSS border can't
+    // hold a gradient. This one stays transparent to reserve its 1px, so the box
+    // never shifts between variants or states, and the ring has somewhere to sit.
+    border: `${BORDER_WIDTH}px solid transparent`,
+    // Containing block for that overlay.
+    position: "relative",
     // Ghost stretches to its container; every other variant hugs its label.
     width: isGhost ? "100%" : undefined,
     // Figma blurs whatever sits behind the button, so the translucent variants
@@ -134,7 +155,27 @@ export function makeButtonStyle({
     // Ghost is a full-bleed bar flush with its container's edges, so scaling it
     // would pull it away from those edges. Single-state by design, no press.
     transform: !disabled && !isGhost && state === "pressed" ? "scale(0.97)" : "scale(1)",
-    transition: "background .12s, border-color .12s, transform .08s",
+    transition: "background .12s, transform .08s",
+  };
+}
+
+// The gradient stroke, as an inline style for the .btn-ring overlay. Returns
+// null for variants that never carry one.
+//
+// The gradient is always the variant's default-state one, and only its opacity
+// follows the current state. Primary is the reason: it drops its stroke on
+// active, and fading the ring out over the same 120ms as the fill is what the
+// old transitioned border-colour did — swapping the gradient out instead would
+// pop, since background-image doesn't interpolate.
+export function makeStrokeStyle({ variant, state = "default", disabled }) {
+  const base = VARIANT_SPEC[variant].default.stroke;
+  if (!base) return null;
+  const current = paint(variant, disabled ? "default" : state).stroke;
+
+  return {
+    backgroundImage: `linear-gradient(90deg, ${base.from}, ${base.to})`,
+    mixBlendMode: base.blend,
+    opacity: current ? STROKE_ALPHA : 0,
   };
 }
 
@@ -163,10 +204,11 @@ export function buttonSpec({ variant, device, surface = "Gray 10" }) {
     iconSize: isGhost ? ICON_SIZE : null,
     iconPosition: isGhost ? ICON_POSITION : null,
     borderWidth: BORDER_WIDTH,
+    strokeAlpha: STROKE_ALPHA,
     fill: rest.background,
     fillActive: active.background,
-    borderColor: rest.borderColor,
-    borderColorActive: active.borderColor,
+    stroke: rest.stroke,
+    strokeActive: active.stroke,
     label: isGhost ? ghost.label : rest.color,
     backdrop: rest.backdropFilter ?? "blur(10px)",
     backdropActive: active.backdropFilter ?? "blur(10px)",

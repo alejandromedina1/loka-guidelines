@@ -1,6 +1,17 @@
 import { useState } from "react";
 import { MultiSelectField } from "./MultiSelectField.jsx";
 import { BestPracticesPanel } from "../BestPracticesPanel.jsx";
+import { SpecOverlay } from "../SpecOverlay.jsx";
+
+// Padding the redline bands are drawn at, per type. Textarea is the only one
+// with vertical padding; the rest centre a single line in a fixed 48px box.
+// Select is measured closed — open, the panel leaves the flow entirely.
+const FIELD_REDLINE = {
+  Text: { padX: 16, padY: 0, heightMode: "fixed" },
+  Email: { padX: 16, padY: 0, heightMode: "fixed" },
+  Textarea: { padX: 16, padY: 12, heightMode: "min · resizes" },
+  Select: { padX: 16, padY: 0, heightMode: "fixed" },
+};
 
 const FIELD_COPY = {
   Text: { label: "Full name", placeholder: "John" },
@@ -51,7 +62,7 @@ const FIELD_TYPE_SPECS = {
     ["List", "348px max · scrolls"],
     ["Option", "48px · radius 12px · #EFF1F5"],
     ["Tag", "#EEF2FE on 1px #D8E2F6"],
-    ["Ceiling", "3 selections"],
+    ["Ceiling", "3 selections · rest disable"],
   ],
 };
 
@@ -61,7 +72,7 @@ const FIELD_NOTES = {
   Textarea:
     "The only control in the family that grows. It keeps the family's 14.5px but relaxes to 1.5 line height, since it holds more than one line.",
   Select:
-    "Body text is 14.5px, not the 16px the standalone Figma frame specifies — matching the field family wins over matching the frame. Clicking the control again collapses it; the panel overlays rather than pushing the page down.",
+    "Body text is 14.5px, not the 16px the standalone Figma frame specifies — matching the field family wins over matching the frame. Clicking the control again collapses it; the panel overlays rather than pushing the page down. At three selections the panel stays open and the unpicked rows disable, so a swap starts by unticking.",
 };
 
 // Live Input Field preview — label sits a full space-10 above the control, and
@@ -72,30 +83,34 @@ export function InputFieldPreview({ type, disabled, error, bestPractices }) {
   const copy = FIELD_COPY[type];
 
   return (
-    <div className="bp-stage">
+    <div className="bp-stage" data-bp={bestPractices || undefined}>
       <div className="field-demo" data-type={type}>
         <label className="field">
           <span className="field-label">{copy.label}</span>
-          {type === "Textarea" ? (
-            <textarea
-              className="field-textarea"
-              data-error={error}
-              placeholder={copy.placeholder}
-              disabled={disabled}
-            />
-          ) : type === "Select" ? (
-            <MultiSelectField disabled={disabled} error={error} placeholder={copy.placeholder} />
-          ) : (
-            <input
-              className="field-input"
-              data-error={error}
-              type={type === "Email" ? "email" : "text"}
-              placeholder={copy.placeholder}
-              disabled={disabled}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-            />
-          )}
+          {/* `fill` because every control in the family is width:100% of the
+              field — redlining it as hug-content would misreport the box. */}
+          <SpecOverlay on={bestPractices} fill widthMode="fill" {...FIELD_REDLINE[type]}>
+            {type === "Textarea" ? (
+              <textarea
+                className="field-textarea"
+                data-error={error}
+                placeholder={copy.placeholder}
+                disabled={disabled}
+              />
+            ) : type === "Select" ? (
+              <MultiSelectField disabled={disabled} error={error} placeholder={copy.placeholder} />
+            ) : (
+              <input
+                className="field-input"
+                data-error={error}
+                type={type === "Email" ? "email" : "text"}
+                placeholder={copy.placeholder}
+                disabled={disabled}
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+              />
+            )}
+          </SpecOverlay>
         </label>
         {error && <span className="field-error-msg">This field is required.</span>}
       </div>

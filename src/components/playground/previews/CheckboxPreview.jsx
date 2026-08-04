@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { CHECKBOX_OPTIONS } from "../../../data/components.js";
 import { BestPracticesPanel } from "../BestPracticesPanel.jsx";
+import { SpecOverlay } from "../SpecOverlay.jsx";
 import { CheckSmall } from "../../common/Icon.jsx";
 
 const CHECKBOX_SPECS = [
@@ -36,36 +36,29 @@ const CHECKBOX_NOTE =
 //   disabled   half-opacity with a greyblue label — driven by the prop
 //
 // So only checked and disabled are real inputs; the rest falls out.
-export function CheckboxPreview({ disabled, bestPractices }) {
-  const [checked, setChecked] = useState(["Life Sciences"]);
+// Figma documents the control with an industry name; one is enough to show
+// every state, since checked and disabled are both driven from outside the pill.
+const LABEL = "Life Sciences";
 
-  const toggle = (option) =>
-    setChecked((cur) =>
-      cur.includes(option) ? cur.filter((o) => o !== option) : [...cur, option],
-    );
+export function CheckboxPreview({ disabled, bestPractices }) {
+  const [checked, setChecked] = useState(true);
 
   return (
-    <div className="bp-stage">
-      <div className="cbx-set">
-        {CHECKBOX_OPTIONS.map((option) => {
-          const on = checked.includes(option);
-          return (
-            <button
-              key={option}
-              type="button"
-              role="checkbox"
-              aria-checked={on}
-              className="cbx"
-              data-checked={on || undefined}
-              disabled={disabled}
-              onClick={() => toggle(option)}
-            >
-              <span className="cbx-box">{on && <CheckSmall />}</span>
-              {option}
-            </button>
-          );
-        })}
-      </div>
+    <div className="bp-stage" data-bp={bestPractices || undefined}>
+      <SpecOverlay on={bestPractices} padX={8} padY={8} widthMode="hug" heightMode="fixed">
+        <button
+          type="button"
+          role="checkbox"
+          aria-checked={checked}
+          className="cbx"
+          data-checked={checked || undefined}
+          disabled={disabled}
+          onClick={() => setChecked((v) => !v)}
+        >
+          <span className="cbx-box">{checked && <CheckSmall />}</span>
+          {LABEL}
+        </button>
+      </SpecOverlay>
       {bestPractices && <BestPracticesPanel rows={CHECKBOX_SPECS} note={CHECKBOX_NOTE} />}
     </div>
   );

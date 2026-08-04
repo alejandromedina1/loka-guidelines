@@ -47,17 +47,6 @@ export const FAQ_ITEMS = [
   },
 ];
 
-// Options for the Checkbox demo — Loka Figma "Checkbox / 40" (node 3692:15296)
-// documents the control with an industry name, so the set reuses the same
-// vocabulary the filter's Industries group uses.
-export const CHECKBOX_OPTIONS = [
-  "Healthcare",
-  "Fintech",
-  "Saas & ISVs",
-  "AdTech & MarTech",
-  "Life Sciences",
-];
-
 // Filter bar groups — Loka Figma "filter" (node 4866:24030). The leading count
 // is part of the design: each option carries how many results match it.
 //
@@ -117,6 +106,6 @@ export const SELECT_GROUPS = [
   },
   {
     label: "Limits",
-    options: ["The third pick closes this", "Remove a tag to reopen", "Tags clear with the \u00d7"],
+    options: ["The third pick locks the rest", "Untick a row to free one up", "Tags clear with the \u00d7"],
   },
 ];

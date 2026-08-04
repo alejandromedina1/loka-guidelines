@@ -57,6 +57,8 @@ export const PATTERNS = [
     description:
       "Small blue squares centred on the corners of a block, pinning it to the layout grid. They straddle the edge rather than sitting inside it, so each square reads as a crossing point, not a decoration in the corner.",
     defaults: { size: 12 },
-    controls: [{ key: "size", label: "Marker size", min: 6, max: 12, step: 1, unit: "px" }],
+    // Steps in 2s across the 6–12px range: 6, 8, 10, 12. Odd sizes can't sit
+    // centred on an edge without landing on a half pixel, so they're skipped.
+    controls: [{ key: "size", label: "Marker size", min: 6, max: 12, step: 2, unit: "px" }],
   },
 ];

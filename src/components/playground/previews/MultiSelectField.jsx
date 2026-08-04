@@ -10,7 +10,8 @@ import { CaretDown, CheckBold, CircleX } from "../../common/Icon.jsx";
 //   Opened      list showing, nothing picked
 //   Selected    list showing, one or more picked (ticked rows + tags below)
 //   No results  a query that matches nothing
-//   Complete    the three-selection ceiling reached, list closed
+//   Complete    the three-selection ceiling reached: the list stays open with the
+//               unpicked rows disabled, so a swap starts by unticking
 export function MultiSelectField({ disabled, error, placeholder }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -32,10 +33,10 @@ export function MultiSelectField({ disabled, error, placeholder }) {
 
   const noResults = open && groups.length === 0;
 
-  // Every way out of the open state goes through here — caret, Escape, clicking
-  // away, and hitting the ceiling — so collapsing always lands back on the
-  // default closed control instead of reopening onto a stale filter. Selections
-  // survive: closing the list isn't a way to clear them.
+  // Every way out of the open state goes through here — caret, Escape, and
+  // clicking away — so collapsing always lands back on the default closed
+  // control instead of reopening onto a stale filter. Selections survive:
+  // closing the list isn't a way to clear them.
   const closeList = useCallback(() => {
     setOpen(false);
     setQuery("");
@@ -56,41 +57,54 @@ export function MultiSelectField({ disabled, error, placeholder }) {
   }, [open, closeList]);
 
   const openList = () => {
-    if (disabled || atMax) return;
+    if (disabled) return;
     setOpen(true);
     // Let the input mount before focusing it.
     requestAnimationFrame(() => inputRef.current?.focus());
   };
 
+  // The ceiling never closes the list or clears a selection — it only stops the
+  // list growing. Unticking a chosen row is the way back under the limit, which
+  // is why the ticked rows stay live while the rest go disabled.
   const toggle = (option) => {
-    setSelected((cur) => {
-      if (cur.includes(option)) return cur.filter((o) => o !== option);
-      if (cur.length >= SELECT_MAX) return cur;
-      const next = [...cur, option];
-      // Reaching the ceiling closes the list — Figma's "Complete" state.
-      if (next.length >= SELECT_MAX) closeList();
-      return next;
-    });
+    if (selected.includes(option)) {
+      setSelected((cur) => cur.filter((o) => o !== option));
+      return;
+    }
+    if (atMax) return;
+    const next = [...selected, option];
+    setSelected(next);
+    // The third pick drops the filter with it: the search row goes inert at the
+    // ceiling, so leaving a query in it would strand a value nobody can edit —
+    // and hide the rows that still need unticking.
+    if (next.length >= SELECT_MAX) setQuery("");
   };
 
   const remove = (option) => setSelected((cur) => cur.filter((o) => o !== option));
 
-  const tags = selected.length > 0 && (
-    <div className="ms-tags">
-      {selected.map((o) => (
-        <span className="ms-tag" key={o}>
-          {o}
-          <button
-            type="button"
-            className="ms-tag-x"
-            aria-label={`Remove ${o}`}
-            disabled={disabled}
-            onClick={() => remove(o)}
-          >
-            <CircleX size={24} />
-          </button>
-        </span>
-      ))}
+  // Same footer open or closed, so the tags don't shift as the panel collapses.
+  // Nothing picked yet means no footer at all: the control ends flush at the
+  // list rather than holding an empty blue strip open for tags that don't
+  // exist — it appears with the first selection.
+  const foot = selected.length > 0 && (
+    <div className="ms-foot">
+      {atMax && <p className="ms-max">Maximum {SELECT_MAX} selected.</p>}
+      <div className="ms-tags">
+        {selected.map((o) => (
+          <span className="ms-tag" key={o}>
+            {o}
+            <button
+              type="button"
+              className="ms-tag-x"
+              aria-label={`Remove ${o}`}
+              disabled={disabled}
+              onClick={() => remove(o)}
+            >
+              <CircleX size={24} />
+            </button>
+          </span>
+        ))}
+      </div>
     </div>
   );
 
@@ -114,17 +128,20 @@ export function MultiSelectField({ disabled, error, placeholder }) {
                 Keyboard users get the same exit via the caret button or Esc. */}
             <div
               className="ms-search"
+              data-max={atMax || undefined}
               onClick={(e) => {
                 if (e.target !== inputRef.current) closeList();
               }}
             >
+              {/* At the ceiling there is nothing left to search for, so the row
+                  goes inert — placeholder and caret both step down a gray. */}
               <input
                 ref={inputRef}
                 className="ms-search-input"
                 placeholder="Type to search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                disabled={disabled}
+                disabled={disabled || atMax}
               />
               {/* The caret toggles: it opens from the closed control, and collapses
                   back to the default state from here. */}
@@ -155,6 +172,7 @@ export function MultiSelectField({ disabled, error, placeholder }) {
                             className="ms-option"
                             data-selected={on || undefined}
                             aria-pressed={on}
+                            disabled={atMax && !on}
                             onClick={() => toggle(o)}
                           >
                             <span className="ms-option-text">{o}</span>
@@ -167,7 +185,7 @@ export function MultiSelectField({ disabled, error, placeholder }) {
                 ))
               )}
             </div>
-            <div className="ms-foot">{tags || <span className="ms-foot-spacer" />}</div>
+            {foot}
           </>
         ) : (
           <>
@@ -178,21 +196,16 @@ export function MultiSelectField({ disabled, error, placeholder }) {
               onClick={openList}
               aria-expanded={false}
             >
-              <span className="ms-control-text" data-muted={atMax || undefined}>
-                {atMax ? "Type to search" : placeholder}
-              </span>
+              {/* Live even at the ceiling: reopening is how a selection gets
+                  swapped out, so the closed control never mutes. */}
+              <span className="ms-control-text">{placeholder}</span>
               {/* Same 20px box the open state's caret button uses, so opening the
                   dropdown doesn't nudge the glyph sideways. */}
               <span className="ms-caret" aria-hidden>
                 <CaretDown />
               </span>
             </button>
-            {(atMax || selected.length > 0) && (
-              <div className="ms-foot">
-                {atMax && <p className="ms-max">Maximum {SELECT_MAX} selected.</p>}
-                {tags}
-              </div>
-            )}
+            {foot}
           </>
         )}
       </div>

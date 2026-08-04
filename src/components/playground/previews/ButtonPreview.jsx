@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { makeButtonStyle, buttonSpec, GHOST_SURFACES } from "../buttonStyles.js";
+import { makeButtonStyle, makeStrokeStyle, buttonSpec, GHOST_SURFACES } from "../buttonStyles.js";
 import { BestPracticesPanel } from "../BestPracticesPanel.jsx";
 import { useDragOffset } from "../useDragOffset.js";
 import { ArrowInline } from "../../common/Icon.jsx";
@@ -28,6 +28,7 @@ export function ButtonPreview({
     disabled,
     surface,
   });
+  const strokeStyle = makeStrokeStyle({ variant, state: btnState, disabled });
 
   // Width is hug-content (or container-filling, for Ghost), so measure it rather
   // than guess. offset* ignores the pressed transform, unlike getBoundingClientRect.
@@ -53,6 +54,9 @@ export function ButtonPreview({
       onMouseDown={() => setBtnState("pressed")}
       onMouseUp={() => setBtnState("hover")}
     >
+      {/* The 1px gradient stroke, sitting exactly over the button's transparent
+          border. Ghost has no stroke, so it gets no ring. */}
+      {strokeStyle && <span className="btn-ring" style={strokeStyle} aria-hidden />}
       {isGhost ? "Listen now" : "Button"}
       {/* Ghost is the only variant with an icon, and Figma puts it AFTER the
           label. No variant in the library uses a leading icon. When the overlay
@@ -156,9 +160,14 @@ export function ButtonPreview({
 // Measured, copy-ready specs for the selected variant — the numbers a designer
 // would otherwise have to open Figma to read.
 function buttonRows({ spec, measured, variant, device }) {
-  const pen = (c) => (c === "transparent" ? "none" : `${spec.borderWidth}px ${c}`);
-  const border = pen(spec.borderColor);
-  const borderActive = pen(spec.borderColorActive);
+  // A gradient at a tenth of its strength doesn't fit "1px #58697E", so the row
+  // spells out both stops, the opacity, and the blend it's painted with.
+  const pen = (s) =>
+    s
+      ? `${spec.borderWidth}px ${s.from} → ${s.to} · ${Math.round(spec.strokeAlpha * 100)}% ${s.blend}`
+      : "none";
+  const border = pen(spec.stroke);
+  const borderActive = pen(spec.strokeActive);
 
   return [
     ["Variant", `${variant} · ${device}`],

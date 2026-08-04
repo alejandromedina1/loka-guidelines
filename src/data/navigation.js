@@ -9,7 +9,10 @@ export const componentId = (name) =>
 export const NAV = [
   {
     group: "Getting started",
-    items: [{ id: "introduction", label: "Introduction" }],
+    items: [
+      { id: "introduction", label: "Introduction" },
+      { id: "figma-library", label: "Figma library" },
+    ],
   },
   {
     group: "Foundations",
@@ -49,6 +52,7 @@ export const NAV = [
 // Flat list of scroll-spy targets, in document order.
 export const SPY_IDS = [
   "introduction",
+  "figma-library",
   "color",
   "color-neutral",
   "color-blue",

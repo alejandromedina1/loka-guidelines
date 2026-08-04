@@ -114,6 +114,20 @@
 .section-title{font-family:var(--display);font-size:32px;font-weight:600;letter-spacing:-.025em;margin:0;}
 .section-desc{font-size:15px;line-height:1.65;color:var(--ink-3);max-width:64ch;margin:0;}
 .section-desc strong{color:var(--ink);font-weight:600;}
+
+/* Figma library — the hand-off out of these docs into the live library. Panels
+   follow the .gfx-card / .varcard convention (1px --line, square corners) but
+   carry no hover treatment: those cards lift because clicking them does
+   something, and these are static — only the button inside is interactive.
+   The button itself is the real component, styled inline from buttonStyles.js. */
+.fig-lib{display:flex;flex-direction:column;gap:12px;width:100%;}
+.fig-open{display:flex;align-items:center;justify-content:space-between;gap:24px;
+  flex-wrap:wrap;padding:24px;border:1px solid var(--line);}
+.fig-open-title{display:block;font-family:var(--display);font-size:18px;font-weight:600;
+  color:var(--ink);}
+.fig-open-meta{display:block;margin-top:6px;font-size:13px;line-height:1.5;color:var(--ink-4);
+  max-width:52ch;}
+.fig-btn{flex:none;text-decoration:none;}
 .sub-anchor{scroll-margin-top:72px;}
 .sub-anchor + .sub-anchor{margin-top:44px;}
 .sub-head{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;margin-bottom:18px;}
@@ -300,9 +314,15 @@
 .gfx-art{display:grid;place-items:center;color:#A8B3CA;
   transition:color .18s ease, transform .28s cubic-bezier(.34,1.56,.64,1);}
 .gfx-card:hover .gfx-art{color:#2F85F3;transform:translateY(-8px);}
-.gfx-art svg{width:72px;height:72px;display:block;
+/* Child combinator, not descendant. These graphics nest <svg> viewports inside
+   the root one (see graphics.js), and a descendant selector hit those too: the
+   drop-shadow then shadowed each nested viewport's rectangle rather than the
+   artwork's silhouette, which is the boxy blue glow. The 72px sizing was
+   leaking into them for the same reason. overflow:visible keeps the filter from
+   rasterising against the root viewport's own clip. */
+.gfx-art > svg{width:72px;height:72px;display:block;overflow:visible;
   transition:filter .28s ease;}
-.gfx-card:hover .gfx-art svg{filter:drop-shadow(0 10px 14px rgba(25,87,244,.22));}
+.gfx-card:hover .gfx-art > svg{filter:drop-shadow(0 10px 14px rgba(25,87,244,.22));}
 .gfx-label{font-size:13px;font-weight:500;color:var(--ink-2);text-align:center;}
 
 /* Patterns & motifs — live playgrounds, built on the .pg component-playground grid */
@@ -426,6 +446,21 @@
 /* room for the redline callouts that sit above, below, and left of the button */
 .btn-cell.bp-on{padding:26px 0 26px 52px;}
 .btn-box{position:relative;display:inline-flex;}
+/* The Button's Figma stroke is a linear gradient at 10%, and a CSS border can't
+   hold a gradient. So the ring is a gradient filling the border box with its
+   middle masked away, leaving only the 1px edge, laid over the button's own
+   transparent border — inset:-1px because an absolute child is placed against
+   the padding box, one pixel in from where the stroke belongs.
+   background-origin has to be border-box too, or the gradient is sized to the
+   padding box and tiles into the ring. The gradient and blend mode come from
+   buttonStyles.js; mix-blend-mode is what reproduces Figma's stroke blending
+   against the fill underneath, and only opacity changes between states. */
+.btn-ring{position:absolute;inset:-1px;border:1px solid transparent;border-radius:inherit;
+  pointer-events:none;background-origin:border-box;background-clip:border-box;
+  -webkit-mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor;
+  mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0);
+  mask-composite:exclude;transition:opacity .12s;}
 .pg-canvas-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;}
 .pg-viewcode{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-3);transition:color .12s;}
 .pg-viewcode:hover{color:var(--ink);}
@@ -534,7 +569,6 @@
   justify-content:space-between;gap:12px;padding:0 16px;font-family:var(--sans);
   font-size:14.5px;line-height:1.3;font-weight:400;color:#A8B3CA;cursor:pointer;text-align:left;}
 .app button.ms-control:disabled{cursor:not-allowed;}
-.ms-control-text[data-muted]{color:#CCD4E0;}
 
 /* search row, shown while open */
 .ms-search{display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;
@@ -542,6 +576,12 @@
 .ms-search-input{flex:1;min-width:0;border:none;background:none;outline:none;
   font-family:var(--sans);font-size:14.5px;font-weight:400;line-height:1.3;color:#186BF3;}
 .ms-search-input::placeholder{color:#A8B3CA;}
+/* At the ceiling the row is inert, so its two greys each step down one: the
+   placeholder to gray-30 and the caret from gray-50 back to the gray-40 the
+   closed control uses. */
+.ms-search[data-max] .ms-search-input{cursor:not-allowed;}
+.ms-search[data-max] .ms-search-input::placeholder{color:#CCD4E0;}
+.app .ms-search[data-max] button.ms-caret{color:#A8B3CA;}
 /* Same 20px box closed (a span) and open (a button), so the glyph lands on the
    identical pixel either way — a bare 12px svg closed would sit ~4px further
    right than one centred in the open state's 20px hit area. */
@@ -582,12 +622,20 @@
   transition:background .12s;}
 .app button.ms-option:hover{background:#E7ECF2;}
 .app button.ms-option[data-selected]{background:#E7ECF2;}
+/* Locked out by the ceiling. `:hover` still matches a disabled button, so the
+   fill has to be restated or the row would light up under a cursor that can't
+   do anything with it. The ticked rows are never disabled — unticking one is
+   the way back under the limit. */
+.app button.ms-option:disabled{opacity:.8;cursor:not-allowed;}
+.app button.ms-option:disabled:hover{background:#EFF1F5;}
+.app button.ms-option:disabled .ms-option-text{color:#A8B3CA;}
 .ms-option-text{flex:1;min-width:0;font-size:14.5px;font-weight:400;line-height:1.3;color:#5C6A82;}
 .ms-option svg{flex:none;color:#186BF3;}
 
-/* footer: the max-reached note and the chosen tags */
+/* Footer: the max-reached note and the chosen tags. Rendered only once there is
+   a selection — with nothing picked the panel ends flush at the list, matching
+   the Opened variant, which stops at input + list. */
 .ms-foot{display:flex;flex-direction:column;gap:12px;padding:12px;}
-.ms-foot-spacer{display:block;height:12px;}
 .ms-max{margin:0;font-size:14.5px;font-weight:400;line-height:1.3;color:#5C6A82;}
 .ms-tags{display:flex;flex-wrap:wrap;align-items:center;gap:8px;}
 .ms-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 4px 4px 8px;
@@ -609,7 +657,6 @@
    documented palette, it comes straight from the Figma variable. Literals for
    the same reason as the multi-select and filter: specified against the light
    surface it ships on. */
-.cbx-set{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;max-width:420px;}
 .app button.cbx{display:inline-flex;align-items:center;gap:8px;height:40px;padding:8px;
   border:1px solid #EFF1F5;border-radius:12px;cursor:pointer;
   font-family:var(--sans);font-size:14px;font-weight:400;line-height:1.45;color:#828FA5;
@@ -716,29 +763,105 @@
    than to the button — the button stays centred inside it. */
 .bp-stage{position:relative;place-self:stretch;display:grid;place-items:center;}
 
-/* measured spec sheet — floats over the canvas, draggable by its head */
-.bp-float{position:absolute;top:0;left:0;z-index:6;display:flex;max-height:100%;}
-.bp-panel{display:flex;flex-direction:column;min-height:0;width:212px;
-  border:1px solid var(--line);background:var(--bg);box-shadow:0 12px 32px rgba(1,8,18,.16);}
+/* Redline overlay — padding bands and width/height dimension lines drawn over a
+   component while Best practices is on. Reuses .bp-tag so the whole redline
+   language stays one colour and one type treatment; the green is the annotation
+   colour, deliberately not a brand colour, so it never reads as part of the
+   component being measured. Off, .rl is an inert wrapper. */
+.rl{position:relative;display:inline-flex;}
+/* Block-level flex, not width:100% — the control fills the row without the
+   wrapper asserting a width the stage padding then has to fight. */
+.rl[data-fill]{display:flex;}
+.rl[data-fill] > *{flex:1;min-width:0;}
+/* Room for the annotations comes from the stage, never from a margin on the
+   redlined element: the filter bar hugs its chips, so margining one chip would
+   stretch the very component being measured.
+   The 272px left gutter is the spec panel's column — 248px wide plus a 24px
+   gap. Absolutely-positioned children resolve against the padding box, so
+   .bp-float stays pinned at the true left edge while the centred component is
+   pushed clear of it. */
+.bp-stage[data-bp]{padding:34px 60px 42px 272px;}
+.rl-band{position:absolute;background:rgba(22,163,74,.35);pointer-events:none;z-index:2;}
+.rl-band-l{top:0;bottom:0;left:0;}
+.rl-band-r{top:0;bottom:0;right:0;}
+.rl-band-t{left:0;right:0;top:0;}
+.rl-band-b{left:0;right:0;bottom:0;}
+.rl-note{position:absolute;display:flex;pointer-events:none;z-index:3;}
+.rl-note-x{bottom:calc(100% + 8px);left:0;}
+.rl-note-y{left:calc(100% + 8px);top:0;}
+/* Height reads up the left edge, width along the bottom — the same arrangement
+   the button's own redlines use, so the two aren't learned separately. */
+.rl-h{position:absolute;right:calc(100% + 8px);top:0;bottom:0;display:flex;align-items:center;
+  gap:4px;pointer-events:none;}
+.rl-h-line{align-self:stretch;width:0;border-left:1px solid #16A34A;position:relative;}
+.rl-h-line::before,.rl-h-line::after{content:"";position:absolute;left:-4px;width:8px;height:1px;
+  background:#16A34A;}
+.rl-h-line::before{top:0;}
+.rl-h-line::after{bottom:0;}
+.rl-w{position:absolute;top:calc(100% + 10px);left:0;right:0;display:flex;flex-direction:column;
+  align-items:center;gap:4px;pointer-events:none;}
+.rl-w-line{width:100%;height:0;border-top:1px solid #16A34A;position:relative;}
+.rl-w-line::before,.rl-w-line::after{content:"";position:absolute;top:-4px;width:1px;height:8px;
+  background:#16A34A;}
+.rl-w-line::before{left:0;}
+.rl-w-line::after{right:0;}
+
+/* Measured spec sheet — floats over the canvas, draggable by its head.
+   Built to read as a sibling of .pg-controls, the properties panel it sits
+   beside: same square 1px --line box, same display-font title, same
+   label-left / mono-value-right row, same --line-2 hairline between rows, and
+   the note reuses .pg-ctrl-desc's 12.5px/1.55 --ink-4 exactly. Every size here
+   is on the documented type scale — the old panel ran 9–11px, below Tag. */
+/* No max-height on the float: the cap lives on the panel, so a user-set height
+   can override it outright. A percentage cap here would silently clip whatever
+   the resize handle produced. */
+.bp-float{position:absolute;top:0;left:0;z-index:6;display:flex;}
+/* 340px sizes to content up to a point, then hands over to .bp-specs' scroll —
+   the Select's 19 rows would otherwise open at full playground height. */
+.bp-panel{position:relative;display:flex;flex-direction:column;min-height:0;width:248px;
+  max-height:340px;border:1px solid var(--line);background:var(--bg);
+  box-shadow:0 12px 32px rgba(1,8,18,.16);}
 .bp-panel-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;
-  padding:6px 8px;border-bottom:1px solid var(--line);background:var(--bg-soft);
+  padding:12px 14px;border-bottom:1px solid var(--line);background:var(--bg-soft);
   cursor:move;user-select:none;}
-.bp-panel-badge{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;
-  color:#16A34A;border:1px solid #16A34A;padding:1px 5px;}
-.bp-panel-grip{font-size:11px;line-height:1;color:var(--ink-4);letter-spacing:-.1em;}
-.bp-panel-note{flex:none;margin:0;padding:7px 9px;border-top:1px solid var(--line);
-  background:var(--bg-soft);font-size:10.5px;line-height:1.45;color:var(--ink-3);}
-.pg-canvas.dark .bp-panel-note{background:rgba(255,255,255,.05);border-top-color:rgba(255,255,255,.14);
-  color:rgba(255,255,255,.6);}
-/* scrolls within whatever height the canvas allows; the head stays put */
-.bp-specs{margin:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
-.bp-spec-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;padding:5px 9px;border-bottom:1px solid var(--line);}
+.bp-panel-badge{font-family:var(--display);font-size:14px;font-weight:600;color:var(--ink);}
+.bp-panel-tools{display:flex;align-items:center;gap:8px;}
+.app button.bp-panel-fold{display:grid;place-items:center;width:20px;height:20px;padding:0;
+  color:var(--ink-4);cursor:pointer;transition:color .12s;}
+.app button.bp-panel-fold:hover{color:var(--ink);}
+.bp-panel-fold svg{flex:none;}
+.bp-panel-grip{font-size:12px;line-height:1;color:var(--ink-4);letter-spacing:-.1em;}
+/* Collapsed, only the head remains — the drag handle and the way back open. */
+.bp-panel[data-collapsed]{width:auto;min-width:168px;}
+.pg-canvas.dark .bp-panel-fold{color:rgba(255,255,255,.5);}
+.pg-canvas.dark .bp-panel-fold:hover{color:#fff;}
+.bp-panel-note{flex:none;margin:0;padding:12px 14px;border-top:1px solid var(--line);
+  background:var(--bg-soft);font-size:12.5px;line-height:1.55;color:var(--ink-4);}
+/* flex:1 so the list takes up whatever the resize handle adds; head and note
+   stay pinned, and the rows scroll inside what's left. */
+.bp-specs{flex:1;margin:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
+/* Sits just past the bottom border, wider than it looks so it's easy to grab.
+   The bar only shows on hover — an always-on grip would read as chrome. */
+.bp-panel-resize{position:absolute;left:0;right:0;bottom:-4px;height:9px;cursor:ns-resize;
+  display:grid;place-items:center;}
+.bp-panel-resize::after{content:"";width:30px;height:2px;background:var(--line-strong);
+  opacity:0;transition:opacity .12s;}
+.bp-panel-resize:hover::after{opacity:1;}
+.pg-canvas.dark .bp-panel-resize::after{background:rgba(255,255,255,.28);}
+.bp-spec-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;
+  padding:9px 14px;border-bottom:1px solid var(--line-2);}
 .bp-spec-row:last-child{border-bottom:none;}
-.bp-specs dt{font-size:11px;color:var(--ink-3);white-space:nowrap;}
-.bp-specs dd{margin:0;font-family:var(--mono);font-size:10.5px;color:var(--ink);text-align:right;word-break:break-all;}
+.bp-specs dt{font-size:13px;color:var(--ink-3);white-space:nowrap;}
+/* overflow-wrap over word-break: long hex/gradient values wrap at the edge
+   instead of being chopped mid-token. */
+.bp-specs dd{margin:0;font-family:var(--mono);font-size:12px;color:var(--ink);
+  text-align:right;overflow-wrap:anywhere;}
 .pg-canvas.dark .bp-panel{background:#121821;border-color:rgba(255,255,255,.14);
   box-shadow:0 12px 32px rgba(0,0,0,.45);}
 .pg-canvas.dark .bp-panel-head{background:rgba(255,255,255,.05);border-bottom-color:rgba(255,255,255,.14);}
+.pg-canvas.dark .bp-panel-badge{color:#fff;}
+.pg-canvas.dark .bp-panel-note{background:rgba(255,255,255,.05);border-top-color:rgba(255,255,255,.14);
+  color:rgba(255,255,255,.6);}
 .pg-canvas.dark .bp-spec-row{border-bottom-color:rgba(255,255,255,.1);}
 .pg-canvas.dark .bp-specs dt{color:rgba(255,255,255,.55);}
 .pg-canvas.dark .bp-specs dd{color:#fff;}

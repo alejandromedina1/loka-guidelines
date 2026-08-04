@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FILTER_GROUPS } from "../../../data/components.js";
 import { BestPracticesPanel } from "../BestPracticesPanel.jsx";
+import { SpecOverlay } from "../SpecOverlay.jsx";
 import { CaretDown } from "../../common/Icon.jsx";
 
 const FILTER_SPECS = [
@@ -86,23 +87,33 @@ export function FilterPreview({ bestPractices }) {
     }));
 
   return (
-    <div className="bp-stage">
+    <div className="bp-stage" data-bp={bestPractices || undefined}>
       <div className="filt" ref={rootRef}>
         <div className="filt-bar">
-          {FILTER_GROUPS.map((g) => {
+          {FILTER_GROUPS.map((g, i) => {
             const on = g.label === openLabel;
             return (
-              <button
+              // The chip is what's redlined, not the bar: the bar hugs its chips,
+              // so its own box is the sum of theirs plus the 6px gaps.
+              <SpecOverlay
                 key={g.label}
-                type="button"
-                className="filt-toggle"
-                data-open={on || undefined}
-                aria-expanded={on}
-                onClick={() => toggleGroup(g.label)}
+                on={bestPractices && i === 0}
+                padX={12}
+                padY={12}
+                widthMode="hug"
+                heightMode="fixed"
               >
-                {g.label}
-                <CaretDown open={on} />
-              </button>
+                <button
+                  type="button"
+                  className="filt-toggle"
+                  data-open={on || undefined}
+                  aria-expanded={on}
+                  onClick={() => toggleGroup(g.label)}
+                >
+                  {g.label}
+                  <CaretDown open={on} />
+                </button>
+              </SpecOverlay>
             );
           })}
         </div>

@@ -59,6 +59,16 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
     : isInputField
       ? inputFieldSnippet({ type: fieldType, disabled: fieldDisabled, error: fieldError })
       : "";
+  // The pill strip under the canvas is the variant switcher for whichever
+  // component is on stage: the Button picks its style variant there, the Input
+  // Field its type. Both are the one axis that changes what you're looking at,
+  // so they belong on the canvas rather than down in the properties panel.
+  const canvasTabs = isButton
+    ? { options: BUTTON_VARIANTS, value: variant, onSelect: setVariant }
+    : isInputField
+      ? { options: FIELD_TYPES, value: fieldType, onSelect: setFieldType }
+      : null;
+
   const stateLabel = disabled
     ? "Disabled"
     : btnState === "hover"
@@ -127,14 +137,15 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
           <div className="pg-canvas-center">{renderPreview()}</div>
 
           <div className="pg-canvas-foot">
-            {isButton ? (
+            {canvasTabs ? (
               <div className="canvas-variants">
-                {BUTTON_VARIANTS.map((v) => (
+                {canvasTabs.options.map((v) => (
                   <button
                     key={v}
                     className="canvas-variant-btn"
-                    data-active={variant === v}
-                    onClick={() => setVariant(v)}
+                    data-active={canvasTabs.value === v}
+                    aria-pressed={canvasTabs.value === v}
+                    onClick={() => canvasTabs.onSelect(v)}
                   >
                     {v}
                   </button>
@@ -181,8 +192,9 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
           <span className="pg-ctrl-title">{selected}</span>
         </div>
         {isInputField ? (
+          // Type is picked on the canvas tabs, the way the Button picks its
+          // variant, so the panel is left holding only the state toggles.
           <>
-            <PgSelect label="Type" value={fieldType} options={FIELD_TYPES} onChange={setFieldType} />
             <PgToggle label="Disabled" value={fieldDisabled} onChange={setFieldDisabled} />
             <PgToggle label="Error state" value={fieldError} onChange={setFieldError} />
             <PgToggle label="Best practices" value={bestPractices} onChange={setBestPractices} />

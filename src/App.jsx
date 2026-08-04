@@ -6,6 +6,7 @@ import { TopBar } from "./components/layout/TopBar.jsx";
 import { Sidebar } from "./components/layout/Sidebar.jsx";
 import { SearchOverlay, SearchFab } from "./components/layout/SearchOverlay.jsx";
 import { IntroSection } from "./components/sections/IntroSection.jsx";
+import { FigmaLibrarySection } from "./components/sections/FigmaLibrarySection.jsx";
 import { ColorSection } from "./components/sections/ColorSection.jsx";
 import { TypographySection } from "./components/sections/TypographySection.jsx";
 import { SpacingSection } from "./components/sections/SpacingSection.jsx";
@@ -94,6 +95,7 @@ export default function App() {
 
         <main className="content">
           <IntroSection registerRef={registerRef} copied={copied} onCopy={copy} onNavigate={navigate} />
+          <FigmaLibrarySection registerRef={registerRef} />
           <ColorSection registerRef={registerRef} copied={copied} onCopy={copy} />
           <TypographySection
             registerRef={registerRef}
