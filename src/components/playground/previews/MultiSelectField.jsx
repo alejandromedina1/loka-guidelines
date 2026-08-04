@@ -12,7 +12,7 @@ import { CaretDown, CheckBold, CircleX } from "../../common/Icon.jsx";
 //   No results  a query that matches nothing
 //   Complete    the three-selection ceiling reached: the list stays open with the
 //               unpicked rows disabled, so a swap starts by unticking
-export function MultiSelectField({ disabled, error, placeholder }) {
+export function MultiSelectField({ disabled, error, focus, placeholder }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState([]);
@@ -118,6 +118,7 @@ export function MultiSelectField({ disabled, error, placeholder }) {
         data-open={open || undefined}
         data-error={error || undefined}
         data-disabled={disabled || undefined}
+        data-focus={focus || undefined}
       >
         {open ? (
           <>

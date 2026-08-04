@@ -53,7 +53,7 @@ src/
     │   ├── ComponentPlayground.jsx
     │   ├── buttonStyles.js      #   Pure styling logic for the Button preview
     │   ├── controls/            #   PgSelect, PgToggle
-    │   └── previews/            #   ButtonPreview, AccordionPreview, AvatarsPreview
+    │   └── previews/            #   ButtonPreview, AccordionPreview, TabsPreview
     ├── layout/                 # TopBar, Sidebar, SearchOverlay + SearchFab
     └── sections/               # One component per documentation section
         ├── IntroSection.jsx

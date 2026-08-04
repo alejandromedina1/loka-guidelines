@@ -7,6 +7,7 @@ import { ArrowInline } from "../../common/Icon.jsx";
 // Live Button preview with hover/press interaction, a redlined best-practices
 // overlay, and two draggable annotation panels — the spec sheet and the
 // "behaviour" card — floating either side of the button.
+
 export function ButtonPreview({
   variant,
   device,

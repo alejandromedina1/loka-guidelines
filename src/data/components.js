@@ -2,9 +2,10 @@
 
 // The full list of components the design system documents. Drives both the
 // sidebar "Components" group and the playground's prev/next cycling.
+// Avatars is deliberately absent: it's being reworked, so it's out of the docs
+// until there's a component to document.
 export const COMPONENT_LIST = [
   "Accordion",
-  "Avatars",
   "Button",
   "Card",
   "Checkbox",
@@ -18,14 +19,15 @@ export const COMPONENT_LIST = [
   "Toggle",
 ];
 
-// Sample people used by the Avatars preview.
-export const AVATARS = [
-  { name: "Ava Reyes", initials: "AR", color: "#1957F4" },
-  { name: "Marcus Lin", initials: "ML", color: "#0FA47A" },
-  { name: "Priya Nair", initials: "PN", color: "#E0602F" },
-  { name: "Tomás Ruiz", initials: "TR", color: "#7C4DE0" },
-  { name: "Jade Okoro", initials: "JO", color: "#D4396B" },
-];
+// The Input Field is four controls under one name, and each of them documents
+// the same four states. Both axes are shared: the types split the component in
+// the nav panel, the states drive the playground's canvas pills.
+//
+// The states are exclusive on purpose — a control is focused or errored or
+// disabled, and picking one from a strip is how you compare them. Combinations
+// like an errored field taking focus still exist in CSS for real use.
+export const FIELD_TYPES = ["Text", "Email", "Textarea", "Select"];
+export const FIELD_STATES = ["Default", "Focus", "Error", "Disabled"];
 
 // Sample copy used by the Accordion preview.
 export const FAQ_ITEMS = [
@@ -84,6 +86,15 @@ export const FILTER_GROUPS = [
     ],
   },
 ];
+
+// Labels for the Tabs bar — Loka Figma "service-icon-item" (node 4007:23097),
+// which the Industries section uses to switch what the block below it shows.
+// Figma ships every slot filled with the same placeholder ("Healthcare
+// Provider"), so the rest come from the industry vocabulary the Filter and
+// Checkbox previews already use. Four is what the Figma bar carries, and the
+// longest label is deliberately long enough to ellipsize at narrow widths —
+// that truncation is part of the item's spec.
+export const TABS = ["Healthcare Provider", "Fintech", "Life Sciences", "SaaS & ISVs"];
 
 // Grouped options for the multi-select dropdown documented under "Input Field".
 // Mirrors the Loka Figma "Dropdown" component (node 6916:50169), including its

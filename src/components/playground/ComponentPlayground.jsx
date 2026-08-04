@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { COMPONENT_LIST } from "../../data/components.js";
+import { COMPONENT_LIST, FIELD_STATES } from "../../data/components.js";
 import {
   BUTTON_VARIANTS,
   DARK_SURFACE_VARIANTS,
@@ -11,25 +11,27 @@ import { PgSelect } from "./controls/PgSelect.jsx";
 import { PgToggle } from "./controls/PgToggle.jsx";
 import { ButtonPreview } from "./previews/ButtonPreview.jsx";
 import { AccordionPreview } from "./previews/AccordionPreview.jsx";
-import { AvatarsPreview } from "./previews/AvatarsPreview.jsx";
 import { FilterPreview } from "./previews/FilterPreview.jsx";
 import { CheckboxPreview } from "./previews/CheckboxPreview.jsx";
 import { InputFieldPreview, inputFieldSnippet } from "./previews/InputFieldPreview.jsx";
+import { TabsPreview } from "./previews/TabsPreview.jsx";
 import { ArrowLeft, ArrowRight, ChevronToggle, CheckIcon, CopyIcon } from "../common/Icon.jsx";
 
-const FIELD_TYPES = ["Text", "Email", "Textarea", "Select"];
+// Tabs documents two things at once — the item and the bar it sits in.
+const TABS_VIEWS = ["Item", "Full bar"];
 
 // The component documentation surface: a live preview canvas, a prev/next
 // cycler, per-component property controls, and a copyable code snippet.
 // The Button is the fully-built reference component; others show a placeholder.
-export function ComponentPlayground({ copied, onCopy, selected, setSelected, theme }) {
+export function ComponentPlayground({ copied, onCopy, selected, setSelected, fieldType, theme }) {
   const dark = theme === "dark";
   const isButton = selected === "Button";
   const isInputField = selected === "Input Field";
   const isCheckbox = selected === "Checkbox";
   const isFilter = selected === "Filter";
+  const isTabs = selected === "Tabs";
   // Every component with a spec sheet written for it.
-  const hasBestPractices = isButton || isCheckbox || isFilter || isInputField;
+  const hasBestPractices = isButton || isCheckbox || isFilter || isInputField || isTabs;
 
   const [variant, setVariant] = useState("Primary");
   const [device, setDevice] = useState("Desktop");
@@ -40,9 +42,11 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
   const [showCode, setShowCode] = useState(false);
   const [btnState, setBtnState] = useState("default"); // default | hover | pressed
 
-  const [fieldType, setFieldType] = useState("Text");
-  const [fieldDisabled, setFieldDisabled] = useState(false);
-  const [fieldError, setFieldError] = useState(false);
+  const [tabsView, setTabsView] = useState("Item");
+
+  // The type is chosen in the nav panel and arrives as a prop; the state is the
+  // playground's own axis, so it sits on the canvas pills.
+  const [fieldState, setFieldState] = useState("Default");
 
   const cycle = (dir) => {
     const i = COMPONENT_LIST.indexOf(selected);
@@ -57,17 +61,20 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
   const code = isButton
     ? buttonSnippet({ variant, device, surface, disabled })
     : isInputField
-      ? inputFieldSnippet({ type: fieldType, disabled: fieldDisabled, error: fieldError })
+      ? inputFieldSnippet({ type: fieldType, state: fieldState })
       : "";
-  // The pill strip under the canvas is the variant switcher for whichever
-  // component is on stage: the Button picks its style variant there, the Input
-  // Field its type. Both are the one axis that changes what you're looking at,
-  // so they belong on the canvas rather than down in the properties panel.
+  // The pill strip under the canvas is the switcher for whichever component is
+  // on stage: the Button picks its style variant there, the Input Field the state
+  // it's in, Tabs whether it's showing one item or the whole bar. Each is the one
+  // axis that changes what you're looking at, so it belongs on the canvas rather
+  // than down in the properties panel.
   const canvasTabs = isButton
     ? { options: BUTTON_VARIANTS, value: variant, onSelect: setVariant }
     : isInputField
-      ? { options: FIELD_TYPES, value: fieldType, onSelect: setFieldType }
-      : null;
+      ? { options: FIELD_STATES, value: fieldState, onSelect: setFieldState }
+      : isTabs
+        ? { options: TABS_VIEWS, value: tabsView, onSelect: setTabsView }
+        : null;
 
   const stateLabel = disabled
     ? "Disabled"
@@ -93,20 +100,13 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
       );
     }
     if (selected === "Accordion") return <AccordionPreview />;
-    if (selected === "Avatars") return <AvatarsPreview />;
     if (isFilter) return <FilterPreview bestPractices={bestPractices} />;
+    if (isTabs) return <TabsPreview view={tabsView} bestPractices={bestPractices} />;
     if (isCheckbox) {
       return <CheckboxPreview disabled={disabled} bestPractices={bestPractices} />;
     }
     if (isInputField) {
-      return (
-        <InputFieldPreview
-          type={fieldType}
-          disabled={fieldDisabled}
-          error={fieldError}
-          bestPractices={bestPractices}
-        />
-      );
+      return <InputFieldPreview type={fieldType} state={fieldState} bestPractices={bestPractices} />;
     }
     return (
       <div className="pg-empty">
@@ -192,13 +192,10 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, the
           <span className="pg-ctrl-title">{selected}</span>
         </div>
         {isInputField ? (
-          // Type is picked on the canvas tabs, the way the Button picks its
-          // variant, so the panel is left holding only the state toggles.
-          <>
-            <PgToggle label="Disabled" value={fieldDisabled} onChange={setFieldDisabled} />
-            <PgToggle label="Error state" value={fieldError} onChange={setFieldError} />
-            <PgToggle label="Best practices" value={bestPractices} onChange={setBestPractices} />
-          </>
+          // The type is a nav entry and the state is a canvas pill, which leaves
+          // the panel nothing to hold but the redlines. Disabled and Error used to
+          // be toggles here; they're two of the states now.
+          <PgToggle label="Best practices" value={bestPractices} onChange={setBestPractices} />
         ) : (
           <>
             <PgSelect

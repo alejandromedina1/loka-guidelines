@@ -27,6 +27,15 @@ export function ColorSection({ registerRef, copied, onCopy }) {
         </div>
         <ColorGroup group="blue" data={PALETTE.blue} copied={copied} onCopy={onCopy} />
       </div>
+
+      {/* Semantics come after the two scales they draw from. */}
+      <div id="color-semantic" className="sub-anchor" ref={(el) => registerRef("color-semantic", el)}>
+        <div className="sub-head">
+          <h3 className="sub-title">Semantic</h3>
+          <p className="section-desc">{PALETTE.semantic.description}</p>
+        </div>
+        <ColorGroup group="semantic" data={PALETTE.semantic} copied={copied} onCopy={onCopy} />
+      </div>
     </section>
   );
 }

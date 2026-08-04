@@ -78,9 +78,16 @@ const FIELD_NOTES = {
 // Live Input Field preview — label sits a full space-10 above the control, and
 // every control (text, textarea, select) shares the same fill/border/radius
 // so the field family reads as one component.
-export function InputFieldPreview({ type, disabled, error, bestPractices }) {
+export function InputFieldPreview({ type, state = "Default", bestPractices }) {
   const [text, setText] = useState("");
   const copy = FIELD_COPY[type];
+
+  // The pills pin a state, so focus can't rely on the control actually holding
+  // it — clicking the pill would hand focus to the pill. `data-state` carries it
+  // instead, and the CSS gives it the same ring :focus draws.
+  const disabled = state === "Disabled";
+  const error = state === "Error";
+  const focus = state === "Focus" || undefined;
 
   return (
     <div className="bp-stage" data-bp={bestPractices || undefined}>
@@ -94,15 +101,22 @@ export function InputFieldPreview({ type, disabled, error, bestPractices }) {
               <textarea
                 className="field-textarea"
                 data-error={error}
+                data-focus={focus}
                 placeholder={copy.placeholder}
                 disabled={disabled}
               />
             ) : type === "Select" ? (
-              <MultiSelectField disabled={disabled} error={error} placeholder={copy.placeholder} />
+              <MultiSelectField
+                disabled={disabled}
+                error={error}
+                focus={focus}
+                placeholder={copy.placeholder}
+              />
             ) : (
               <input
                 className="field-input"
                 data-error={error}
+                data-focus={focus}
                 type={type === "Email" ? "email" : "text"}
                 placeholder={copy.placeholder}
                 disabled={disabled}
@@ -116,7 +130,7 @@ export function InputFieldPreview({ type, disabled, error, bestPractices }) {
       </div>
       {bestPractices && (
         <BestPracticesPanel
-          rows={[["Type", type], ...FIELD_TYPE_SPECS[type], ...FIELD_BASE_SPECS]}
+          rows={[["Type", type], ["State", state], ...FIELD_TYPE_SPECS[type], ...FIELD_BASE_SPECS]}
           note={FIELD_NOTES[type]}
         />
       )}
@@ -124,13 +138,14 @@ export function InputFieldPreview({ type, disabled, error, bestPractices }) {
   );
 }
 
-// The copyable ERB snippet reflecting the current field configuration.
-export function inputFieldSnippet({ type, disabled, error }) {
+// The copyable ERB snippet reflecting the current field configuration. Focus
+// isn't in it: it's a state the browser owns, not something the server renders.
+export function inputFieldSnippet({ type, state }) {
   return (
     `<%= render InputFieldComponent.new(` +
     `type: :${type.toLowerCase()}, label: "${FIELD_COPY[type].label}"` +
-    (disabled ? `, disabled: true` : "") +
-    (error ? `, error: "This field is required."` : "") +
+    (state === "Disabled" ? `, disabled: true` : "") +
+    (state === "Error" ? `, error: "This field is required."` : "") +
     `) %>`
   );
 }

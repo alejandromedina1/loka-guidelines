@@ -425,21 +425,6 @@
 .pg-canvas.dark .faq-a{color:rgba(255,255,255,.55);}
 .faq-item[data-open="true"] .faq-a{padding:0 4px 22px;}
 
-/* avatars */
-.avatars-demo{display:flex;flex-direction:column;gap:28px;align-items:center;}
-.avatars-row{display:flex;align-items:center;gap:14px;}
-.avatar{display:grid;place-items:center;width:44px;height:44px;border-radius:999px;color:#fff;
-  font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:.01em;flex:none;
-  box-shadow:0 1px 2px rgba(1,8,18,.14);}
-.avatar-sm{width:32px;height:32px;font-size:12px;}
-.avatar-lg{width:60px;height:60px;font-size:20px;}
-.avatar-more{background:var(--line-strong)!important;color:var(--ink-2);box-shadow:none;}
-.pg-canvas.dark .avatar-more{color:#fff;}
-.avatars-stack{display:flex;align-items:center;}
-.avatars-stack .avatar{margin-left:-12px;border:2px solid var(--bg);}
-.pg-canvas.dark .avatars-stack .avatar{border-color:#0F141C;}
-.avatars-stack .avatar:first-child{margin-left:0;}
-
 .pg-canvas-center{position:relative;flex:1;display:grid;place-items:center;padding:40px;}
 .btn-variants{display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;justify-content:center;}
 .btn-cell{display:inline-flex;flex-direction:column;align-items:center;}
@@ -522,7 +507,11 @@
   padding:0 16px;transition:border-color .14s,box-shadow .14s;}
 .field-input{height:48px;}
 .field-input::placeholder,.field-textarea::placeholder{color:#A8B3CA;}
-.field-input:focus,.field-textarea:focus{
+/* [data-focus] is the playground pinning the focus state from its canvas pills:
+   clicking a pill moves real focus to the pill, so the state has to be a flag
+   rather than :focus. Same ring either way. */
+.field-input:focus,.field-textarea:focus,
+.field-input[data-focus],.field-textarea[data-focus]{
   outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
 .field-textarea{min-height:110px;padding:12px 16px;resize:vertical;line-height:1.5;font-family:inherit;}
 .field-input:disabled,.field-textarea:disabled{opacity:.55;cursor:not-allowed;}
@@ -560,6 +549,15 @@
   backdrop-filter:blur(30px);}
 .ms[data-error]{border-color:var(--danger);}
 .ms[data-disabled]{opacity:.55;}
+/* The select had no focus treatment at all — the family spec calls for the same
+   blue ring the text controls draw, and the Focus pill needs something to show.
+   Closed only: open, Figma gives the panel its own gray-5 border, and a blue ring
+   around a 396px panel isn't what the Opened variant looks like. :focus-within
+   covers a keyboard reaching the closed control, [data-focus] the pinned state,
+   and the ring replaces the button's own outline rather than doubling it. */
+.ms:not([data-open]):focus-within,.ms:not([data-open])[data-focus]{
+  border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
+.ms:not([data-open]):focus-within .ms-control{outline:none;}
 
 /* closed control */
 /* Height is pinned to the same 48px as .ms-search below: the closed control and
@@ -713,6 +711,53 @@
 .filt-count{flex:none;width:22px;color:#A8B3CA;}
 .filt-option-label{color:#041D3E;}
 .filt-empty{margin:0;padding:12px;font-size:16px;line-height:1.3;color:#5C6A82;}
+
+/* Tabs — Loka Figma "service-icon-item" (node 4007:23097), in the bar that hosts
+   it (node 4253:19091). Tokens: blue-100 #186BF3, LineOpaque #DFDFE1, DarkBlue
+   #041D3E, white. Literals for the same reason the dropdown keeps them: the bar
+   is specified against the light surface it ships on, not the app's theme.
+   #DBE7F5, the active fill, is a raw hex in Figma rather than a palette token. */
+/* The bar fills its section in Figma, so the demo box gives it a width to fill.
+   720px is where four labels stay readable before the ellipsis takes over. */
+.tabs-demo{width:100%;max-width:720px;}
+/* Solo, the item is shown at the 345px share it takes in the real 4-up bar —
+   it has no width of its own in the spec, so hugging its label would invent one
+   and hide the ellipsis the label is built for. */
+.tab-solo-demo{width:345px;max-width:100%;}
+.tabs{display:flex;flex-direction:column;justify-content:flex-end;padding:4px;
+  border-radius:15px;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);
+  box-shadow:0 0 6px rgba(0,0,0,.1);}
+.tabs-row{display:flex;align-items:center;gap:4px;width:100%;}
+/* Items share the row equally — min-width:0 is what lets a long label ellipsize
+   instead of forcing its item wider than its share.
+   That freedom is also why the item has to clip: min-width:0 lets flex shrink an
+   item below the 36px its 12px marker and 12px padding need, and the marker is
+   flex:none, so with nothing clipping it the spill escapes the item, then the
+   bar, then the playground itself. It shows up when the specs panel docks and
+   leaves the canvas under ~500px wide. Clipping keeps the row tidy instead. */
+.app button.tab-item{flex:1 1 0;min-width:0;height:70px;display:flex;flex-direction:column;
+  align-items:flex-start;justify-content:center;padding:12px;border-radius:12px;
+  overflow:hidden;cursor:pointer;text-align:left;transition:background .12s;}
+.app button.tab-item:hover:not([data-active]){background:#FFFFFF;}
+.app button.tab-item[data-active]{background:#DBE7F5;}
+/* Figma tightens the stack by 4px on the active item. Reproduced rather than
+   normalised: it's the spec, though it does nudge the label as you select. */
+.tab-stack{display:flex;flex-direction:column;gap:12px;width:100%;min-width:0;}
+.tab-item[data-active] .tab-stack{gap:8px;}
+/* One 12px box carries all three markers: a hairline square at rest, a blue ring
+   around a 6px dot on hover, and a solid blue square when active. The dot is a
+   centred ::after, so the 3px inset Figma draws falls out of the 1px border. */
+.tab-mark{flex:none;width:12px;height:12px;display:grid;place-items:center;
+  border:1px solid #DFDFE1;transition:border-color .12s, background .12s;}
+.tab-mark::after{content:"";width:6px;height:6px;background:#186BF3;opacity:0;transition:opacity .12s;}
+.tab-item:hover:not([data-active]) .tab-mark{border-color:#186BF3;}
+.tab-item:hover:not([data-active]) .tab-mark::after{opacity:1;}
+.tab-item[data-active] .tab-mark{background:#186BF3;border-color:transparent;}
+.tab-label{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  font-family:var(--sans);font-size:16px;font-weight:400;line-height:1.3;color:#041D3E;
+  transition:color .12s;}
+.tab-item:hover:not([data-active]) .tab-label,
+.tab-item[data-active] .tab-label{color:#186BF3;}
 
 /* Best practices — annotations around the button (button stays put) */
 .bp-anchor{position:relative;display:inline-flex;}

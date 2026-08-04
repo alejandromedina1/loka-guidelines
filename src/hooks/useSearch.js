@@ -19,11 +19,26 @@ function buildSearchIndex() {
       } else {
         idx.push({ label: it.label, kind: "Section", target: it.id });
       }
-      (it.sub || []).forEach((s) => idx.push({ label: s.label, kind: "Section", target: s.id }));
+      // Foundations sub-items are scroll targets; component sub-items are variants
+      // of the one playground canvas, so they resolve to a component plus the
+      // variant to open it on — their ids aren't anywhere to scroll to.
+      (it.sub || []).forEach((s) =>
+        idx.push(
+          s.component
+            ? {
+                label: `${s.component} · ${s.label}`,
+                kind: "Component",
+                target: "components",
+                setComponent: s.component,
+                setVariant: s.variant,
+              }
+            : { label: s.label, kind: "Section", target: s.id }
+        )
+      );
     })
   );
 
-  ["neutral", "blue"].forEach((g) =>
+  ["neutral", "blue", "semantic"].forEach((g) =>
     PALETTE[g].tokens.forEach((t) =>
       idx.push({ label: t.name, kind: "Color", sub: `#${t.hex.toUpperCase()}`, target: `color-${g}` })
     )

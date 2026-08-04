@@ -37,4 +37,20 @@ export const PALETTE = {
       { name: "blue-5", hex: "EEF2FE" },
     ],
   },
+  // The root-level `colors/*` variables from Figma's Primitives collection —
+  // everything that isn't a step on the neutral or blue ramp. Names match the
+  // Figma variables exactly so a value can be traced back to its token.
+  semantic: {
+    label: "Semantic",
+    description:
+      "Colors named for the job they do rather than for where they sit on a ramp — the page itself, a section fill, a divider, a muted label. Reach for these before picking a step off the neutral scale: the name records the decision, so a surface that should track the page background doesn't quietly become “whichever gray looked right”. Two values will look familiar — DarkBlue is gray-80 and GreyBlue sits between gray-40 and gray-50 — but Figma binds them as their own variables, so they're documented as their own tokens.",
+    tokens: [
+      { name: "PageBackground", hex: "FDFDFD" },
+      { name: "BackgroundGrey", hex: "F5F6FA" },
+      { name: "Line-stroke", hex: "ECECEE" },
+      { name: "LineOpaque", hex: "DFDFE1" },
+      { name: "GreyBlue", hex: "7C92AE" },
+      { name: "DarkBlue", hex: "041D3E" },
+    ],
+  },
 };

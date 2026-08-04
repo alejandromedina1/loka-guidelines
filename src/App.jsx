@@ -32,6 +32,10 @@ export default function App() {
   const [theme, setTheme] = useState("light");
   const [mobileNav, setMobileNav] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState("Button");
+  // Which Input Field type is on the canvas. It lives up here rather than in the
+  // playground because the nav panel picks it — the component's four types are
+  // sidebar entries, not a control inside the canvas.
+  const [fieldType, setFieldType] = useState("Text");
   const [selectedPattern, setSelectedPattern] = useState("dot-grid");
   const [expandedRow, setExpandedRow] = useState(null);
 
@@ -46,9 +50,12 @@ export default function App() {
     [scrollTo]
   );
 
+  // `variant` comes from the nav's component sub-items; without one the
+  // component keeps whatever variant it was last showing.
   const selectComponent = useCallback(
-    (name) => {
+    (name, variant) => {
       setSelectedComponent(name);
+      if (variant) setFieldType(variant);
       navigate("components");
     },
     [navigate]
@@ -57,6 +64,7 @@ export default function App() {
   const runSearchResult = useCallback(
     (r) => {
       if (r.setComponent) setSelectedComponent(r.setComponent);
+      if (r.setVariant) setFieldType(r.setVariant);
       if (r.setPattern) setSelectedPattern(r.setPattern);
       navigate(r.target);
     },
@@ -86,6 +94,7 @@ export default function App() {
           active={active}
           activeTop={toActiveTop(active)}
           selectedComponent={selectedComponent}
+          componentVariant={fieldType}
           onSelectComponent={selectComponent}
           onNavigate={navigate}
           open={mobileNav}
@@ -121,6 +130,7 @@ export default function App() {
             onCopy={copy}
             selectedComponent={selectedComponent}
             setSelectedComponent={setSelectedComponent}
+            fieldType={fieldType}
             theme={theme}
           />
         </main>

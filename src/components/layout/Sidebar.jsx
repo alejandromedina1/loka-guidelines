@@ -4,7 +4,15 @@ import { CaretRight } from "../common/Icon.jsx";
 
 // The left navigation. Renders the NAV model, tracks which collapsible groups
 // are open, and highlights the active section (or selected component).
-export function Sidebar({ active, activeTop, selectedComponent, onSelectComponent, onNavigate, open }) {
+export function Sidebar({
+  active,
+  activeTop,
+  selectedComponent,
+  componentVariant,
+  onSelectComponent,
+  onNavigate,
+  open,
+}) {
   const [expandedGroups, setExpandedGroups] = useState({ color: false, typography: false });
 
   const toggleGroup = (id) => setExpandedGroups((g) => ({ ...g, [id]: !g[id] }));
@@ -23,13 +31,13 @@ export function Sidebar({ active, activeTop, selectedComponent, onSelectComponen
                 ? active === "components" && selectedComponent === item.component
                 : activeTop === item.id;
 
+              // Opening a parent reveals its children either way; a component
+              // parent also puts itself on the canvas, keeping whichever variant
+              // is already selected.
               const handleClick = () => {
-                if (isComponent) {
-                  onSelectComponent(item.component);
-                } else {
-                  onNavigate(item.id);
-                  if (hasSub) setExpandedGroups((g) => ({ ...g, [item.id]: true }));
-                }
+                if (isComponent) onSelectComponent(item.component);
+                else onNavigate(item.id);
+                if (hasSub) setExpandedGroups((g) => ({ ...g, [item.id]: true }));
               };
 
               return (
@@ -51,12 +59,25 @@ export function Sidebar({ active, activeTop, selectedComponent, onSelectComponen
                   </button>
                   {hasSub && groupOpen && (
                     <div className="nav-sub">
+                      {/* Foundations sub-items are places to scroll to; component
+                          sub-items are variants of one canvas, so they're active
+                          when that variant is the one on stage. */}
                       {item.sub.map((s) => (
                         <button
                           key={s.id}
                           className="nav-subitem"
-                          data-active={active === s.id}
-                          onClick={() => onNavigate(s.id)}
+                          data-active={
+                            s.component
+                              ? active === "components" &&
+                                selectedComponent === s.component &&
+                                componentVariant === s.variant
+                              : active === s.id
+                          }
+                          onClick={() =>
+                            s.component
+                              ? onSelectComponent(s.component, s.variant)
+                              : onNavigate(s.id)
+                          }
                         >
                           {s.label}
                         </button>

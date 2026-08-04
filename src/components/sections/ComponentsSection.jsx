@@ -3,7 +3,15 @@ import { ComponentPlayground } from "../playground/ComponentPlayground.jsx";
 
 // Components — the interactive playground. The section title tracks the
 // currently selected component.
-export function ComponentsSection({ registerRef, copied, onCopy, selectedComponent, setSelectedComponent, theme }) {
+export function ComponentsSection({
+  registerRef,
+  copied,
+  onCopy,
+  selectedComponent,
+  setSelectedComponent,
+  fieldType,
+  theme,
+}) {
   return (
     <section id="components" className="section" ref={(el) => registerRef("components", el)}>
       <SectionHead title={selectedComponent}>
@@ -14,6 +22,7 @@ export function ComponentsSection({ registerRef, copied, onCopy, selectedCompone
         onCopy={onCopy}
         selected={selectedComponent}
         setSelected={setSelectedComponent}
+        fieldType={fieldType}
         theme={theme}
       />
     </section>
