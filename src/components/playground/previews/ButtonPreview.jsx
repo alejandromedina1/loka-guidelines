@@ -18,7 +18,11 @@ export function ButtonPreview({
   btnState,
   setBtnState,
 }) {
-  const [bhPos, onBhDown] = useDragOffset({ x: 60, y: 0 });
+  // The card is handed to the hook so a drag can write its transform directly
+  // instead of re-rendering this whole preview on every mousemove. No bounds
+  // selector: it's anchored outside its parent on purpose.
+  const bhRef = useRef(null);
+  const [bhPos, onBhDown] = useDragOffset({ x: 60, y: 0 }, bhRef);
 
   const isGhost = variant === "Ghost";
   const spec = buttonSpec({ variant, device, surface });
@@ -122,7 +126,11 @@ export function ButtonPreview({
           </div>
         </div>
         {showBehaviour && (
-          <div className="bh" style={{ transform: `translate(${bhPos.x}px, ${bhPos.y}px)` }}>
+          <div
+            className="bh"
+            ref={bhRef}
+            style={{ transform: `translate(${bhPos.x}px, ${bhPos.y}px)` }}
+          >
             <div className="bh-card" onMouseDown={onBhDown}>
               <span className="bh-badge">Interaction</span>
               {isGhost ? (

@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { BestPracticesPanel } from "../BestPracticesPanel.jsx";
 import { SpecOverlay } from "../SpecOverlay.jsx";
 import { CheckSmall } from "../../common/Icon.jsx";
@@ -24,24 +23,27 @@ const CHECKBOX_SPECS = [
 ];
 
 const CHECKBOX_NOTE =
-  "Figma calls the checked variant “Focused”, but it's the checked state — no focus ring is defined, so keyboard focus falls back to the browser default. The whole pill is the target, not just the circle.";
+  "Figma calls the checked variant “Focused”, but it's the checked state — no focus ring is defined, so keyboard focus falls back to the browser default. The whole pill is the target, not just the circle, and clicking it moves the pills: a click from Default or Hovered checks it, and a click from Checked clears it.";
 
 // Checkbox — the Loka Figma "Checkbox / 40" component (node 3692:15296). Figma
-// documents four states, but they aren't four things to render:
+// documents four states, and the canvas pills step through all of them:
 //
 //   Default    resting, empty circle, gray-50 label
-//   Hovered    the same control with the backgroundgrey fill — pure CSS
-//   Focused    misnamed: this is the checked state. The circle fills blue-100
-//              and the label darkens to gray-90, so it follows the value
-//   disabled   half-opacity with a greyblue label — driven by the prop
+//   Hovered    the same control with the backgroundgrey fill
+//   Checked    Figma's "Focused": circle fills blue-100, label darkens to gray-90
+//   Disabled   half-opacity with a greyblue label
 //
-// So only checked and disabled are real inputs; the rest falls out.
+// Hover is pure CSS in real use, so the pinned state is a flag the same rule
+// answers to — otherwise picking "Hovered" from a pill, which moves the cursor
+// away from the control, could never show it.
 // Figma documents the control with an industry name; one is enough to show
 // every state, since checked and disabled are both driven from outside the pill.
 const LABEL = "Life Sciences";
 
-export function CheckboxPreview({ disabled, bestPractices }) {
-  const [checked, setChecked] = useState(true);
+export function CheckboxPreview({ state = "Default", setState, bestPractices }) {
+  const checked = state === "Checked";
+  const disabled = state === "Disabled";
+  const hovered = state === "Hovered";
 
   return (
     <div className="bp-stage" data-bp={bestPractices || undefined}>
@@ -52,14 +54,22 @@ export function CheckboxPreview({ disabled, bestPractices }) {
           aria-checked={checked}
           className="cbx"
           data-checked={checked || undefined}
+          data-hover={hovered || undefined}
           disabled={disabled}
-          onClick={() => setChecked((v) => !v)}
+          // The control stays live, so the pills follow the click rather than
+          // drifting out of step with what's on screen.
+          onClick={() => setState?.(checked ? "Default" : "Checked")}
         >
-          <span className="cbx-box">{checked && <CheckSmall />}</span>
+          <span className="cbx-box">{checked ? <CheckSmall /> : null}</span>
           {LABEL}
         </button>
       </SpecOverlay>
-      {bestPractices && <BestPracticesPanel rows={CHECKBOX_SPECS} note={CHECKBOX_NOTE} />}
+      {bestPractices && (
+        <BestPracticesPanel
+          rows={[["State", state], ...CHECKBOX_SPECS]}
+          note={CHECKBOX_NOTE}
+        />
+      )}
     </div>
   );
 }

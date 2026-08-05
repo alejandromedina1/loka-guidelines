@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { COMPONENT_LIST, FIELD_STATES } from "../../data/components.js";
+import { CHECKBOX_STATES, COMPONENT_LIST, FIELD_STATES } from "../../data/components.js";
 import {
   BUTTON_VARIANTS,
   DARK_SURFACE_VARIANTS,
@@ -43,6 +43,7 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
   const [btnState, setBtnState] = useState("default"); // default | hover | pressed
 
   const [tabsView, setTabsView] = useState("Item");
+  const [cbxState, setCbxState] = useState("Default");
 
   // The type is chosen in the nav panel and arrives as a prop; the state is the
   // playground's own axis, so it sits on the canvas pills.
@@ -64,17 +65,19 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
       ? inputFieldSnippet({ type: fieldType, state: fieldState })
       : "";
   // The pill strip under the canvas is the switcher for whichever component is
-  // on stage: the Button picks its style variant there, the Input Field the state
-  // it's in, Tabs whether it's showing one item or the whole bar. Each is the one
-  // axis that changes what you're looking at, so it belongs on the canvas rather
-  // than down in the properties panel.
+  // on stage: the Button picks its style variant there, the Input Field and the
+  // Checkbox the state they're in, Tabs whether it's showing one item or the whole
+  // bar. Each is the one axis that changes what you're looking at, so it belongs
+  // on the canvas rather than down in the properties panel.
   const canvasTabs = isButton
     ? { options: BUTTON_VARIANTS, value: variant, onSelect: setVariant }
     : isInputField
       ? { options: FIELD_STATES, value: fieldState, onSelect: setFieldState }
-      : isTabs
-        ? { options: TABS_VIEWS, value: tabsView, onSelect: setTabsView }
-        : null;
+      : isCheckbox
+        ? { options: CHECKBOX_STATES, value: cbxState, onSelect: setCbxState }
+        : isTabs
+          ? { options: TABS_VIEWS, value: tabsView, onSelect: setTabsView }
+          : null;
 
   const stateLabel = disabled
     ? "Disabled"
@@ -103,7 +106,9 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
     if (isFilter) return <FilterPreview bestPractices={bestPractices} />;
     if (isTabs) return <TabsPreview view={tabsView} bestPractices={bestPractices} />;
     if (isCheckbox) {
-      return <CheckboxPreview disabled={disabled} bestPractices={bestPractices} />;
+      return (
+        <CheckboxPreview state={cbxState} setState={setCbxState} bestPractices={bestPractices} />
+      );
     }
     if (isInputField) {
       return <InputFieldPreview type={fieldType} state={fieldState} bestPractices={bestPractices} />;
@@ -213,13 +218,9 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
                 onChange={setSurface}
               />
             )}
-            {/* Checkbox documents a disabled state too, so the control stays live for it. */}
-            <PgToggle
-              label="Disabled"
-              value={disabled}
-              onChange={setDisabled}
-              disabled={!isButton && !isCheckbox}
-            />
+            {/* The Button is the only component left that takes Disabled from
+                here — the Checkbox's is one of its state pills now. */}
+            <PgToggle label="Disabled" value={disabled} onChange={setDisabled} disabled={!isButton} />
             <PgToggle
               label="Best practices"
               value={bestPractices}

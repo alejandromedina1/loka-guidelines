@@ -255,7 +255,12 @@
 /* Color swatches — fixed height, static, Copy HEX pill on hover */
 .swatch-grid{display:flex;gap:0;margin-top:4px;}
 .swatch-grid .swatch{flex:1;min-width:0;}
-.swatch{position:relative;height:200px;border-radius:var(--radius);overflow:hidden;isolation:isolate;}
+/* Every swatch sits below the fold on load, and each one carries a hover layer
+   and a copy pill. content-visibility skips their layout and paint until they're
+   scrolled to; the intrinsic size is the real 200px, so nothing shifts when they
+   come in and the scroll-spy's section measurements stay exact. */
+.swatch{position:relative;height:200px;border-radius:var(--radius);overflow:hidden;isolation:isolate;
+  content-visibility:auto;contain-intrinsic-size:auto 200px;}
 .swatch-hover{position:absolute;inset:0;display:grid;place-items:center;opacity:0;
   background:var(--swatch-scrim);transition:opacity .1s ease;z-index:2;}
 .swatch:hover .swatch-hover{opacity:1;}
@@ -295,8 +300,12 @@
   border:1px solid var(--line);border-radius:999px;line-height:1;}
 .ico-empty{font-size:14px;color:var(--ink-3);padding:8px 0;}
 .ico-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;width:100%;}
+/* Same reasoning as .swatch, and it counts for more here: 41 cards, each holding
+   an inline SVG. 150px is the min-height below, and the content never reaches it
+   (30 + 32 + 14 + two clamped label lines + 18), so the reserved box is exact. */
 .ico-card{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;
   min-height:150px;padding:30px 14px 18px;
+  content-visibility:auto;contain-intrinsic-size:auto 150px;
   border:1px solid var(--line);border-radius:var(--radius);background:transparent;transition:border-color .16s,background .16s;cursor:pointer;}
 .ico-card:hover{border-color:var(--line-strong);background:var(--bg-soft);}
 .ico-art{display:grid;place-items:center;width:32px;height:32px;color:#186BF3;flex:none;transition:transform .2s cubic-bezier(.34,1.56,.64,1);}
@@ -481,8 +490,14 @@
 .pg-row-label{font-size:13px;color:var(--ink-3);}
 .pg-row-control select{font-family:var(--display);font-size:13px;font-weight:600;color:var(--ink);
   border:none;background:none;cursor:pointer;text-align:right;padding-right:2px;}
-.pg-toggle{width:38px;height:22px;border-radius:999px;background:#EFF1F5;position:relative;transition:background .16s;flex:none;}
-.pg-toggle[data-on="true"]{background:var(--blue);}
+/* Both selectors need the `.app button` prefix, and it's load-bearing on the off
+   state in particular: `.app button{background:none}` outranks a bare .pg-toggle,
+   so the track was rendering transparent — reading as white against the panel —
+   while the on state won on its own because of the extra attribute selector. With
+   the base rule raised, the on state has to be raised with it or it loses. */
+.app button.pg-toggle{width:38px;height:22px;border-radius:999px;background:#EFF1F5;
+  position:relative;transition:background .16s;flex:none;}
+.app button.pg-toggle[data-on="true"]{background:var(--blue);}
 .pg-toggle-knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:999px;background:#fff;transition:transform .16s;box-shadow:0 1px 3px rgba(1,8,18,.3);}
 .pg-toggle[data-on="true"] .pg-toggle-knob{transform:translateX(16px);}
 
@@ -659,7 +674,11 @@
   border:1px solid #EFF1F5;border-radius:12px;cursor:pointer;
   font-family:var(--sans);font-size:14px;font-weight:400;line-height:1.45;color:#828FA5;
   transition:background .12s,color .12s;}
-.app button.cbx:hover{background:#F5F6FA;}
+/* [data-hover] is the playground pinning the hovered state from its canvas pills:
+   picking that pill moves the cursor to the pill, so the state can't rely on
+   :hover. Same fill either way, and the same trick the field controls use for
+   their pinned focus. */
+.app button.cbx:hover,.app button.cbx[data-hover]{background:#F5F6FA;}
 .app button.cbx[data-checked]{background:#F5F6FA;color:#020F1F;}
 .app button.cbx:disabled{opacity:.5;background:none;color:#7C92AE;cursor:not-allowed;}
 /* 16px measured off the Figma render — the stroke sits inside, so the 12px tick

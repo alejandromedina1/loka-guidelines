@@ -4,14 +4,21 @@ import { ICON_CATEGORIES } from "../../data/icons.js";
 // Clicking a glyph copies its JSX tag (e.g. `<IconCheck />`).
 export function IconGallery({ filter = "", copied, onCopy }) {
   const q = filter.trim().toLowerCase();
-  const groups = ICON_CATEGORIES.map((cat) => ({
-    ...cat,
-    icons: q
-      ? cat.icons.filter(
-          (ic) => ic.name.toLowerCase().includes(q) || ic.keywords.toLowerCase().includes(q)
-        )
-      : cat.icons,
-  })).filter((cat) => cat.icons.length > 0);
+  // Filter and drop-if-empty in one pass rather than mapping every category and
+  // then walking the result again. With no query there's nothing to compute, so
+  // the whole list passes straight through.
+  let groups;
+  if (!q) {
+    groups = ICON_CATEGORIES;
+  } else {
+    groups = [];
+    for (const cat of ICON_CATEGORIES) {
+      const icons = cat.icons.filter(
+        (ic) => ic.name.toLowerCase().includes(q) || ic.keywords.toLowerCase().includes(q)
+      );
+      if (icons.length > 0) groups.push({ ...cat, icons });
+    }
+  }
 
   if (groups.length === 0) {
     return <p className="ico-empty">No icons match “{filter}”.</p>;

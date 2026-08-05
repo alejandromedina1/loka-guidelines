@@ -40,9 +40,19 @@ export function BestPracticesPanel({ rows, note, badge = "Specs" }) {
       ? Math.max(MIN_HEIGHT, bounds.bottom - panel.getBoundingClientRect().top)
       : Infinity;
 
-    const move = (ev) =>
-      setHeight(Math.min(maxH, Math.max(MIN_HEIGHT, startH + (ev.clientY - startY))));
+    // Transient, like the drag offset in useDragOffset: while the edge is held,
+    // the height only has to reach this one element, so it goes straight to the
+    // style and commits to state on release. Through state it would re-render
+    // every spec row on every mousemove.
+    let live = startH;
+    const move = (ev) => {
+      live = Math.min(maxH, Math.max(MIN_HEIGHT, startH + (ev.clientY - startY)));
+      panel.style.height = `${live}px`;
+      // Matches the `sized` style below, so the commit render is a no-op visually.
+      panel.style.maxHeight = "none";
+    };
     const up = () => {
+      setHeight(live);
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseup", up);
     };

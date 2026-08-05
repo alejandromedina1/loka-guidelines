@@ -29,6 +29,11 @@ export const COMPONENT_LIST = [
 export const FIELD_TYPES = ["Text", "Email", "Textarea", "Select"];
 export const FIELD_STATES = ["Default", "Focus", "Error", "Disabled"];
 
+// The Checkbox's four states, in the order Figma lays its variants out. "Checked"
+// is Figma's "Focused" under the name it actually describes — no focus ring is
+// defined anywhere in the component, and the variant is the ticked control.
+export const CHECKBOX_STATES = ["Default", "Hovered", "Checked", "Disabled"];
+
 // Sample copy used by the Accordion preview.
 export const FAQ_ITEMS = [
   {

@@ -15,12 +15,23 @@ import { GraphicsSection } from "./components/sections/GraphicsSection.jsx";
 import { PatternsSection } from "./components/sections/PatternsSection.jsx";
 import { ComponentsSection } from "./components/sections/ComponentsSection.jsx";
 
+// Which top-level nav item owns each sub-section. Hoisted to a module-level Map:
+// this is read on every scroll-spy change, and building two arrays per call to
+// scan them linearly is work that never varies.
+const SUB_SECTION_PARENT = new Map([
+  ["color", "color"],
+  ["color-neutral", "color"],
+  ["color-blue", "color"],
+  ["color-semantic", "color"],
+  ["typography", "typography"],
+  ["type-desktop", "typography"],
+  ["type-mobile", "typography"],
+]);
+
 // Maps a possibly-nested active section id to the top-level nav id, so a parent
 // nav item stays highlighted while one of its sub-sections is in view.
 function toActiveTop(active) {
-  if (["color", "color-neutral", "color-blue"].includes(active)) return "color";
-  if (["typography", "type-desktop", "type-mobile"].includes(active)) return "typography";
-  return active;
+  return SUB_SECTION_PARENT.get(active) ?? active;
 }
 
 // Top-level composition: global state (theme, mobile nav, selected component,
