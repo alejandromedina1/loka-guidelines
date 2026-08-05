@@ -15,10 +15,15 @@ import { FilterPreview } from "./previews/FilterPreview.jsx";
 import { CheckboxPreview } from "./previews/CheckboxPreview.jsx";
 import { InputFieldPreview, inputFieldSnippet } from "./previews/InputFieldPreview.jsx";
 import { TabsPreview } from "./previews/TabsPreview.jsx";
+import { LinkPreview } from "./previews/LinkPreview.jsx";
 import { ArrowLeft, ArrowRight, ChevronToggle, CheckIcon, CopyIcon } from "../common/Icon.jsx";
 
 // Tabs documents two things at once — the item and the bar it sits in.
 const TABS_VIEWS = ["Item", "Full bar"];
+
+// The Link's two Figma variants — real hover already shows this in the
+// browser, so the pills exist for touch/screenshot cases the mouse can't.
+const LINK_STATES = ["Default", "Hover"];
 
 // The component documentation surface: a live preview canvas, a prev/next
 // cycler, per-component property controls, and a copyable code snippet.
@@ -30,6 +35,7 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
   const isCheckbox = selected === "Checkbox";
   const isFilter = selected === "Filter";
   const isTabs = selected === "Tabs";
+  const isLink = selected === "Link";
   // Every component with a spec sheet written for it.
   const hasBestPractices = isButton || isCheckbox || isFilter || isInputField || isTabs;
 
@@ -44,6 +50,7 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
 
   const [tabsView, setTabsView] = useState("Item");
   const [cbxState, setCbxState] = useState("Default");
+  const [linkState, setLinkState] = useState("Default");
 
   // The type is chosen in the nav panel and arrives as a prop; the state is the
   // playground's own axis, so it sits on the canvas pills.
@@ -77,7 +84,9 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
         ? { options: CHECKBOX_STATES, value: cbxState, onSelect: setCbxState }
         : isTabs
           ? { options: TABS_VIEWS, value: tabsView, onSelect: setTabsView }
-          : null;
+          : isLink
+            ? { options: LINK_STATES, value: linkState, onSelect: setLinkState }
+            : null;
 
   const stateLabel = disabled
     ? "Disabled"
@@ -113,6 +122,7 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
     if (isInputField) {
       return <InputFieldPreview type={fieldType} state={fieldState} bestPractices={bestPractices} />;
     }
+    if (isLink) return <LinkPreview state={linkState} />;
     return (
       <div className="pg-empty">
         <span className="pg-empty-name">{selected}</span>
