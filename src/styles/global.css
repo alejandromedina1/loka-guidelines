@@ -29,26 +29,29 @@
 .app button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
 
 /* Topbar */
-.topbar{position:sticky;top:0;z-index:40;height:56px;display:flex;align-items:center;justify-content:space-between;
+/* Three columns rather than space-between, so search sits centred between the
+   brand and the theme switch instead of being pushed to one side. The middle
+   track is given a width rather than sized to its content — shrink-wrapped, the
+   trigger reads as a small button instead of as the field it opens. */
+.topbar{position:sticky;top:0;z-index:40;height:56px;display:grid;
+  grid-template-columns:1fr minmax(0,380px) 1fr;align-items:center;gap:16px;
   padding:0 16px;background:var(--topbar-bg);backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--line);}
-.topbar-left{display:flex;align-items:center;gap:14px;}
-/* Global search */
-.topbar-right{display:flex;align-items:center;gap:10px;}
-.app button.fab-search{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:58;isolation:isolate;
-  display:inline-flex;align-items:center;gap:9px;height:46px;padding:0 16px 0 18px;
-  background:#FFFFFF;color:#010812;border-radius:999px;opacity:1;
-  box-shadow:0 0 0 1px rgba(1,8,18,.10), 0 2px 6px rgba(0,0,0,.12);
-  transition:transform .16s ease,box-shadow .16s ease;
-  animation:fabIn .28s cubic-bezier(.34,1.4,.64,1);}
-@keyframes fabIn{from{opacity:0;transform:translateX(-50%) translateY(12px);}to{opacity:1;transform:translateX(-50%) translateY(0);}}
-.fab-search svg{color:#010812;}
-.app button.fab-search:hover{transform:translateX(-50%) translateY(-2px);box-shadow:0 0 0 1px rgba(1,8,18,.12), 0 4px 10px rgba(0,0,0,.16);}
-.fab-search-text{font-size:14px;font-weight:600;}
-.fab-search-kbd{font-family:var(--mono);font-size:11px;color:#5C6A82;background:#EFF1F5;padding:2px 7px;border-radius:6px;}
-.app[data-theme="dark"] button.fab-search{background:#FFFFFF;color:#010812;
-  box-shadow:0 0 0 1px rgba(255,255,255,.14), 0 2px 6px rgba(0,0,0,.3);}
-.app[data-theme="dark"] .fab-search svg{color:#010812;}
-.app[data-theme="dark"] .fab-search-kbd{color:#5C6A82;background:#EFF1F5;}
+.topbar-left{display:flex;align-items:center;gap:14px;justify-self:start;}
+.topbar-right{display:flex;align-items:center;gap:10px;justify-self:end;}
+
+/* Global search — a field, because that's what it opens. It replaced a pill
+   fixed to the bottom centre of the viewport, which collided with the
+   playground's canvas foot once that section was sized to fill the screen. */
+.app button.topbar-search{display:flex;align-items:center;gap:9px;
+  width:100%;height:34px;padding:0 10px 0 12px;
+  background:var(--bg-soft);border:1px solid var(--line);border-radius:999px;
+  cursor:pointer;transition:border-color .14s,background .14s;}
+.app button.topbar-search:hover{border-color:var(--line-strong);background:var(--bg);}
+.topbar-search svg{flex:none;color:var(--ink-4);}
+/* flex:1 pushes the shortcut hint to the far edge, the way a real field would */
+.topbar-search-text{flex:1;text-align:left;font-size:13.5px;color:var(--ink-4);}
+.topbar-search-kbd{flex:none;font-family:var(--mono);font-size:11px;color:var(--ink-4);
+  background:var(--line-2);border-radius:6px;padding:2px 6px;}
 .searchov{position:fixed;inset:0;z-index:60;background:rgba(1,8,18,.28);backdrop-filter:blur(6px);
   display:flex;align-items:flex-start;justify-content:center;padding:16vh 24px 24px;}
 .searchbox{width:min(600px,92vw);background:var(--bg);border:1px solid var(--line);border-radius:8px;
@@ -402,9 +405,14 @@
 .placeholder-grid span{height:44px;border-radius:0;background:linear-gradient(180deg,var(--line-2),var(--bg-soft));}
 .placeholder p{font-size:13.5px;color:var(--ink-4);max-width:52ch;margin:0 auto;line-height:1.6;}
 
-/* Component playground */
+/* Component playground.
+   Shared with the Patterns lab (.pg.pat-lab), which sizes to its content — so
+   the base keeps its 520px floor and everything that pins a height is scoped to
+   #components below. */
 .pg{display:grid;grid-template-columns:minmax(0,1fr) 260px;gap:0;border:1px solid var(--line);min-height:520px;}
-.pg-stage{display:flex;flex-direction:column;min-width:0;}
+.pg-stage{display:flex;flex-direction:column;min-width:0;min-height:0;}
+/* Shrinks as the code panel opens rather than being pushed off the bottom. The
+   280px floor is what keeps the component legible once it has. */
 .pg-canvas{flex:1;position:relative;display:flex;flex-direction:column;min-height:280px;transition:background .2s ease;}
 .pg-canvas.dark{background:#0A0F17;}
 .pg-canvas-nav{display:flex;justify-content:flex-end;gap:6px;padding:12px 16px;}
@@ -464,15 +472,55 @@
 .pg-empty-name{font-family:var(--display);font-size:22px;font-weight:600;color:var(--ink-3);}
 .pg-canvas.dark .pg-empty-name{color:rgba(255,255,255,.7);}
 .pg-empty-note{font-size:12.5px;color:var(--ink-4);}
-.pg-code{border-top:1px solid var(--line);}
-.pg-code-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);}
-.pg-code-file{font-family:var(--mono);font-size:12.5px;color:var(--ink-2);}
-.pg-code-copy{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-3);transition:color .12s;}
+.pg-code{display:flex;flex-direction:column;min-height:0;border-top:1px solid var(--line);}
+.pg-code-head{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 16px;border-bottom:1px solid var(--line);}
+/* Same pill strip as the canvas variant switcher — the two are both "pick which
+   thing you're looking at", so they should read as the same control. */
+.pg-code-tabs{display:inline-flex;gap:2px;padding:3px;background:var(--bg-soft);border:1px solid var(--line);border-radius:999px;}
+/* `.app button{color:inherit}` outranks a bare `.pg-code-tab`, so the resting
+   colour has to be raised or the inactive tab reads at full ink and the strip
+   loses its selected state. */
+.app .pg-code-tab{padding:4px 11px;font-size:12px;font-weight:500;color:var(--ink-3);border-radius:999px;transition:all .14s;}
+.app .pg-code-tab:hover{color:var(--ink);}
+.pg-code-tab[data-active="true"]{background:var(--line-strong);color:var(--ink);}
+/* What the selected format is for, with the filename parked on the right. */
+.pg-code-hint{display:flex;align-items:baseline;justify-content:space-between;gap:20px;
+  padding:10px 16px;border-bottom:1px solid var(--line-2);font-size:12px;color:var(--ink-4);line-height:1.5;}
+.pg-code-file{flex:none;font-family:var(--mono);font-size:12px;color:var(--ink-3);}
+.pg-code-copy{flex:none;display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-3);transition:color .12s;}
 .pg-code-copy:hover{color:var(--ink);}
-.pg-code-body{margin:0;padding:16px;font-family:var(--mono);font-size:12.5px;color:var(--ink);
-  background:var(--bg-soft);overflow-x:auto;display:flex;gap:16px;line-height:1.6;white-space:pre-wrap;word-break:break-word;}
-.pg-ln{color:var(--ink-4);user-select:none;flex:none;}
+/* These blocks are dozens of lines now, so the body scrolls in both directions
+   rather than growing the page. white-space:pre, not pre-wrap: a wrapped line
+   would slide the content out of step with its number in the gutter. */
+.pg-code-body{flex:1;min-height:0;margin:0;padding:16px;font-family:var(--mono);font-size:12.5px;
+  color:var(--ink);background:var(--bg-soft);overflow:auto;display:flex;gap:16px;line-height:1.6;
+  white-space:pre;}
+.pg-ln{color:var(--ink-4);user-select:none;flex:none;text-align:right;}
 .pg-controls{border-left:1px solid var(--line);padding:18px 16px;display:flex;flex-direction:column;gap:2px;}
+
+/* ── One height, always ──────────────────────────────────────────────────────
+   The playground is the whole point of this section, so it and the heading
+   above it are sized to land inside a single viewport: the section is a flex
+   column pinned to the space under the topbar, the head takes what it needs,
+   and the playground takes the rest.
+   Opening the code panel or the specs sheet then redistributes that space
+   instead of adding to it. The page never grows, the component never slides
+   down the screen, and switching components doesn't resize the box around them
+   — a 20-row Select used to make the playground visibly taller than a 6-row
+   Ghost button.
+   88px is the topbar plus .content's padding top and bottom, which is also
+   where .section's scroll-margin-top lands the section. Scoped to #components
+   so the Patterns lab, which shares .pg, keeps sizing to its content. */
+#components{display:flex;flex-direction:column;height:calc(100vh - 88px);min-height:560px;}
+#components .section-head{flex:none;}
+#components .pg{flex:1;min-height:0;}
+/* The controls column scrolls as one region. The specs sheet below the toggles
+   used to carry its own cap and its own scrollbar; the column is bounded now,
+   and one scrollbar beats two nested ones. */
+#components .pg-controls{min-height:0;overflow-y:auto;overscroll-behavior:contain;}
+/* Capped as a share of the stage rather than by a pixel height on the body, so
+   the canvas keeps the larger half and the panel scrolls inside what it gets. */
+#components .pg-code{max-height:52%;}
 /* in-canvas variant switcher (bottom-left, aligned with View code) */
 .canvas-variants{display:inline-flex;gap:2px;padding:3px;background:var(--bg-soft);border:1px solid var(--line);border-radius:999px;}
 .pg-canvas.dark .canvas-variants{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);}
@@ -689,6 +737,19 @@
 .cbx[data-checked] .cbx-box{background:#186BF3;border-color:#186BF3;}
 .cbx-box svg{flex:none;}
 
+/* Link — Loka Figma "Link / Light" (node 30:2487).
+   Tokens: gray-80 #041D3E (default text), blue-100 #186BF3 (hover text + dot).
+   The dot sits in the layout at rest too, just invisible, so the row doesn't
+   shift width when it appears on hover. [data-hover] pins the state from the
+   playground's canvas pills — same trick the Checkbox pill uses. */
+.lnk{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:18px;
+  font-family:var(--sans);font-size:18px;font-weight:400;line-height:1;color:#041D3E;
+  text-decoration:none;cursor:pointer;transition:color .12s;}
+.lnk:hover,.lnk[data-hover]{color:#186BF3;}
+.lnk-dot{flex:none;width:6px;height:6px;border-radius:100px;background:#186BF3;
+  opacity:0;transition:opacity .12s;}
+.lnk:hover .lnk-dot,.lnk[data-hover] .lnk-dot{opacity:1;}
+
 /* Filter bar — Loka Figma "filter" (node 4866:24030).
    Figma tokens: gray-5 #EFF1F5 (bar), gray-20 #D6DCE6 (open chip),
    gray-40 #A8B3CA (counts, closed arrow), gray-50 #828FA5 (open arrow),
@@ -780,12 +841,23 @@
 
 /* Best practices — annotations around the button (button stays put) */
 .bp-anchor{position:relative;display:inline-flex;}
-.btn-state-label{margin-right:auto;display:inline-flex;align-items:center;height:26px;z-index:2;font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-4);transition:color .12s;}
-.btn-state-label[data-state="hover"]{color:var(--blue);}
-.btn-state-label[data-state="pressed"]{color:var(--ink);}
-.btn-state-label[data-state="disabled"]{color:var(--ink-4);opacity:.6;}
-.pg-canvas.dark .btn-state-label{color:rgba(255,255,255,.5);}
-.pg-canvas.dark .btn-state-label[data-state="hover"]{color:#fff;}
+/* The state readout in the canvas's top-left corner — what the component on
+   stage is doing right now. It was Button-only; every component reports one.
+   Colour keys off `tone`, not the text, so a component can name its states
+   whatever fits without needing a rule of its own here.
+   It shares the nav row with the prev/next arrows, and the Tabs bar's readout
+   names the selected tab, so it ellipsises rather than pushing them off. */
+.pg-state-label{margin-right:auto;min-width:0;height:26px;line-height:26px;z-index:2;
+  font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--ink-4);transition:color .12s;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pg-state-label[data-tone="active"]{color:var(--blue);}
+.pg-state-label[data-tone="pressed"]{color:var(--ink);}
+.pg-state-label[data-tone="error"]{color:var(--danger);}
+.pg-state-label[data-tone="disabled"]{color:var(--ink-4);opacity:.6;}
+.pg-canvas.dark .pg-state-label{color:rgba(255,255,255,.5);}
+.pg-canvas.dark .pg-state-label[data-tone="active"],
+.pg-canvas.dark .pg-state-label[data-tone="pressed"]{color:#fff;}
 /* green padding highlight INSIDE the button edges */
 .bp-pad-inner{position:absolute;top:1px;bottom:1px;background:rgba(22,163,74,.35);pointer-events:none;z-index:2;}
 .bp-pad-inner-left{left:1px;}
@@ -823,8 +895,8 @@
 .bp-icon-note{position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);
   display:flex;pointer-events:none;}
 
-/* Fills the canvas centre so the floating panel can dock to the canvas rather
-   than to the button — the button stays centred inside it. */
+/* Fills the canvas centre so the component stays centred while the redline
+   callouts take their room from the stage padding rather than from it. */
 .bp-stage{position:relative;place-self:stretch;display:grid;place-items:center;}
 
 /* Redline overlay — padding bands and width/height dimension lines drawn over a
@@ -840,11 +912,11 @@
 /* Room for the annotations comes from the stage, never from a margin on the
    redlined element: the filter bar hugs its chips, so margining one chip would
    stretch the very component being measured.
-   The 272px left gutter is the spec panel's column — 248px wide plus a 24px
-   gap. Absolutely-positioned children resolve against the padding box, so
-   .bp-float stays pinned at the true left edge while the centred component is
-   pushed clear of it. */
-.bp-stage[data-bp]{padding:34px 60px 42px 272px;}
+   The left gutter is wider than the others because the height dimension line
+   reads up that edge with its tag outside it. It used to be 272px to seat the
+   spec panel's column; the panel moved into the properties column, so the
+   canvas gets that width back. */
+.bp-stage[data-bp]{padding:34px 60px 42px 96px;}
 .rl-band{position:absolute;background:rgba(22,163,74,.35);pointer-events:none;z-index:2;}
 .rl-band-l{top:0;bottom:0;left:0;}
 .rl-band-r{top:0;bottom:0;right:0;}
@@ -870,73 +942,36 @@
 .rl-w-line::before{left:0;}
 .rl-w-line::after{right:0;}
 
-/* Measured spec sheet — floats over the canvas, draggable by its head.
-   Built to read as a sibling of .pg-controls, the properties panel it sits
-   beside: same square 1px --line box, same display-font title, same
-   label-left / mono-value-right row, same --line-2 hairline between rows, and
-   the note reuses .pg-ctrl-desc's 12.5px/1.55 --ink-4 exactly. Every size here
-   is on the documented type scale — the old panel ran 9–11px, below Tag. */
-/* No max-height on the float: the cap lives on the panel, so a user-set height
-   can override it outright. A percentage cap here would silently clip whatever
-   the resize handle produced. */
-.bp-float{position:absolute;top:0;left:0;z-index:6;display:flex;}
-/* 340px sizes to content up to a point, then hands over to .bp-specs' scroll —
-   the Select's 19 rows would otherwise open at full playground height. */
-.bp-panel{position:relative;display:flex;flex-direction:column;min-height:0;width:248px;
-  max-height:340px;border:1px solid var(--line);background:var(--bg);
-  box-shadow:0 12px 32px rgba(1,8,18,.16);}
-.bp-panel-head{flex:none;display:flex;align-items:center;justify-content:space-between;gap:8px;
-  padding:12px 14px;border-bottom:1px solid var(--line);background:var(--bg-soft);
-  cursor:move;user-select:none;}
-.bp-panel-badge{font-family:var(--display);font-size:14px;font-weight:600;color:var(--ink);}
-.bp-panel-tools{display:flex;align-items:center;gap:8px;}
-.app button.bp-panel-fold{display:grid;place-items:center;width:20px;height:20px;padding:0;
-  color:var(--ink-4);cursor:pointer;transition:color .12s;}
-.app button.bp-panel-fold:hover{color:var(--ink);}
-.bp-panel-fold svg{flex:none;}
-.bp-panel-grip{font-size:12px;line-height:1;color:var(--ink-4);letter-spacing:-.1em;}
-/* Collapsed, only the head remains — the drag handle and the way back open. */
-.bp-panel[data-collapsed]{width:auto;min-width:168px;}
-.pg-canvas.dark .bp-panel-fold{color:rgba(255,255,255,.5);}
-.pg-canvas.dark .bp-panel-fold:hover{color:#fff;}
-.bp-panel-note{flex:none;margin:0;padding:12px 14px;border-top:1px solid var(--line);
-  background:var(--bg-soft);font-size:12.5px;line-height:1.55;color:var(--ink-4);}
-/* flex:1 so the list takes up whatever the resize handle adds; head and note
-   stay pinned, and the rows scroll inside what's left. */
-.bp-specs{flex:1;margin:0;min-height:0;overflow-y:auto;overscroll-behavior:contain;}
-/* Sits just past the bottom border, wider than it looks so it's easy to grab.
-   The bar only shows on hover — an always-on grip would read as chrome. */
-.bp-panel-resize{position:absolute;left:0;right:0;bottom:-4px;height:9px;cursor:ns-resize;
-  display:grid;place-items:center;}
-.bp-panel-resize::after{content:"";width:30px;height:2px;background:var(--line-strong);
-  opacity:0;transition:opacity .12s;}
-.bp-panel-resize:hover::after{opacity:1;}
-.pg-canvas.dark .bp-panel-resize::after{background:rgba(255,255,255,.28);}
+/* Specs sheet — docked in the properties column, under the controls.
+   It used to float over the canvas with drag, resize and fold. All three were
+   machinery for a panel too big to place: it opened with 16 to 21 rows, and the
+   canvas reserved a 272px gutter for it, shrinking the very component being
+   measured. Cut to rules plus the values the redlines can't draw, it fits the
+   260px column it was already styled to look like a sibling of — same
+   label-left / mono-value-right row, same --line-2 hairline between rows.
+   Colours come from the column's own theme variables now, so the
+   .pg-canvas.dark overrides went with the float. */
+.bp-panel{margin-top:20px;padding-top:16px;border-top:1px solid var(--line);}
+.bp-panel-badge{display:block;margin-bottom:12px;font-family:var(--display);font-size:13px;
+  font-weight:600;color:var(--ink);}
+/* Rules first. They're the reason to open the panel, and they used to be a
+   single paragraph pushed below the table. */
+.bp-rules{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;}
+.bp-rules li{position:relative;padding-left:13px;font-size:12.5px;line-height:1.5;color:var(--ink-3);}
+.bp-rules li::before{content:"";position:absolute;left:2px;top:.62em;width:3px;height:3px;
+  border-radius:50%;background:var(--ink-4);}
+/* No cap and no scroll of its own — .pg-controls is bounded by the playground's
+   fixed height and scrolls for it. */
+.bp-specs{margin:14px 0 0;}
+.bp-rules + .bp-specs{padding-top:2px;border-top:1px solid var(--line-2);}
 .bp-spec-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;
-  padding:9px 14px;border-bottom:1px solid var(--line-2);}
+  padding:8px 0;border-bottom:1px solid var(--line-2);}
 .bp-spec-row:last-child{border-bottom:none;}
-.bp-specs dt{font-size:13px;color:var(--ink-3);white-space:nowrap;}
+.bp-specs dt{font-size:12.5px;color:var(--ink-3);white-space:nowrap;}
 /* overflow-wrap over word-break: long hex/gradient values wrap at the edge
    instead of being chopped mid-token. */
-.bp-specs dd{margin:0;font-family:var(--mono);font-size:12px;color:var(--ink);
+.bp-specs dd{margin:0;font-family:var(--mono);font-size:11.5px;color:var(--ink);
   text-align:right;overflow-wrap:anywhere;}
-.pg-canvas.dark .bp-panel{background:#121821;border-color:rgba(255,255,255,.14);
-  box-shadow:0 12px 32px rgba(0,0,0,.45);}
-.pg-canvas.dark .bp-panel-head{background:rgba(255,255,255,.05);border-bottom-color:rgba(255,255,255,.14);}
-.pg-canvas.dark .bp-panel-badge{color:#fff;}
-.pg-canvas.dark .bp-panel-note{background:rgba(255,255,255,.05);border-top-color:rgba(255,255,255,.14);
-  color:rgba(255,255,255,.6);}
-.pg-canvas.dark .bp-spec-row{border-bottom-color:rgba(255,255,255,.1);}
-.pg-canvas.dark .bp-specs dt{color:rgba(255,255,255,.55);}
-.pg-canvas.dark .bp-specs dd{color:#fff;}
-
-/* behaviour annotation — draggable dark tooltip */
-.bh{position:absolute;top:50%;left:100%;display:flex;align-items:center;z-index:5;}
-.bh-card{width:230px;background:#2A2A2E;padding:12px;box-shadow:0 12px 32px rgba(1,8,18,.28);cursor:move;user-select:none;}
-.bh-badge{display:inline-block;border:1px solid #A8B3CA;color:#A8B3CA;font-size:9px;font-weight:600;
-  letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:4px;margin-bottom:10px;}
-.bh-text{margin:0;font-size:13px;line-height:1.5;color:#fff;}
-
 .scrim{display:none;}
 
 /* Responsive */
@@ -947,7 +982,12 @@
   .sidebar.open{transform:none;}
   .scrim{display:block;position:fixed;inset:56px 0 0 0;z-index:30;background:rgba(1,8,18,.3);}
   .content{padding:16px;}
-  .topbar{padding:0 16px;}
+  /* The hamburger joins the left cluster here, so the bar can't hold a 380px
+     field as well — search collapses to its icon, and the middle track goes
+     back to content-sized so it doesn't reserve width it no longer needs. */
+  .topbar{padding:0 16px;gap:10px;grid-template-columns:1fr auto 1fr;}
+  .app button.topbar-search{width:auto;padding:0 10px;}
+  .topbar-search-text,.topbar-search-kbd{display:none;}
   .brand-hero{min-height:auto;padding:24px 0;}
   .hero-ring{grid-template-columns:repeat(3, minmax(0,1fr));grid-template-rows:repeat(3, 96px);gap:8px;width:100%;max-width:340px;}
   .hchip-aa{font-size:30px;}
@@ -960,8 +1000,18 @@
   .ccard{min-height:170px;padding:18px;}
   .row-detail,.trow-detail{grid-template-columns:1fr !important;padding-left:6px;gap:14px;}
   .type-hero{flex-direction:column;align-items:flex-start;text-align:left;}
+  /* Single column here, so the canvas and the controls stack. Holding the
+     section to one viewport would split that height between them and squash
+     both — the page scrolls instead, and the playground goes back to sizing to
+     its content. */
+  #components{height:auto;min-height:0;}
   .pg{grid-template-columns:1fr;}
   .pg-controls{border-left:none;border-top:1px solid var(--line);}
+  #components .pg-controls{overflow-y:visible;}
+  /* A share of the stage means nothing once the stage sizes to its content, so
+     the cap goes viewport-relative here — otherwise the Filter's snippet alone
+     adds 2000px of page to scroll past. */
+  #components .pg-code{max-height:60vh;}
   .ico-grid{grid-template-columns:repeat(4,1fr);}
 }
 /* Small phones */

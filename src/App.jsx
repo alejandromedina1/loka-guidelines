@@ -4,7 +4,7 @@ import { useScrollSpy } from "./hooks/useScrollSpy.js";
 import { useSearch } from "./hooks/useSearch.js";
 import { TopBar } from "./components/layout/TopBar.jsx";
 import { Sidebar } from "./components/layout/Sidebar.jsx";
-import { SearchOverlay, SearchFab } from "./components/layout/SearchOverlay.jsx";
+import { SearchOverlay } from "./components/layout/SearchOverlay.jsx";
 import { IntroSection } from "./components/sections/IntroSection.jsx";
 import { FigmaLibrarySection } from "./components/sections/FigmaLibrarySection.jsx";
 import { ColorSection } from "./components/sections/ColorSection.jsx";
@@ -86,9 +86,12 @@ export default function App() {
 
   return (
     <div className="app" data-theme={theme}>
-      <TopBar theme={theme} setTheme={setTheme} onToggleNav={() => setMobileNav((v) => !v)} />
-
-      {active !== "introduction" && <SearchFab onOpen={() => search.setOpen(true)} />}
+      <TopBar
+        theme={theme}
+        setTheme={setTheme}
+        onToggleNav={() => setMobileNav((v) => !v)}
+        onOpenSearch={() => search.setOpen(true)}
+      />
 
       {search.open && (
         <SearchOverlay
