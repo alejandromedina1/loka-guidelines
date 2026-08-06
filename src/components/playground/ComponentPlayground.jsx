@@ -1,5 +1,10 @@
 import { useCallback, useState } from "react";
-import { CHECKBOX_STATES, COMPONENT_LIST, FIELD_STATES } from "../../data/components.js";
+import {
+  CHECKBOX_STATES,
+  COMPONENT_LIST,
+  FIELD_STATES,
+  LINK_STATES,
+} from "../../data/components.js";
 import {
   BUTTON_VARIANTS,
   DARK_SURFACE_VARIANTS,
@@ -13,6 +18,7 @@ import { BestPracticesPanel } from "./BestPracticesPanel.jsx";
 import { PgSelect } from "./controls/PgSelect.jsx";
 import { PgToggle } from "./controls/PgToggle.jsx";
 import { ButtonPreview } from "./previews/ButtonPreview.jsx";
+import { LinkPreview } from "./previews/LinkPreview.jsx";
 import {
   AccordionPreview,
   accordionHtmlSnippet,
@@ -58,6 +64,7 @@ const CHECKBOX_TONE = {
   Checked: "active",
   Disabled: "disabled",
 };
+const LINK_TONE = { Default: "default", Hover: "active" };
 
 // The two things the code panel can hand a developer. Neither is a call into a
 // Loka package, because there isn't one yet — a snippet that only works if the
@@ -91,6 +98,7 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
   const isCheckbox = selected === "Checkbox";
   const isFilter = selected === "Filter";
   const isTabs = selected === "Tabs";
+  const isLink = selected === "Link";
 
   const [variant, setVariant] = useState("Primary");
   const [device, setDevice] = useState("Desktop");
@@ -200,8 +208,8 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
   // The state readout in the canvas's top-left corner: what the component on
   // stage is doing right now.
   //
-  // Button, Input Field and Checkbox take their state from a playground axis,
-  // so it's derived here. Accordion, Filter and Tabs own theirs internally and
+  // Button, Input Field, Checkbox and Link take their state from a playground
+  // axis, so it's derived here. Accordion, Filter and Tabs own theirs internally and
   // report it up — lifting it would put a filter's open chip and its search
   // query in the playground, which is the control's business, not this one's.
   //
@@ -221,7 +229,9 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
       ? { text: fieldState, tone: FIELD_TONE[fieldState] }
       : isCheckbox
         ? { text: cbxState, tone: CHECKBOX_TONE[cbxState] }
-        : reportedFor;
+        : isLink
+          ? { text: linkState, tone: LINK_TONE[linkState] }
+          : reportedFor;
 
   const renderPreview = () => {
     if (isButton) {
