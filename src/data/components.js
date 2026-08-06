@@ -58,49 +58,56 @@ export const FAQ_ITEMS = [
 // Filter bar groups — Loka Figma "filter" (node 4866:24030). The leading count
 // is part of the design: each option carries how many results match it.
 //
-// Figma only fills in the Industries list; the other two are written to match
-// its shape so all three chips open onto something real.
+// The copy is placeholder, and deliberately describes the control rather than
+// standing in for a real catalogue — same as SELECT_GROUPS below and the FAQ
+// above. This is a reference page, so reading the panel should teach how the
+// filter behaves; industry names would only teach what Loka sells.
+//
+// Counts mix one and two digits on purpose: they sit in a fixed 22px column so
+// the labels stay aligned across both, and an all-two-digit list would hide it.
 export const FILTER_GROUPS = [
   {
-    label: "Industries",
+    label: "Selecting",
     options: [
-      { count: 12, label: "Healthcare" },
-      { count: 9, label: "Fintech" },
-      { count: 12, label: "Saas & ISVs" },
-      { count: 7, label: "AdTech & MarTech" },
-      { count: 8, label: "Life Sciences" },
+      { count: 12, label: "Pick one per group" },
+      { count: 9, label: "Picking again clears it" },
+      { count: 4, label: "Groups are independent" },
+      { count: 17, label: "The bar hugs its chips" },
+      { count: 8, label: "Chips keep their own width" },
     ],
   },
   {
-    label: "Solutions",
+    label: "Searching",
     options: [
-      { count: 14, label: "Generative AI" },
-      { count: 11, label: "Data Platforms" },
-      { count: 8, label: "MLOps" },
-      { count: 6, label: "Cloud Migration" },
-      { count: 5, label: "Analytics" },
+      { count: 14, label: "The first row is an input" },
+      { count: 6, label: "Type above to filter" },
+      { count: 11, label: "No match shows a note" },
+      { count: 3, label: "Closing clears the query" },
+      { count: 20, label: "Escape closes the panel" },
     ],
   },
   {
-    label: "Tech stack",
+    label: "Counts",
     options: [
-      { count: 18, label: "AWS" },
-      { count: 10, label: "Databricks" },
-      { count: 9, label: "Snowflake" },
-      { count: 13, label: "Python" },
-      { count: 4, label: "Terraform" },
+      { count: 1, label: "Counts sit in a fixed column" },
+      { count: 18, label: "One digit lines up with two" },
+      { count: 7, label: "The label never shifts" },
+      { count: 22, label: "The panel overlays the page" },
+      { count: 5, label: "It never pushes content down" },
     ],
   },
 ];
 
-// Labels for the Tabs bar — Loka Figma "service-icon-item" (node 4007:23097),
-// which the Industries section uses to switch what the block below it shows.
-// Figma ships every slot filled with the same placeholder ("Healthcare
-// Provider"), so the rest come from the industry vocabulary the Filter and
-// Checkbox previews already use. Four is what the Figma bar carries, and the
-// longest label is deliberately long enough to ellipsize at narrow widths —
-// that truncation is part of the item's spec.
-export const TABS = ["Healthcare Provider", "Fintech", "Life Sciences", "SaaS & ISVs"];
+// Labels for the Tabs bar — Loka Figma "service-icon-item" (node 4007:23097).
+// Four is what the Figma bar carries.
+//
+// Placeholder copy, like the Filter's. The first slot is deliberately the long
+// one: truncation is part of the item's spec, and in the 4-up bar — where each
+// item gets a quarter of the row — it's the one that shows it. It reads in full
+// in the "Item" view, which is correct rather than a gap: that view pins the
+// item to the 345px share it gets in the real bar, so a label that truncated
+// even there would misrepresent what fits.
+export const TABS = ["A tab label that ellipsizes", "Second tab", "Third tab", "Fourth tab"];
 
 // Grouped options for the multi-select dropdown documented under "Input Field".
 // Mirrors the Loka Figma "Dropdown" component (node 6916:50169), including its

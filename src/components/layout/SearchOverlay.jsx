@@ -40,13 +40,30 @@ export function SearchOverlay({ query, setQuery, results, onRun, onClose }) {
   );
 }
 
-// The floating "Search" button shown once the user scrolls past the intro.
-export function SearchFab({ onOpen }) {
+// The search trigger, in the topbar.
+//
+// It used to be a pill floating at the bottom centre of the viewport. That was
+// fine while the page scrolled freely, but once the Components section was
+// sized to the viewport its canvas foot — the state pills on the left, "Get the
+// code" on the right — landed at the bottom of the screen too, and the pill sat
+// on top of them. Moving it anywhere else in the floating layer just picks a
+// different thing to cover, so it isn't floating any more: the topbar has a row
+// of its own that nothing else can occupy.
+//
+// Styled as a field rather than a button because that's what it opens, and it
+// now shows on every section including the intro — there's no longer a reason
+// to hide it, and search should be reachable from anywhere.
+export function SearchTrigger({ onOpen }) {
   return (
-    <button className="fab-search" onClick={onOpen} aria-label="Search">
+    <button
+      className="topbar-search"
+      onClick={onOpen}
+      aria-label="Search"
+      aria-keyshortcuts="Meta+K"
+    >
       <SearchIcon />
-      <span className="fab-search-text">Search</span>
-      <span className="fab-search-kbd">⌘K</span>
+      <span className="topbar-search-text">Search</span>
+      <span className="topbar-search-kbd">⌘K</span>
     </button>
   );
 }
