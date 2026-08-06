@@ -689,6 +689,19 @@
 .cbx[data-checked] .cbx-box{background:#186BF3;border-color:#186BF3;}
 .cbx-box svg{flex:none;}
 
+/* Link — Loka Figma "Link / Light" (node 30:2487).
+   Tokens: gray-80 #041D3E (default text), blue-100 #186BF3 (hover text + dot).
+   The dot sits in the layout at rest too, just invisible, so the row doesn't
+   shift width when it appears on hover. [data-hover] pins the state from the
+   playground's canvas pills — same trick the Checkbox pill uses. */
+.lnk{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:18px;
+  font-family:var(--sans);font-size:18px;font-weight:400;line-height:1;color:#041D3E;
+  text-decoration:none;cursor:pointer;transition:color .12s;}
+.lnk:hover,.lnk[data-hover]{color:#186BF3;}
+.lnk-dot{flex:none;width:6px;height:6px;border-radius:100px;background:#186BF3;
+  opacity:0;transition:opacity .12s;}
+.lnk:hover .lnk-dot,.lnk[data-hover] .lnk-dot{opacity:1;}
+
 /* Filter bar — Loka Figma "filter" (node 4866:24030).
    Figma tokens: gray-5 #EFF1F5 (bar), gray-20 #D6DCE6 (open chip),
    gray-40 #A8B3CA (counts, closed arrow), gray-50 #828FA5 (open arrow),
