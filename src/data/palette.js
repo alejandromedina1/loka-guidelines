@@ -1,6 +1,8 @@
 // Color palette tokens
 // Extracted verbatim from the original Loka design-system source.
 
+import { cssColorVar } from "../utils/color.js";
+
 export const PALETTE = {
   neutral: {
     label: "Neutral",
@@ -54,3 +56,29 @@ export const PALETTE = {
     ],
   },
 };
+
+// Reverse lookup from a resolved hex to the token that owns it, so generated
+// snippets and specs can name a colour rather than just quoting its value —
+// "#186BF3" on its own tells a developer nothing about where it came from.
+//
+// First writer wins, and the group order above is what settles the collisions:
+// DarkBlue and gray-80 are the same value, and the ramp step is the name a
+// developer is likelier to recognise.
+const TOKEN_BY_HEX = new Map();
+for (const [group, { tokens }] of Object.entries(PALETTE)) {
+  for (const { name, hex } of tokens) {
+    const key = `#${hex.toUpperCase()}`;
+    if (!TOKEN_BY_HEX.has(key)) {
+      TOKEN_BY_HEX.set(key, { group, name, cssVar: cssColorVar(group, name) });
+    }
+  }
+}
+
+// Returns { group, name, cssVar } for a hex value, or null when there's no
+// token behind it — rgba() overlays, `transparent`, and the gradient stroke
+// stops are all real values in the system that no palette entry names.
+export function tokenForHex(value) {
+  if (typeof value !== "string") return null;
+  const match = value.trim().match(/^#?([0-9a-f]{6})$/i);
+  return match ? (TOKEN_BY_HEX.get(`#${match[1].toUpperCase()}`) ?? null) : null;
+}

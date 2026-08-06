@@ -5,6 +5,18 @@
 // button on three axes — type, device, state — which map here to variant,
 // device, and state.
 
+import {
+  FONT_STACK,
+  blocks,
+  htmlDocument,
+  indent,
+  rule,
+  ruleHeadlines,
+  ruleTexts,
+  specPrompt,
+  tokenRef,
+} from "./snippets.js";
+
 // Design-system tokens the button spec references, by their Figma names.
 const BLUE_100 = "#186BF3"; // colors/blue/100
 const BLUE_NEW = "#1957F4"; // colors/blue/newblue
@@ -215,15 +227,309 @@ export function buttonSpec({ variant, device, surface = "Gray 10" }) {
   };
 }
 
-// The copyable ERB snippet reflecting the current button configuration.
-export function buttonSnippet({ variant, device, surface, disabled }) {
-  const slug = (s) => s.toLowerCase().replace(/\s+/g, "_");
-  return (
-    `<%= render ButtonComponent.new(` +
-    `variant: :${slug(variant)}, device: :${device.toLowerCase()}` +
-    // Ghost's trailing arrow is part of the variant, so it needs no icon arg.
-    (variant === "Ghost" ? `, surface: :${slug(surface)}` : "") +
-    (disabled ? `, disabled: true` : "") +
-    `, label: "Label") %>`
-  );
+// ── Copyable output ─────────────────────────────────────────────────────────
+// Both formats below are built from buttonSpec(), which reads the same
+// constants makeButtonStyle() renders the live preview from — so the snippet
+// can't drift from the button on the canvas.
+
+const CLASS = "loka-btn";
+const variantClass = (variant) => `${CLASS}--${variant.toLowerCase().replace(/\s+/g, "-")}`;
+
+// Placeholder copy. Ghost gets its own because it's a card-footer CTA rather
+// than a standalone control, and "Button" in a card footer reads as a mistake.
+// Exported so the live preview and the copyable snippet read the same string —
+// they used to hold one literal each, which is one literal too many.
+const LABEL = { Ghost: "Card action" };
+const DEFAULT_LABEL = "Button";
+
+export const buttonLabel = (variant) => LABEL[variant] ?? DEFAULT_LABEL;
+
+// The trailing arrow, matching ArrowInline in Icon.jsx. Inlined rather than
+// referenced, because a snippet that needs an icon import isn't self-contained.
+const arrowSvg = (size) =>
+  `<svg viewBox="0 0 16 16" width="${size}" height="${size}" aria-hidden="true">` +
+  `<path d="M3 8h9M8 3.5L12.5 8L8 12.5" fill="none" stroke="currentColor" ` +
+  `stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+
+// Spells a gradient stroke out as prose — "1px #58697E" would be a lie about a
+// two-stop gradient painted at a tenth of its strength.
+const describeStroke = (stroke, spec) =>
+  stroke
+    ? `${spec.borderWidth}px linear-gradient(90deg, ${stroke.from} → ${stroke.to}), ` +
+      `${Math.round(spec.strokeAlpha * 100)}% opacity, ${stroke.blend} blend`
+    : "none";
+
+// The compact form the specs panel shows, where the column is 260px wide.
+const penShort = (stroke, spec) =>
+  stroke
+    ? `${spec.borderWidth}px ${stroke.from} → ${stroke.to} · ${Math.round(spec.strokeAlpha * 100)}% ${stroke.blend}`
+    : "none";
+
+// The guidance behind the Button, stated once. The specs panel shows the
+// headlines; the AI prompt shows these with their reasoning attached.
+export function buttonRules({ variant, surface = "Gray 10" }) {
+  const spec = buttonSpec({ variant, device: "Desktop", surface });
+
+  return [
+    {
+      rule: "The stroke is a gradient at 10% — a CSS border can't hold one.",
+      why: "Paint it as a masked overlay over a reserved 1px transparent border, so the box never shifts between variants or states.",
+    },
+    spec.isGhost
+      ? {
+          rule: "Ghost has no fill: its container's background is its surface.",
+          why: "It spans the full width of that container and the label colour follows the surface. Only two pairings ship in the library — gray-10 and blue-100 card footers.",
+        }
+      : {
+          rule: "No icon. Ghost is the only variant that carries one, after the label.",
+          why: "No variant in the library uses a leading icon.",
+        },
+    {
+      rule: "Device sets the label size only — a media query, not a prop.",
+      why: "16px desktop, 15px mobile; the box is identical on both.",
+    },
+    ...(spec.isGhost
+      ? [
+          {
+            rule: "Single-state by design: the card's hover is Ghost's hover.",
+            why: "Hovering the parent card is what brings it on screen, so it never needs a hover of its own, and it takes no press scale — it's flush with its container's edges.",
+          },
+        ]
+      : [
+          {
+            rule: "Width hugs the label — there's no min-width to honour.",
+          },
+          // The interaction model. This used to live in a draggable card behind
+          // a "Show behaviour" toggle that only ever worked for the Button; it
+          // belongs with the rest of the guidance, where every component's is.
+          {
+            rule: "Hover and press share one appearance — desktop hovers, mobile presses.",
+            why: "Don't build them as two treatments; press only adds the 0.97 scale on top of the hover fill.",
+          },
+        ]),
+    {
+      rule: "No focus state is defined. Don't invent one.",
+      why: "Keyboard focus falls back to the browser's default ring, or to whatever focus treatment this project already has.",
+    },
+  ];
+}
+
+// What the specs panel shows. Width, height and padding are absent on purpose —
+// the redlines draw all three on the component itself, and the font is the
+// system's rather than the Button's. What's left is mostly colour, which is the
+// one part of the spec a redline can't show.
+export function buttonSpecs({ variant, device, surface = "Gray 10" }) {
+  const spec = buttonSpec({ variant, device, surface });
+  const border = penShort(spec.stroke, spec);
+  const borderActive = penShort(spec.strokeActive, spec);
+
+  return {
+    rules: ruleHeadlines(buttonRules({ variant, surface })),
+    rows: [
+      ...(spec.surface ? [["Surface", spec.surface]] : []),
+      ["Radius", spec.radius === 0 ? "0 · square" : `${spec.radius}px · pill`],
+      ["Text", `${spec.fontSize}px / ${spec.fontWeight}`],
+      ["Fill", spec.fill],
+      ...(spec.fill === spec.fillActive ? [] : [["Fill · hover", spec.fillActive]]),
+      ["Label", spec.label],
+      ["Border", border],
+      ...(border === borderActive ? [] : [["Border · hover", borderActive]]),
+      // Backdrop isn't here. It's blur(10px) on every variant and only Primary
+      // drops it on hover — a rendering detail rather than a decision to read
+      // off a spec sheet, and the code panel carries it either way.
+    ],
+  };
+}
+
+// The stylesheet for one button configuration. Every value is resolved: no
+// custom properties, so it renders identically wherever it's pasted.
+export function buttonCss({ variant, device, surface = "Gray 10" }) {
+  const spec = buttonSpec({ variant, device, surface });
+  const v = variantClass(variant);
+  const ghost = GHOST_SURFACES[surface] ?? GHOST_SURFACES["Gray 10"];
+
+  const base = rule(`.${CLASS}`, [
+    ["display", "inline-flex"],
+    ["align-items", "center"],
+    ["justify-content", "center"],
+    ["gap", `${spec.gap}px`],
+    ["height", `${spec.height}px`],
+    ["padding", `0 ${spec.padX}px`],
+    ["border-radius", spec.radius ? `${spec.radius}px` : "0"],
+    // The 1px is reserved even where the stroke is invisible, so the box never
+    // shifts between variants or states — the ring below is painted over it.
+    ["border", `${spec.borderWidth}px solid transparent`],
+    ["position", "relative"],
+    ["font-family", FONT_STACK],
+    ["font-size", `${spec.fontSize}px`],
+    ["font-weight", spec.fontWeight],
+    ["line-height", spec.lineHeight],
+    ["cursor", "pointer"],
+    ["transition", "background .12s, opacity .12s, transform .08s"],
+  ]);
+
+  const paint = rule(`.${v}`, [
+    ["background", spec.fill],
+    ["color", spec.label],
+    // Figma blurs whatever sits behind the button so the translucent variants
+    // stay readable over imagery.
+    ["backdrop-filter", spec.backdrop === "none" ? null : spec.backdrop],
+    ["width", spec.isGhost ? "100%" : null],
+  ]);
+
+  // Figma paints the stroke as a linear gradient, and a CSS border can't hold
+  // one — so it's a gradient filling the border box with its middle masked
+  // away, leaving only the 1px edge.
+  const ring = spec.stroke
+    ? rule(`.${v}::after`, [
+        ["content", '""'],
+        ["position", "absolute"],
+        ["inset", `-${spec.borderWidth}px`],
+        ["border", `${spec.borderWidth}px solid transparent`],
+        ["border-radius", "inherit"],
+        ["pointer-events", "none"],
+        ["background-image", `linear-gradient(90deg, ${spec.stroke.from}, ${spec.stroke.to})`],
+        ["background-origin", "border-box"],
+        // Reproduces Figma's stroke blending against the fill underneath.
+        ["mix-blend-mode", spec.stroke.blend],
+        ["opacity", spec.strokeAlpha],
+        ["-webkit-mask", "linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0)"],
+        ["-webkit-mask-composite", "xor"],
+        ["mask", "linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0)"],
+        ["mask-composite", "exclude"],
+        ["transition", "opacity .12s"],
+      ])
+    : "";
+
+  // Hover and press share one appearance — desktop reaches it by hovering,
+  // mobile by pressing. :not(:disabled) because a disabled button still takes
+  // :hover in some browsers, and the disabled button has no hover state.
+  const hover = rule(`.${v}:hover:not(:disabled)`, [
+    ["background", spec.fillActive !== spec.fill ? spec.fillActive : null],
+    ["backdrop-filter", spec.backdropActive !== spec.backdrop ? spec.backdropActive : null],
+  ]);
+
+  // Primary is the only variant that drops its stroke on active. Fade it rather
+  // than swapping the gradient out — background-image doesn't interpolate, so a
+  // swap would pop where the fill transitions smoothly.
+  const hoverRing =
+    spec.stroke && !spec.strokeActive
+      ? rule(`.${v}:hover:not(:disabled)::after`, [["opacity", "0"]])
+      : "";
+
+  // Ghost is a full-bleed bar flush with its container's edges, so scaling it
+  // would pull it away from them.
+  const press = spec.isGhost
+    ? ""
+    : rule(`.${CLASS}:active:not(:disabled)`, [["transform", "scale(0.97)"]]);
+
+  // Figma has no disabled variant; this is the system's own convention.
+  const disabled = rule(`.${CLASS}:disabled`, [
+    ["opacity", "0.45"],
+    ["cursor", "not-allowed"],
+  ]);
+
+  // Ghost has no fill of its own — the container's background becomes its
+  // surface, so the frame ships with it. Width is the host card's, not ours.
+  const frame = spec.isGhost
+    ? rule(`.${CLASS}-ghost-frame`, [
+        ["display", "flex"],
+        ["background", ghost.fill],
+      ])
+    : "";
+
+  return blocks(base, paint, ring, hover, hoverRing, press, disabled, frame);
+}
+
+// A self-contained HTML + CSS block for the current configuration: paste it
+// into any page and it renders, with no Loka package required.
+export function buttonHtmlSnippet({ variant, device, surface = "Gray 10", disabled }) {
+  const spec = buttonSpec({ variant, device, surface });
+  const v = variantClass(variant);
+  const label = buttonLabel(variant);
+  // Ghost is the only variant with an icon, and Figma puts it after the label.
+  const icon = spec.iconSize ? `\n  ${arrowSvg(spec.iconSize)}` : "";
+  const button =
+    `<button class="${CLASS} ${v}"${disabled ? " disabled" : ""}>\n` +
+    `  ${label}${icon}\n` +
+    `</button>`;
+
+  return htmlDocument({
+    title: `Button — ${variant} · ${device}${disabled ? " · disabled" : ""}`,
+    css: buttonCss({ variant, device, surface }),
+    // Ghost is transparent and full-bleed: it only reads correctly inside the
+    // card footer that supplies its surface.
+    markup: spec.isGhost
+      ? `<div class="${CLASS}-ghost-frame">\n${indent(button)}\n</div>`
+      : button,
+  });
+}
+
+// The same configuration as a spec an agent can build from, in whatever stack
+// the developer's project already uses.
+export function buttonPromptSnippet({ variant, device, surface = "Gray 10", disabled }) {
+  const spec = buttonSpec({ variant, device, surface });
+  const stroke = describeStroke(spec.stroke, spec);
+  const strokeActive = describeStroke(spec.strokeActive, spec);
+
+  return specPrompt({
+    component: "Button",
+    config: [variant, device, spec.isGhost && `on ${surface}`, disabled && "disabled"]
+      .filter(Boolean)
+      .join(" · "),
+    sections: [
+      [
+        "Box",
+        [
+          ["Width", spec.isGhost ? "fills its container" : "hug content — no min-width in the spec"],
+          ["Height", `${spec.height}px`],
+          ["Padding", `0 ${spec.padX}px`],
+          ["Radius", spec.radius ? `${spec.radius}px (pill)` : "0 (square — the container supplies the shape)"],
+          ["Border", stroke],
+        ],
+      ],
+      [
+        "Type",
+        [
+          ["Family", "Alliance No.2"],
+          ["Size", `${spec.fontSize}px`],
+          ["Weight", `${spec.fontWeight}`],
+          ["Line height", `${spec.lineHeight}`],
+          ...(spec.iconSize
+            ? [
+                ["Icon", `${spec.iconSize}px, ${spec.iconPosition} — an arrow after the label`],
+                ["Gap", `${spec.gap}px between label and icon`],
+              ]
+            : [["Icon", "none"]]),
+        ],
+      ],
+      [
+        "Color",
+        [
+          ...(spec.surface ? [["Surface", tokenRef(spec.surface.split(" · ").pop())]] : []),
+          ["Fill", tokenRef(spec.fill)],
+          ["Label", tokenRef(spec.label)],
+          ["Backdrop", spec.backdrop],
+        ],
+      ],
+    ],
+    states: [
+      spec.fill === spec.fillActive
+        ? "Hover and press: no change. Ghost is the reveal-on-hover CTA of its parent card — hovering the card is what brings it on screen, so it never needs a hover of its own."
+        : `Hover and press share one appearance: fill steps to ${tokenRef(spec.fillActive)} over 120ms. Desktop reaches it by hovering, mobile by pressing.`,
+      ...(spec.stroke && spec.stroke !== spec.strokeActive
+        ? [
+            spec.strokeActive
+              ? `Over the same 120ms the stroke becomes ${strokeActive}. Animate its opacity rather than swapping the gradient — background-image doesn't interpolate, so a swap pops where the fill transitions smoothly.`
+              : "Over the same 120ms the stroke fades out entirely. Animate its opacity rather than removing it — background-image doesn't interpolate, so a swap pops where the fill transitions smoothly.",
+          ]
+        : []),
+      ...(spec.isGhost ? [] : ["Press adds transform: scale(0.97) over 80ms, so touch still gets feedback."]),
+      // Focus isn't listed here — it's a rule below, and there's no state to
+      // describe, only the instruction not to invent one.
+      "Disabled: 45% opacity, cursor: not-allowed. Figma has no disabled variant — this is the system's own convention.",
+    ],
+    notes: ruleTexts(buttonRules({ variant, surface })),
+    reference: buttonHtmlSnippet({ variant, device, surface, disabled }),
+  });
 }
