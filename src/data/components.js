@@ -11,6 +11,7 @@ export const COMPONENT_LIST = [
   "Checkbox",
   "Filter",
   "Input Field",
+  "Link",
   "List Item",
   "Navigation Menu",
   "Search",

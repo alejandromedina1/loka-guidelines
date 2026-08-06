@@ -103,6 +103,7 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
 
   const [tabsView, setTabsView] = useState("Item");
   const [cbxState, setCbxState] = useState("Default");
+  const [linkState, setLinkState] = useState("Default");
 
   // The type is chosen in the nav panel and arrives as a prop; the state is the
   // playground's own axis, so it sits on the canvas pills.
@@ -192,7 +193,9 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
         ? { options: CHECKBOX_STATES, value: cbxState, onSelect: setCbxState }
         : isTabs
           ? { options: TABS_VIEWS, value: tabsView, onSelect: setTabsView }
-          : null;
+          : isLink
+            ? { options: LINK_STATES, value: linkState, onSelect: setLinkState }
+            : null;
 
   // The state readout in the canvas's top-left corner: what the component on
   // stage is doing right now.
@@ -247,6 +250,7 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
     if (isInputField) {
       return <InputFieldPreview type={fieldType} state={fieldState} bestPractices={bestPractices} />;
     }
+    if (isLink) return <LinkPreview state={linkState} />;
     return (
       <div className="pg-empty">
         <span className="pg-empty-name">{selected}</span>
