@@ -30,6 +30,10 @@ export const COMPONENT_LIST = [
 export const FIELD_TYPES = ["Text", "Email", "Textarea", "Select"];
 export const FIELD_STATES = ["Default", "Focus", "Error", "Disabled"];
 
+// The Link's two states — Loka Figma "Link / Light" (node 30:2487). Resting text
+// and a hover that reveals the marker dot; there's no third variant to document.
+export const LINK_STATES = ["Default", "Hover"];
+
 // The Checkbox's four states, in the order Figma lays its variants out. "Checked"
 // is Figma's "Focused" under the name it actually describes — no focus ring is
 // defined anywhere in the component, and the variant is the ticked control.
