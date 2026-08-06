@@ -10,6 +10,10 @@ export const componentId = (name) =>
 // the Foundations sub-items, these aren't scroll targets — the playground shows
 // one canvas at a time — so each carries the `variant` the playground opens on
 // rather than an id to scroll to. Kept out of SPY_IDS for that reason.
+//
+// The Dropdown's Multi-select/Single-select split used to live here too; it's
+// a canvas pill strip now instead — the same pattern the Button's variants
+// use — so switching modes doesn't require the sidebar.
 const COMPONENT_SUBS = {
   "Input Field": FIELD_TYPES.map((type) => ({
     id: `${componentId("Input Field")}-${type.toLowerCase()}`,

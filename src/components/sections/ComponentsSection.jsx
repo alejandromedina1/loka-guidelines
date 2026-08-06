@@ -9,7 +9,8 @@ export function ComponentsSection({
   onCopy,
   selectedComponent,
   setSelectedComponent,
-  fieldType,
+  componentVariant,
+  setComponentVariant,
   theme,
 }) {
   return (
@@ -22,7 +23,8 @@ export function ComponentsSection({
         onCopy={onCopy}
         selected={selectedComponent}
         setSelected={setSelectedComponent}
-        fieldType={fieldType}
+        componentVariant={componentVariant}
+        setComponentVariant={setComponentVariant}
         theme={theme}
       />
     </section>

@@ -43,10 +43,12 @@ export default function App() {
   const [theme, setTheme] = useState("light");
   const [mobileNav, setMobileNav] = useState(false);
   const [selectedComponent, setSelectedComponent] = useState("Button");
-  // Which Input Field type is on the canvas. It lives up here rather than in the
-  // playground because the nav panel picks it — the component's four types are
-  // sidebar entries, not a control inside the canvas.
-  const [fieldType, setFieldType] = useState("Text");
+  // Which variant of the selected component is on the canvas — the Input
+  // Field's four types, the Dropdown's two modes. It lives up here rather than
+  // in the playground because the nav panel picks it: those are sidebar
+  // entries, not a control inside the canvas. Shared across components rather
+  // than one state per component, since only one is ever on stage at a time.
+  const [componentVariant, setComponentVariant] = useState("Text");
   const [selectedPattern, setSelectedPattern] = useState("dot-grid");
   const [expandedRow, setExpandedRow] = useState(null);
 
@@ -66,7 +68,7 @@ export default function App() {
   const selectComponent = useCallback(
     (name, variant) => {
       setSelectedComponent(name);
-      if (variant) setFieldType(variant);
+      if (variant) setComponentVariant(variant);
       navigate("components");
     },
     [navigate]
@@ -75,7 +77,7 @@ export default function App() {
   const runSearchResult = useCallback(
     (r) => {
       if (r.setComponent) setSelectedComponent(r.setComponent);
-      if (r.setVariant) setFieldType(r.setVariant);
+      if (r.setVariant) setComponentVariant(r.setVariant);
       if (r.setPattern) setSelectedPattern(r.setPattern);
       navigate(r.target);
     },
@@ -108,7 +110,7 @@ export default function App() {
           active={active}
           activeTop={toActiveTop(active)}
           selectedComponent={selectedComponent}
-          componentVariant={fieldType}
+          componentVariant={componentVariant}
           onSelectComponent={selectComponent}
           onNavigate={navigate}
           open={mobileNav}
@@ -144,7 +146,8 @@ export default function App() {
             onCopy={copy}
             selectedComponent={selectedComponent}
             setSelectedComponent={setSelectedComponent}
-            fieldType={fieldType}
+            componentVariant={componentVariant}
+            setComponentVariant={setComponentVariant}
             theme={theme}
           />
         </main>

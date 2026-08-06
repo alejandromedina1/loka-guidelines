@@ -9,6 +9,7 @@ export const COMPONENT_LIST = [
   "Button",
   "Card",
   "Checkbox",
+  "Dropdown",
   "Filter",
   "Input Field",
   "Link",
@@ -20,15 +21,24 @@ export const COMPONENT_LIST = [
   "Toggle",
 ];
 
-// The Input Field is four controls under one name, and each of them documents
+// The Input Field is three controls under one name, and each of them documents
 // the same four states. Both axes are shared: the types split the component in
-// the nav panel, the states drive the playground's canvas pills.
+// the nav panel, the states drive the playground's canvas pills. Select used
+// to be a fourth type here; the search-and-select control it embedded now
+// documents itself as its own Dropdown component instead.
 //
 // The states are exclusive on purpose — a control is focused or errored or
 // disabled, and picking one from a strip is how you compare them. Combinations
 // like an errored field taking focus still exist in CSS for real use.
-export const FIELD_TYPES = ["Text", "Email", "Textarea", "Select"];
+export const FIELD_TYPES = ["Text", "Email", "Textarea"];
 export const FIELD_STATES = ["Default", "Focus", "Error", "Disabled"];
+
+// The Dropdown component documents the search-and-select control on its own,
+// split by how many rows it can hold at once — the same split as SELECT_GROUPS
+// below. It used to be embedded as the Input Field's Select type too; this is
+// now the only place it lives, so the ceiling, tags, and three-selection limit
+// have one home rather than two.
+export const DROPDOWN_VARIANTS = ["Multi-select", "Single-select"];
 
 // The Link's two states — Loka Figma "Link / Light" (node 30:2487). Resting text
 // and a hover that reveals the marker dot; there's no third variant to document.
@@ -113,27 +123,73 @@ export const FILTER_GROUPS = [
 // even there would misrepresent what fits.
 export const TABS = ["A tab label that ellipsizes", "Second tab", "Third tab", "Fourth tab"];
 
-// Grouped options for the multi-select dropdown documented under "Input Field".
-// Mirrors the Loka Figma "Dropdown" component (node 6916:50169), including its
-// three-selection ceiling.
-//
-// The options deliberately describe the control rather than carrying real
-// content: this is a reference page, so reading the list should teach how the
-// dropdown behaves. Kept short so the tags stay legible and grouping still
-// shows — enough rows that the list scrolls, without a catalogue to wade through.
+// Grouped options for the search-and-select dropdown — Loka Figma "Dropdown"
+// component. Multi mode carries the "Opened" variant's real content (node
+// 11:2264): five of Loka's own service categories, four offerings each — the
+// exact catalogue the design documents, not stand-in copy. Single mode keeps
+// instructional rows instead: there's no single-select "Opened" reference to
+// match.
 export const SELECT_MAX = 3;
 
-export const SELECT_GROUPS = [
-  {
-    label: "Selecting",
-    options: ["Pick up to three", "Checked rows are chosen", "Choices collect as tags"],
-  },
-  {
-    label: "Searching",
-    options: ["Type above to filter", "Groups hide when empty", "No match shows a note"],
-  },
-  {
-    label: "Limits",
-    options: ["The third pick locks the rest", "Untick a row to free one up", "Tags clear with the \u00d7"],
-  },
+export const SELECT_GROUPS = {
+  multi: [
+    {
+      label: "AI & Agentic",
+      options: [
+        "AI, ML or Agentic Assessment",
+        "AIdeation Workshop",
+        "AI Production Accelerator",
+        "Other AI & Agentic",
+      ],
+    },
+    {
+      label: "Migration & Modernization",
+      options: [
+        "Claude or OpenAI Migration",
+        "Cloud-to-Cloud Migration",
+        "Legacy Migration & Modernization",
+        "Other Migrations & Modernizations",
+      ],
+    },
+    {
+      label: "Data & Analytics",
+      options: [
+        "AI-Ready Data & Governance",
+        "Data Strategy & Discovery",
+        "Data Engineering & Infrastructure",
+        "Other Data & Analytics",
+      ],
+    },
+    {
+      label: "Security & Compliance",
+      options: [
+        "AI Governance & Safety",
+        "Cloud Infrastructure Security",
+        "Compliance Programs",
+        "Other Security & Compliance",
+      ],
+    },
+    {
+      label: "Product Design & Development",
+      options: [
+        "Design Sprint",
+        "AI Feature Integration",
+        "Full Mobile & Web Development",
+        "Other Product Design and Development",
+      ],
+    },
+  ],
+};
+
+// Single-select's demo rows, flat rather than grouped — one value doesn't need
+// categories to sort through, so there's no eyebrow label and no divider
+// between rows, just the list. Same instructional copy the old two groups
+// carried, merged into one.
+export const SELECT_SINGLE_OPTIONS = [
+  "Pick one to fill the field",
+  "Picking again swaps it",
+  "Closes the list on pick",
+  "Type above to filter",
+  "Groups hide when empty",
+  "No match shows a note",
 ];

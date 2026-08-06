@@ -149,11 +149,14 @@
 }
 /* grid lines removed */
 .hero-grid{display:none;}
-/* blue glow that follows the mouse */
-.hero-glow{position:absolute;inset:0;z-index:0;pointer-events:none;
+/* blue glow that follows the mouse, with fading trail layers lagging behind it */
+.hero-glow{position:absolute;inset:0;z-index:3;pointer-events:none;
   background:radial-gradient(360px circle at var(--mx,50%) var(--my,45%),
     rgba(25,87,244,.55), rgba(80,140,255,.22) 35%, transparent 70%);
   mix-blend-mode:screen;transition:background .08s ease;}
+.hero-glow-tail{transition-duration:.22s;transition-timing-function:ease-out;opacity:.5;}
+.hero-glow-tail-2{transition-duration:.42s;opacity:.3;}
+.hero-glow-tail-3{transition-duration:.68s;opacity:.16;}
 
 /* bento — 4×3, fills full width, mixed square + rectangle tiles, logo card centre */
 .hero-ring{position:relative;z-index:2;
@@ -161,10 +164,10 @@
   grid-template-columns:repeat(4, 1fr);
   grid-template-rows:repeat(3, 1fr);
   gap:0;padding:0;}
-.hchip{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+.hero-ring .hchip{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
   box-shadow:inset 0 0 0 1px rgba(120,150,220,.32);background:rgba(18,30,58,.35);backdrop-filter:blur(4px);
   cursor:pointer;transition:box-shadow .18s ease,background .18s ease;}
-.hchip:hover{box-shadow:inset 0 0 0 1px rgba(120,150,220,.75);background:rgba(18,30,58,.6);}
+.hero-ring .hchip:hover{box-shadow:inset 0 0 0 1px rgba(120,150,220,.75);background:rgba(18,30,58,.6);}
 .hchip-art{display:grid;place-items:center;color:rgba(255,255,255,.85);}
 .hchip-aa{font-family:var(--display);font-size:56px;font-weight:600;color:#fff;line-height:1;}
 .hchip-swatch{display:flex;gap:6px;}
@@ -203,7 +206,7 @@
 /* centre logo card — bigger, spans the middle 2 cells */
 .hero-logo-card{grid-column:2 / span 2;grid-row:2;
   display:grid;place-items:center;
-  background:linear-gradient(160deg,#0C1830,#04070E);
+  background:rgba(18,30,58,.35);backdrop-filter:blur(4px);
   box-shadow:inset 0 0 0 1px rgba(120,150,220,.28), 0 20px 60px rgba(0,0,0,.45);}
 
 .intro-block{
@@ -556,9 +559,13 @@
    this container gap is the whole distance; it carries no margin of its own. */
 .field-demo{--field-gap:10px;display:flex;flex-direction:column;gap:var(--field-gap);
   width:100%;max-width:380px;}
-/* Select only: its panel is absolute, so it adds no height and would hang past
-   the canvas bottom from a centred start. The other field types stay centred. */
-.field-demo[data-type="Select"]{align-self:start;}
+/* Any field whose control opens an absolutely-positioned panel below it — the
+   Input Field's Select type, the standalone Dropdown — adds no height when
+   open and would hang past the canvas bottom from a centred start. Pinned to
+   the stage's top always, closed or open: a fixed position is what guarantees
+   the control opens reliably everywhere, rather than one computed at runtime
+   from the container's measured height and animated into place. */
+.field-demo[data-lift]{align-self:start;}
 .field{display:flex;flex-direction:column;}
 .field-label{font-size:13.5px;font-weight:500;color:var(--ink-2);
   margin-bottom:var(--field-gap,10px);}
@@ -607,8 +614,17 @@
    lands the search row exactly where the closed control was. */
 .ms-anchor{position:relative;width:100%;min-height:48px;}
 .ms{width:100%;border:1px solid #E7ECF2;border-radius:12px;background:#FAFBFC;}
+/* Figma's Dropdown component (node 52:212): open, the panel takes its own
+   16px radius rather than the closed control's 12px, since it's a floating
+   surface rather than a form field. Figma's own gray-5 border (#EFF1F5) reads
+   as a soft, nearly-invisible haze against this blue-5 fill — still a true
+   1px stroke, but too low-contrast against its own background to read as
+   one — so this steps up to gray-20 (#D6DCE6, --line-strong's light value)
+   instead, crisp against the tint the way gray-10 is crisp against the closed
+   control's plain white. A literal, not the token: this whole block stays
+   light regardless of app theme, and --line-strong resolves dark there. */
 .ms[data-open]{position:absolute;top:0;left:0;z-index:20;
-  background:#EEF2FE;border-color:#EFF1F5;overflow:clip;
+  background:#EEF2FE;border-color:#D6DCE6;border-radius:16px;overflow:clip;
   backdrop-filter:blur(30px);}
 .ms[data-error]{border-color:var(--danger);}
 .ms[data-disabled]{opacity:.55;}
@@ -616,24 +632,30 @@
    blue ring the text controls draw, and the Focus pill needs something to show.
    Closed only: open, Figma gives the panel its own gray-5 border, and a blue ring
    around a 396px panel isn't what the Opened variant looks like. :focus-within
-   covers a keyboard reaching the closed control, [data-focus] the pinned state,
-   and the ring replaces the button's own outline rather than doubling it. */
+   covers a keyboard reaching the closed control — the caret button is the only
+   focusable thing in it — [data-focus] the pinned state, and the ring replaces
+   the caret's own outline rather than doubling it. */
 .ms:not([data-open]):focus-within,.ms:not([data-open])[data-focus]{
   border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
-.ms:not([data-open]):focus-within .ms-control{outline:none;}
+.ms:not([data-open]):focus-within .ms-caret{outline:none;}
 
 /* closed control */
 /* Height is pinned to the same 48px as .ms-search below: the closed control and
    the open search row are different elements, so without this the top row would
    jump a few px the moment the dropdown opens. */
-.app button.ms-control{width:100%;height:48px;display:flex;align-items:center;
+/* A plain row, not a button — the caret inside it is the click target now,
+   so this just lays the value text and the caret out; it takes no cursor or
+   :disabled styling of its own. */
+.ms-control{width:100%;height:48px;display:flex;align-items:center;
   justify-content:space-between;gap:12px;padding:0 16px;font-family:var(--sans);
-  font-size:14.5px;line-height:1.3;font-weight:400;color:#A8B3CA;cursor:pointer;text-align:left;}
-.app button.ms-control:disabled{cursor:not-allowed;}
+  font-size:14.5px;line-height:1.3;font-weight:400;color:#A8B3CA;text-align:left;}
+/* Single-select fills the closed control with the chosen label instead of a
+   tag, so it needs to read as a value rather than a placeholder. */
+.ms-control[data-filled]{color:var(--ink);}
 
 /* search row, shown while open */
 .ms-search{display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;
-  background:#FAFBFC;border-bottom:1px solid #ECECEE;border-radius:11px 11px 0 0;}
+  background:#FAFBFC;border-bottom:1px solid #ECECEE;border-radius:12px 12px 0 0;}
 .ms-search-input{flex:1;min-width:0;border:none;background:none;outline:none;
   font-family:var(--sans);font-size:14.5px;font-weight:400;line-height:1.3;color:#186BF3;}
 .ms-search-input::placeholder{color:#A8B3CA;}
@@ -643,11 +665,10 @@
 .ms-search[data-max] .ms-search-input{cursor:not-allowed;}
 .ms-search[data-max] .ms-search-input::placeholder{color:#CCD4E0;}
 .app .ms-search[data-max] button.ms-caret{color:#A8B3CA;}
-/* Same 20px box closed (a span) and open (a button), so the glyph lands on the
-   identical pixel either way — a bare 12px svg closed would sit ~4px further
-   right than one centred in the open state's 20px hit area. */
-/* Figma's arrow component colours its two states differently: wrapped (closed,
-   a span here) is gray-40, unwrapped (open, a button) is gray-50. */
+/* Same 20px box closed and open, so the glyph lands on the identical pixel
+   either way — a bare 12px svg would sit ~4px further right than one centred
+   in this 20px hit area, and the box is the real click target now in both
+   states, not just where the glyph happens to sit. */
 /* padding:0 and a non-shrinking glyph are both load-bearing: `.app button` resets
    border and background but not the UA's default button padding, so as a <button>
    this 20px box loses ~12px of content width and the svg — a flex item that
@@ -655,11 +676,12 @@
 .ms-caret{flex:none;display:inline-flex;align-items:center;justify-content:center;
   width:20px;height:20px;padding:0;color:#A8B3CA;}
 .ms-caret svg{flex:none;}
-/* `.app button{color:inherit}` outranks a bare `.ms-caret`, so the open-state
-   caret needs the class restated on the button or it inherits body ink. No
-   hover colour: the arrow reads purely as a state indicator here, matching the
-   filter chip's, where the two gray steps are the only thing it ever does. */
+/* `.app button{color:inherit}` outranks a bare `.ms-caret`, so a real button
+   needs the class restated on it or it inherits body ink. Gray-50 rather than
+   the base gray-40, closed or open: a real, clickable trigger reads as one
+   consistently, rather than stepping up only once the panel's already open. */
 .app button.ms-caret{color:#828FA5;cursor:pointer;}
+.app button.ms-caret:disabled{color:#A8B3CA;cursor:not-allowed;}
 
 /* option list */
 .ms-list{max-height:348px;overflow-y:auto;overscroll-behavior:contain;
@@ -702,13 +724,52 @@
 .ms-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 4px 4px 8px;
   border:1px solid #D8E2F6;border-radius:100px;background:#EEF2FE;
   font-size:14.5px;font-weight:400;line-height:1.3;color:#186BF3;}
-/* Box tracks the 24px glyph, and padding:0 keeps it that way — see .ms-caret:
-   the UA's button padding would otherwise squeeze the svg well under 24px. */
+/* Figma's dropdown-tag (node 11:2259): the "x" sits in a 20px box around its
+   15px glyph, not the 24px the tag icon used before syncing to this update.
+   padding:0 keeps it that way — see .ms-caret: the UA's button padding would
+   otherwise squeeze the svg below its intended size. */
 .app button.ms-tag-x{display:inline-flex;align-items:center;justify-content:center;
-  width:24px;height:24px;padding:0;color:#5C6A82;cursor:pointer;transition:color .12s;}
+  width:20px;height:20px;padding:0;color:#5C6A82;cursor:pointer;transition:color .12s;}
 .ms-tag-x svg{flex:none;}
 .app button.ms-tag-x:hover{color:#186BF3;}
 .app button.ms-tag-x:disabled{cursor:not-allowed;}
+
+/* Dark theme. Every colour above is a light-surface literal by design — see
+   the note at the top of this block — so left alone the control renders as a
+   stark white card sitting on the dark canvas, borders included, regardless
+   of the app's theme. This maps each one to the dark palette's equivalent
+   step (--bg-soft for the light literal fill, --line for gray-10 borders,
+   --ink-N for the gray-NN text scale) rather than turning literals into
+   theme tokens throughout the block above, since the light surface is still
+   what every non-dark reader of this file should see at a glance. */
+.app[data-theme="dark"] .ms{border-color:var(--line);background:var(--bg-soft);}
+.app[data-theme="dark"] .ms[data-open]{background:var(--blue-soft);border-color:var(--line-strong);}
+.app[data-theme="dark"] .ms-control:not([data-filled]){color:var(--ink-4);}
+.app[data-theme="dark"] .ms-search{background:var(--bg-soft);border-bottom-color:var(--line);}
+.app[data-theme="dark"] .ms-search-input{color:var(--blue);}
+.app[data-theme="dark"] .ms-search-input::placeholder{color:var(--ink-4);}
+.app[data-theme="dark"] .ms-search[data-max] .ms-search-input::placeholder{color:var(--line-strong);}
+.app[data-theme="dark"] .ms-search[data-max] button.ms-caret{color:var(--ink-4);}
+.app[data-theme="dark"] .ms-caret{color:var(--ink-4);}
+.app[data-theme="dark"] button.ms-caret{color:var(--ink-3);}
+.app[data-theme="dark"] button.ms-caret:disabled{color:var(--ink-4);}
+.app[data-theme="dark"] .ms-list{background:var(--bg-soft);border-color:var(--line);}
+.app[data-theme="dark"] .ms-list::-webkit-scrollbar-track{background:var(--line);}
+.app[data-theme="dark"] .ms-list::-webkit-scrollbar-thumb{background:var(--line-strong);}
+.app[data-theme="dark"] .ms-empty{color:var(--ink-3);}
+.app[data-theme="dark"] .ms-group{border-bottom-color:var(--line-2);}
+.app[data-theme="dark"] .ms-group-label{color:var(--ink-2);}
+.app[data-theme="dark"] button.ms-option{background:var(--line-2);}
+.app[data-theme="dark"] button.ms-option:hover,
+.app[data-theme="dark"] button.ms-option[data-selected]{background:var(--line);}
+.app[data-theme="dark"] button.ms-option:disabled:hover{background:var(--line-2);}
+.app[data-theme="dark"] button.ms-option:disabled .ms-option-text{color:var(--ink-4);}
+.app[data-theme="dark"] .ms-option-text{color:var(--ink-3);}
+.app[data-theme="dark"] .ms-option svg{color:var(--blue);}
+.app[data-theme="dark"] .ms-max{color:var(--ink-3);}
+.app[data-theme="dark"] .ms-tag{border-color:#2C3F5C;background:var(--blue-soft);color:var(--blue);}
+.app[data-theme="dark"] button.ms-tag-x{color:var(--ink-3);}
+.app[data-theme="dark"] button.ms-tag-x:hover{color:var(--blue);}
 
 /* Checkbox — Loka Figma "Checkbox / 40" (node 3692:15296).
    Tokens: gray-5 #EFF1F5 (pill border), gray-10 #E7ECF2 (empty circle),

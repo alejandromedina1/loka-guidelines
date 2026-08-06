@@ -2,7 +2,9 @@ import { useCallback, useState } from "react";
 import {
   CHECKBOX_STATES,
   COMPONENT_LIST,
+  DROPDOWN_VARIANTS,
   FIELD_STATES,
+  FIELD_TYPES,
   LINK_STATES,
 } from "../../data/components.js";
 import {
@@ -43,6 +45,12 @@ import {
   inputFieldPromptSnippet,
   inputFieldSpecs,
 } from "./previews/InputFieldPreview.jsx";
+import {
+  DropdownPreview,
+  dropdownHtmlSnippet,
+  dropdownPromptSnippet,
+  dropdownSpecs,
+} from "./previews/DropdownPreview.jsx";
 import {
   TabsPreview,
   tabsHtmlSnippet,
@@ -91,10 +99,19 @@ const CODE_VIEWS = [
 // The component documentation surface: a live preview canvas, a prev/next
 // cycler, per-component property controls, and a copyable code snippet.
 // The Button is the fully-built reference component; others show a placeholder.
-export function ComponentPlayground({ copied, onCopy, selected, setSelected, fieldType, theme }) {
+export function ComponentPlayground({
+  copied,
+  onCopy,
+  selected,
+  setSelected,
+  componentVariant,
+  setComponentVariant,
+  theme,
+}) {
   const dark = theme === "dark";
   const isButton = selected === "Button";
   const isInputField = selected === "Input Field";
+  const isDropdown = selected === "Dropdown";
   const isCheckbox = selected === "Checkbox";
   const isFilter = selected === "Filter";
   const isTabs = selected === "Tabs";
@@ -116,6 +133,17 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
   // The type is chosen in the nav panel and arrives as a prop; the state is the
   // playground's own axis, so it sits on the canvas pills.
   const [fieldState, setFieldState] = useState("Default");
+
+  // `componentVariant` is one state shared across every component with nav
+  // sub-items, not one per component — switching to Input Field or Dropdown
+  // straight from the top-level nav item (no sub-item, so no variant argument)
+  // keeps whatever the last component's variant was, which won't be one of
+  // this component's own. Falling back to each list's first entry is what
+  // keeps that a harmless default instead of an undefined lookup.
+  const resolvedFieldType = FIELD_TYPES.includes(componentVariant) ? componentVariant : FIELD_TYPES[0];
+  const resolvedDropdownVariant = DROPDOWN_VARIANTS.includes(componentVariant)
+    ? componentVariant
+    : DROPDOWN_VARIANTS[0];
 
   // Where the three self-contained previews post their current state for the
   // canvas readout. Stamped with the component that sent it — see stateReadout.
@@ -165,7 +193,13 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
       html: inputFieldHtmlSnippet,
       prompt: inputFieldPromptSnippet,
       specs: inputFieldSpecs,
-      args: { type: fieldType, state: fieldState },
+      args: { type: resolvedFieldType, state: fieldState },
+    },
+    Dropdown: {
+      html: dropdownHtmlSnippet,
+      prompt: dropdownPromptSnippet,
+      specs: dropdownSpecs,
+      args: { variant: resolvedDropdownVariant },
     },
     Tabs: {
       html: tabsHtmlSnippet,
@@ -191,19 +225,22 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
   // The pill strip under the canvas is the switcher for whichever component is
   // on stage: the Button picks its style variant there, the Input Field and the
   // Checkbox the state they're in, Tabs whether it's showing one item or the whole
-  // bar. Each is the one axis that changes what you're looking at, so it belongs
-  // on the canvas rather than down in the properties panel.
+  // bar, the Dropdown which mode it's in. Each is the one axis that changes what
+  // you're looking at, so it belongs on the canvas rather than down in the
+  // properties panel.
   const canvasTabs = isButton
     ? { options: BUTTON_VARIANTS, value: variant, onSelect: setVariant }
     : isInputField
       ? { options: FIELD_STATES, value: fieldState, onSelect: setFieldState }
-      : isCheckbox
-        ? { options: CHECKBOX_STATES, value: cbxState, onSelect: setCbxState }
-        : isTabs
-          ? { options: TABS_VIEWS, value: tabsView, onSelect: setTabsView }
-          : isLink
-            ? { options: LINK_STATES, value: linkState, onSelect: setLinkState }
-            : null;
+      : isDropdown
+        ? { options: DROPDOWN_VARIANTS, value: resolvedDropdownVariant, onSelect: setComponentVariant }
+        : isCheckbox
+          ? { options: CHECKBOX_STATES, value: cbxState, onSelect: setCbxState }
+          : isTabs
+            ? { options: TABS_VIEWS, value: tabsView, onSelect: setTabsView }
+            : isLink
+              ? { options: LINK_STATES, value: linkState, onSelect: setLinkState }
+              : null;
 
   // The state readout in the canvas's top-left corner: what the component on
   // stage is doing right now.
@@ -258,7 +295,10 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
       );
     }
     if (isInputField) {
-      return <InputFieldPreview type={fieldType} state={fieldState} bestPractices={bestPractices} />;
+      return <InputFieldPreview type={resolvedFieldType} state={fieldState} bestPractices={bestPractices} />;
+    }
+    if (isDropdown) {
+      return <DropdownPreview variant={resolvedDropdownVariant} bestPractices={bestPractices} onState={reportState} />;
     }
     if (isLink) return <LinkPreview state={linkState} />;
     return (
@@ -364,10 +404,11 @@ export function ComponentPlayground({ copied, onCopy, selected, setSelected, fie
         <div className="pg-ctrl-head">
           <span className="pg-ctrl-title">{selected}</span>
         </div>
-        {isInputField ? (
-          // The type is a nav entry and the state is a canvas pill, which leaves
-          // the panel nothing to hold but the redlines. Disabled and Error used to
-          // be toggles here; they're two of the states now.
+        {isInputField || isDropdown ? (
+          // The type (or variant) is a nav entry, which leaves the panel
+          // nothing to hold but the redlines. The Input Field's state used to
+          // be toggles here; they're canvas pills now, and the Dropdown has no
+          // state axis of its own to add one for.
           <PgToggle label="Best practices" value={bestPractices} onChange={setBestPractices} />
         ) : (
           <>

@@ -17,6 +17,9 @@ export function IntroSection({ registerRef, copied, onCopy, onNavigate }) {
   return (
     <section id="introduction" className="section intro" ref={(el) => registerRef("introduction", el)}>
       <div className="brand-hero" onMouseMove={trackGlow}>
+        <div className="hero-glow hero-glow-tail-3" aria-hidden />
+        <div className="hero-glow hero-glow-tail-2" aria-hidden />
+        <div className="hero-glow hero-glow-tail" aria-hidden />
         <div className="hero-glow" aria-hidden />
 
         <div className="hero-ring">
