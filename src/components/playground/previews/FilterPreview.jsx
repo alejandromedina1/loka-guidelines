@@ -46,6 +46,13 @@ const T = {
   countWidth: 22,
   empty: "#5C6A82", // gray-60
   width: 366,
+  // Not sourced — a floor under the panel's own width, not the bar's. The
+  // panel matches whichever bar it hangs from (see filt/filt-panel in
+  // global.css), but Single select's bar is one narrow chip; without a
+  // floor its panel would be too narrow for its own rows to stay on one
+  // line. 300px stays under the three-chip bar's own ~338px, so Multiple
+  // select keeps its exact match rather than gaining a wider one.
+  panelMinWidth: 300,
   shadow:
     "drop-shadow(0 3px 3px rgba(43,64,92,.05)) drop-shadow(0 11px 5.5px rgba(43,64,92,.04)) " +
     "drop-shadow(0 25px 7.5px rgba(43,64,92,.03)) drop-shadow(0 45px 9px rgba(43,64,92,.01))",
@@ -63,14 +70,23 @@ const FILTER_SPECS = [
   ["Label", `${T.label} · gray-80`],
   ["Panel", `${T.panel} · 1px ${T.panelBorder} · radius ${T.panelRadius}px`],
   ["Panel offset", `${T.panelOffset}px below the bar`],
+  ["Panel width", `matches the bar · ${T.panelMinWidth}px minimum`],
   ["Row", `${T.rowHeight}px · padding ${T.rowPad}px · radius ${T.rowRadius}px`],
   ["Row · picked", `${T.rowPicked} · gray-20`],
   ["Count", `${T.count} · ${T.countWidth}px column`],
 ];
 
+// Whether the bar shows all three groups or just one. Multiple select is the
+// bar's original, default behaviour — Selecting, Searching and Counts each
+// keep their own pick, independent of the others. Single select drops down
+// to Selecting alone: with only one active pick possible bar-wide, the other
+// two groups would just be dead ends sitting next to it.
+const isSingleSelect = (variant) => variant === "Single select";
+
 // The guidance behind the bar, stated once. The specs panel shows the
 // headlines; the AI prompt shows these with their reasoning attached.
-export function filterRules() {
+export function filterRules(variant = "Multiple select") {
+  const single = isSingleSelect(variant);
   return [
     {
       rule: "The panel's first row is an input, not a heading — type to filter.",
@@ -85,18 +101,31 @@ export function filterRules() {
       why: "Labels then stay aligned across one- and two-digit values, so don't let the count size itself.",
     },
     {
-      rule: "The bar has no height of its own — it hugs its chips.",
-      why: `Its box is the sum of theirs plus the ${T.barGap}px gaps, so don't pin it to ${T.chipHeight}px.`,
+      rule: "The bar has no size of its own on either axis — it hugs its chips.",
+      why: `Its box is the sum of theirs plus the ${T.barGap}px gaps. That has to be inline-flex, not flex: a block-level flex container stretches to fill its own parent's width regardless of how few chips are in it, which leaves empty pill background trailing the last one rather than the pill ending right after it.`,
+    },
+    {
+      rule: `The panel matches the bar's width, down to a ${T.panelMinWidth}px floor.`,
+      why: `Matching the bar exactly is what keeps Multiple select's panel from overhanging past Counts, its last chip. But Single select's own bar is one narrow chip — without a floor under the panel specifically, its rows would wrap rather than stay on one line. ${T.panelMinWidth}px reads comfortably and still sits under the three-chip bar's own width, so Multiple select keeps its exact match.`,
     },
     {
       rule: "One chip is open at a time, and closing always clears the query.",
       why: "Reopening starts clean rather than on a stale filter. The panel also dismisses on an outside click and on Escape.",
     },
+    single
+      ? {
+          rule: "One chip, not three — Single select drops Searching and Counts entirely.",
+          why: "With only one active pick possible bar-wide, showing three groups to choose from would just be two dead ends. Selecting is the one group that stays, not a merge of all three into one list.",
+        }
+      : {
+          rule: "Groups are independent — picking in one doesn't touch another.",
+          why: "Each group holds its own pick, so narrowing by one category leaves every other group's filter in place.",
+        },
   ];
 }
 
-export function filterSpecs() {
-  return { rules: ruleHeadlines(filterRules()), rows: FILTER_SPECS };
+export function filterSpecs({ variant } = {}) {
+  return { rules: ruleHeadlines(filterRules(variant)), rows: FILTER_SPECS };
 }
 
 // Filter bar — the Loka Figma "filter" component (node 4866:24030). Figma
@@ -107,7 +136,14 @@ export function filterSpecs() {
 //   active    the open chip on gray-20, its arrow flipped up, panel below
 //
 // The panel's first row is a real input — typing filters the options under it.
-export function FilterPreview({ bestPractices, onState }) {
+// `variant` is a second axis on top of that: Multiple select keeps every
+// group's pick independent (the bar's original behaviour) across all three
+// chips. Single select isn't those same three chips with stricter picking —
+// it's one chip, Selecting, since a bar that can only hold one active pick
+// has no use for Searching or Counts as a second or third dead end.
+export function FilterPreview({ variant = "Multiple select", bestPractices, onState }) {
+  const single = isSingleSelect(variant);
+  const visibleGroups = single ? FILTER_GROUPS.slice(0, 1) : FILTER_GROUPS;
   const [openLabel, setOpenLabel] = useState(null);
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState({});
@@ -120,6 +156,13 @@ export function FilterPreview({ bestPractices, onState }) {
     setOpenLabel(null);
     setQuery("");
   }, []);
+
+  // Switching modes can drop the chip that's currently open — Searching or
+  // Counts stop existing the moment Single select takes over — so close
+  // rather than leave openLabel pointing at a chip that's no longer there.
+  useEffect(() => {
+    close();
+  }, [variant, close]);
 
   useEffect(() => {
     if (!openLabel) return;
@@ -145,7 +188,7 @@ export function FilterPreview({ bestPractices, onState }) {
     );
   }, [openLabel, onState]);
 
-  const openGroup = FILTER_GROUPS.find((g) => g.label === openLabel);
+  const openGroup = visibleGroups.find((g) => g.label === openLabel);
 
   const options = useMemo(() => {
     if (!openGroup) return [];
@@ -162,17 +205,22 @@ export function FilterPreview({ bestPractices, onState }) {
     requestAnimationFrame(() => inputRef.current?.focus());
   };
 
+  // Multiple select keeps every group's pick in the same object, untouched by
+  // the others. Single select replaces the whole object with just this pick —
+  // or empties it on a re-pick — so no other group can hold one at the same time.
   const pick = (groupLabel, option) =>
-    setPicked((cur) => ({
-      ...cur,
-      [groupLabel]: cur[groupLabel] === option ? undefined : option,
-    }));
+    single
+      ? setPicked((cur) => (cur[groupLabel] === option ? {} : { [groupLabel]: option }))
+      : setPicked((cur) => ({
+          ...cur,
+          [groupLabel]: cur[groupLabel] === option ? undefined : option,
+        }));
 
   return (
     <div className="bp-stage" data-bp={bestPractices || undefined}>
       <div className="filt" ref={rootRef}>
         <div className="filt-bar">
-          {FILTER_GROUPS.map((g, i) => {
+          {visibleGroups.map((g, i) => {
             const on = g.label === openLabel;
             return (
               // The chip is what's redlined, not the bar: the bar hugs its chips,
@@ -248,14 +296,20 @@ const caretSvg = (open) =>
 export function filterCss() {
   return blocks(
     // The panel is absolute, so it contributes no height — the root is the
-    // positioning context it hangs from.
+    // positioning context it hangs from. width:fit-content, not 100%: the
+    // panel below is width:100% of this box, so stretching it to fill the
+    // container would make the panel wider than the bar itself now that the
+    // bar hugs its own chips instead of stretching too.
     rule(`.${CLASS}`, [
       ["position", "relative"],
-      ["width", "100%"],
+      ["width", "fit-content"],
       ["max-width", `${T.width}px`],
     ]),
+    // inline-flex, not flex — a block-level flex container stretches to fill
+    // its parent's width regardless of how few chips are in it, leaving
+    // visible empty pill background after the last one.
     rule(`.${CLASS}__bar`, [
-      ["display", "flex"],
+      ["display", "inline-flex"],
       ["align-items", "center"],
       ["gap", `${T.barGap}px`],
       ["background", T.bar],
@@ -293,6 +347,7 @@ export function filterCss() {
       ["top", `calc(100% + ${T.panelGap}px)`],
       ["z-index", "2"],
       ["width", "100%"],
+      ["min-width", `${T.panelMinWidth}px`],
       ["display", "flex"],
       ["flex-direction", "column"],
       ["gap", "2px"],
@@ -360,8 +415,10 @@ export function filterCss() {
 // only state that shows every part at once. The open/close, the outside-click
 // and Escape dismissal, and the type-to-filter all need JavaScript — the
 // comment in the snippet says so, and the AI prompt tab specifies them.
-export function filterHtmlSnippet() {
-  const open = FILTER_GROUPS[0];
+export function filterHtmlSnippet({ variant = "Multiple select" } = {}) {
+  const single = isSingleSelect(variant);
+  const visibleGroups = single ? FILTER_GROUPS.slice(0, 1) : FILTER_GROUPS;
+  const open = visibleGroups[0];
 
   const chip = (group, isOpen) =>
     [
@@ -382,7 +439,7 @@ export function filterHtmlSnippet() {
   const markup = [
     `<div class="${CLASS}">`,
     indent(`<div class="${CLASS}__bar">`),
-    ...FILTER_GROUPS.map((g, i) => indent(chip(g, i === 0), 4)),
+    ...visibleGroups.map((g, i) => indent(chip(g, i === 0), 4)),
     indent("</div>"),
     "",
     indent(`<div class="${CLASS}__panel">`),
@@ -394,25 +451,35 @@ export function filterHtmlSnippet() {
     "<!-- Shown with the first chip open — Figma's active variant, and the only state",
     "     that shows every part at once. Opening and closing a chip, dismissing on",
     "     outside click or Escape, and filtering the rows as you type are all JavaScript;",
-    "     see the AI prompt tab for what each has to do. -->",
+    "     see the AI prompt tab for what each has to do.",
+    single
+      ? "     Single select: one chip, not three — Searching and Counts don't exist here. -->"
+      : "     Multiple select: each group keeps its own pick, independent of the rest. -->",
   ].join("\n");
 
-  return htmlDocument({ title: "Filter — bar with panel open", css: filterCss(), markup });
+  return htmlDocument({ title: `Filter — ${variant}, bar with panel open`, css: filterCss(), markup });
 }
 
-export function filterPromptSnippet() {
+export function filterPromptSnippet({ variant = "Multiple select" } = {}) {
+  const single = isSingleSelect(variant);
   return specPrompt({
     component: "Filter",
-    config: "Bar with dropdown panel",
+    config: `Bar with dropdown panel — ${variant}`,
     sections: [
       [
         "Bar",
         [
-          ["Width", `fills its container, ${T.width}px maximum`],
+          ["Width", `hugs its chips, ${T.width}px maximum — the panel below matches this, not its container`],
           ["Fill", tokenRef(T.bar)],
           ["Radius", `${T.barRadius}px — a pill`],
           ["Gap", `${T.barGap}px between chips`],
           ["Height", "hugs its chips — it has no height of its own"],
+          [
+            "Chip count",
+            single
+              ? "one chip (Selecting) — Multiple select's other two groups, Searching and Counts, don't exist in this mode"
+              : "three chips (Selecting, Searching, Counts), one per group",
+          ],
         ],
       ],
       [
@@ -431,7 +498,7 @@ export function filterPromptSnippet() {
         "Panel",
         [
           ["Position", `absolute, ${T.panelGap}px below the bar — ${T.panelOffset}px from its top`],
-          ["Width", "matches the bar"],
+          ["Width", `matches the bar, ${T.panelMinWidth}px minimum`],
           ["Fill", tokenRef(T.panel)],
           ["Border", `1px solid ${tokenRef(T.panelBorder)}`],
           ["Radius", `${T.panelRadius}px`],
@@ -458,11 +525,14 @@ export function filterPromptSnippet() {
       "One chip is open at a time: opening another closes the current one, and clicking the open chip closes it.",
       "The panel dismisses on an outside click and on Escape. Closing always clears the query, so reopening starts clean rather than on a stale filter.",
       "Opening a chip moves focus into the panel's search input.",
+      single
+        ? "There's only the one group to pick from, so the bar carries at most one active filter at a time by construction, not by clearing other groups' picks."
+        : "Each group's pick is independent — picking in one leaves every other group's pick in place.",
     ],
     notes: [
-      ...ruleTexts(filterRules()),
+      ...ruleTexts(filterRules(variant)),
       "Each option is a toggle, so use aria-pressed rather than a checkbox role.",
     ],
-    reference: filterHtmlSnippet(),
+    reference: filterHtmlSnippet({ variant }),
   });
 }

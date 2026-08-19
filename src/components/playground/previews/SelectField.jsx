@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SELECT_GROUPS, SELECT_MAX } from "../../../data/components.js";
+import { SELECT_GROUPS, SELECT_MAX, SELECT_SINGLE_OPTIONS } from "../../../data/components.js";
 import { CaretDown, CheckBold, CircleX } from "../../common/Icon.jsx";
 
-// Searchable, grouped multi-select — the Loka Figma "Dropdown" component
+// Searchable, grouped select — the Loka Figma "Dropdown" component
 // (node 6916:50169). Figma documents it as five variants; they're all states of
 // one control, so this is built interactive and each variant falls out of use:
 //
@@ -10,26 +10,45 @@ import { CaretDown, CheckBold, CircleX } from "../../common/Icon.jsx";
 //   Opened      list showing, nothing picked
 //   Selected    list showing, one or more picked (ticked rows + tags below)
 //   No results  a query that matches nothing
-//   Complete    the three-selection ceiling reached: the list stays open with the
-//               unpicked rows disabled, so a swap starts by unticking
-export function MultiSelectField({ disabled, error, focus, placeholder }) {
+//   Complete    multi-select only — the three-selection ceiling reached: the list
+//               stays open with the unpicked rows disabled, so a swap starts by
+//               unticking
+//
+// `mode` splits the control in two: "multi" keeps the ceiling, the ticked rows,
+// and the tag row underneath; "single" picks one row and closes on it, the way
+// a native select would, with the chosen label filling the closed control
+// instead of sitting in a tag. Both share every other row of markup and CSS —
+// it's one control with two selection models, not two controls.
+//
+// `options` is a plain, ungrouped list for callers that just need a simple
+// dropdown — the Input Field's Select type, say, where the demo content is one
+// of four field types rather than the point of the page. Leaving it out falls
+// back to a mode default: SELECT_GROUPS.multi's grouped, behaviour-describing
+// copy for multi-select, or the flat SELECT_SINGLE_OPTIONS for single — one
+// value doesn't need categories to sort through, so it gets no eyebrow label
+// and no divider between rows either, the same as an explicit `options` list.
+export function SelectField({ mode = "multi", options, disabled, error, focus, placeholder, onOpenChange }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState([]);
   const rootRef = useRef(null);
   const inputRef = useRef(null);
 
-  const atMax = selected.length >= SELECT_MAX;
+  // Only multi-select has a ceiling — single-select just replaces its one pick.
+  const atMax = mode === "multi" && selected.length >= SELECT_MAX;
 
-  // Filtering keeps a group only while it still has a matching option.
+  // Filtering keeps a group only while it still has a matching option. A flat
+  // list — an explicit `options` prop, or single-select's own default — is one
+  // nameless group, so the panel skips its label and its divider.
   const groups = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return SELECT_GROUPS;
-    return SELECT_GROUPS.map((g) => ({
-      ...g,
-      options: g.options.filter((o) => o.toLowerCase().includes(q)),
-    })).filter((g) => g.options.length > 0);
-  }, [query]);
+    const flat = options ?? (mode === "single" ? SELECT_SINGLE_OPTIONS : null);
+    const all = flat ? [{ label: null, options: flat }] : SELECT_GROUPS.multi;
+    if (!q) return all;
+    return all
+      .map((g) => ({ ...g, options: g.options.filter((o) => o.toLowerCase().includes(q)) }))
+      .filter((g) => g.options.length > 0);
+  }, [mode, options, query]);
 
   const noResults = open && groups.length === 0;
 
@@ -40,7 +59,8 @@ export function MultiSelectField({ disabled, error, focus, placeholder }) {
   const closeList = useCallback(() => {
     setOpen(false);
     setQuery("");
-  }, []);
+    onOpenChange?.(false);
+  }, [onOpenChange]);
 
   useEffect(() => {
     if (!open) return;
@@ -59,14 +79,22 @@ export function MultiSelectField({ disabled, error, focus, placeholder }) {
   const openList = () => {
     if (disabled) return;
     setOpen(true);
+    onOpenChange?.(true);
     // Let the input mount before focusing it.
     requestAnimationFrame(() => inputRef.current?.focus());
   };
 
-  // The ceiling never closes the list or clears a selection — it only stops the
-  // list growing. Unticking a chosen row is the way back under the limit, which
-  // is why the ticked rows stay live while the rest go disabled.
+  // Single-select commits on the same click that picks the row: one value at a
+  // time means there's nothing left to confirm. Multi-select's ceiling never
+  // closes the list or clears a selection — it only stops the list growing.
+  // Unticking a chosen row is the way back under the limit, which is why the
+  // ticked rows stay live while the rest go disabled.
   const toggle = (option) => {
+    if (mode === "single") {
+      setSelected([option]);
+      closeList();
+      return;
+    }
     if (selected.includes(option)) {
       setSelected((cur) => cur.filter((o) => o !== option));
       return;
@@ -82,11 +110,9 @@ export function MultiSelectField({ disabled, error, focus, placeholder }) {
 
   const remove = (option) => setSelected((cur) => cur.filter((o) => o !== option));
 
-  // Same footer open or closed, so the tags don't shift as the panel collapses.
-  // Nothing picked yet means no footer at all: the control ends flush at the
-  // list rather than holding an empty blue strip open for tags that don't
-  // exist — it appears with the first selection.
-  const foot = selected.length > 0 && (
+  // Tags are multi-only — single-select's one value fills the closed control
+  // directly instead of sitting in a removable chip below it.
+  const foot = mode === "multi" && selected.length > 0 && (
     <div className="ms-foot">
       {atMax && <p className="ms-max">Maximum {SELECT_MAX} selected.</p>}
       <div className="ms-tags">
@@ -100,13 +126,18 @@ export function MultiSelectField({ disabled, error, focus, placeholder }) {
               disabled={disabled}
               onClick={() => remove(o)}
             >
-              <CircleX size={24} />
+              <CircleX />
             </button>
           </span>
         ))}
       </div>
     </div>
   );
+
+  // Single-select's closed control shows the chosen label in place of the
+  // placeholder, the way a native select would — there's no tag to hold it.
+  const filled = mode === "single" && selected.length > 0;
+  const closedText = filled ? selected[0] : placeholder;
 
   return (
     // The anchor holds the closed control's height so the open panel can lift
@@ -123,15 +154,18 @@ export function MultiSelectField({ disabled, error, focus, placeholder }) {
         {open ? (
           <>
             {/* Clicking the control again collapses it, the way the filter chip
-                does. The filter keeps a button when open; this row becomes a
-                search input, so only clicks outside the input itself count —
-                otherwise focusing the field to type would close the panel.
+                does. Once there's a query, clicking back into the input places
+                the caret in it instead of closing — otherwise fixing a typo
+                would collapse the panel. Empty, there's nothing in the input to
+                protect, so any click on the row — including the placeholder —
+                closes it, the same as clicking the closed control would have.
                 Keyboard users get the same exit via the caret button or Esc. */}
             <div
               className="ms-search"
               data-max={atMax || undefined}
               onClick={(e) => {
-                if (e.target !== inputRef.current) closeList();
+                if (e.target === inputRef.current && query) return;
+                closeList();
               }}
             >
               {/* At the ceiling there is nothing left to search for, so the row
@@ -160,9 +194,9 @@ export function MultiSelectField({ disabled, error, focus, placeholder }) {
               {noResults ? (
                 <p className="ms-empty">Not matching solutions.</p>
               ) : (
-                groups.map((g) => (
-                  <div className="ms-group" key={g.label}>
-                    <span className="ms-group-label">{g.label}</span>
+                groups.map((g, i) => (
+                  <div className="ms-group" key={g.label ?? i}>
+                    {g.label && <span className="ms-group-label">{g.label}</span>}
                     <div className="ms-options">
                       {g.options.map((o) => {
                         const on = selected.includes(o);
@@ -190,26 +224,61 @@ export function MultiSelectField({ disabled, error, focus, placeholder }) {
           </>
         ) : (
           <>
-            <button
-              type="button"
-              className="ms-control"
-              disabled={disabled}
-              onClick={openList}
-              aria-expanded={false}
-            >
+            <div className="ms-control" data-filled={filled || undefined} data-disabled={disabled || undefined}>
               {/* Live even at the ceiling: reopening is how a selection gets
                   swapped out, so the closed control never mutes. */}
-              <span className="ms-control-text">{placeholder}</span>
-              {/* Same 20px box the open state's caret button uses, so opening the
-                  dropdown doesn't nudge the glyph sideways. */}
-              <span className="ms-caret" aria-hidden>
+              <span className="ms-control-text">{closedText}</span>
+              {/* The caret is the open trigger, not the row around it — the same
+                  split the open state already draws between its search input
+                  and its own caret button. Same 20px box either state, so
+                  opening doesn't nudge the glyph sideways. */}
+              <button
+                type="button"
+                className="ms-caret"
+                aria-label="Open options"
+                aria-expanded={false}
+                disabled={disabled}
+                onClick={openList}
+              >
                 <CaretDown />
-              </span>
-            </button>
+              </button>
+            </div>
             {foot}
           </>
         )}
       </div>
     </div>
   );
+}
+
+// Shared behavioural rules, in one place so the Input Field's Select type
+// (always single) and the Dropdown component (either mode) read consistently
+// rather than describing the same control two different ways.
+export function selectRules(mode) {
+  return [
+    {
+      rule: "The panel overlays the page — it never pushes content down.",
+      why: "It's absolutely positioned, so it adds no height. Clicking the control again collapses it.",
+    },
+    mode === "multi"
+      ? {
+          rule: "At three selections the unpicked rows disable, so a swap starts by unticking.",
+          why: "The panel stays open while that happens rather than closing on the third pick.",
+        }
+      : {
+          rule: "Picking a row fills the field and closes the list.",
+          why: "One value at a time, so there's nothing left to confirm — the same click that picks it commits it.",
+        },
+  ];
+}
+
+// The panel's own spec rows — values nothing on the canvas reports, since the
+// redlines measure the closed control. Tags only exist in multi-select.
+export function selectPanelSpecs(mode) {
+  return [
+    ["Panel fill", "#EEF2FE · blue-5"],
+    ["List", "348px max · scrolls"],
+    ["Option", "48px · radius 12px · #EFF1F5"],
+    ...(mode === "multi" ? [["Tag", "#EEF2FE on 1px #D8E2F6"]] : []),
+  ];
 }

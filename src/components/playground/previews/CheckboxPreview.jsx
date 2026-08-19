@@ -1,120 +1,146 @@
 import { SpecOverlay } from "../SpecOverlay.jsx";
 import { CheckSmall } from "../../common/Icon.jsx";
-import {
-  FONT_STACK,
-  blocks,
-  htmlDocument,
-  indent,
-  rule,
-  ruleHeadlines,
-  ruleTexts,
-  specPrompt,
-  tokenRef,
-} from "../snippets.js";
+import { blocks, htmlDocument, indent, rule, ruleHeadlines, ruleTexts, specPrompt, tokenRef } from "../snippets.js";
+
+// The accessible name for the bare control — there's no text printed beside
+// it, so this only ever reaches an aria-label, never the screen.
+const LABEL = "Option label";
 
 // Resolved values for the control, in one place — global.css paints these, and
 // the spec sheet and the copyable snippets below both read them from here.
 const T = {
-  height: 40,
-  pad: 8,
-  gap: 8,
-  radius: 12,
-  border: "#EFF1F5", // gray-5
-  box: 16,
-  boxRadius: 100,
+  // None of these three is the sourced Figma control either (that one
+  // measures 16px) — this system's own scale, for contexts where a bigger,
+  // more tappable target matters more than matching the render exactly.
+  // 28px, the middle step, is the default.
+  boxSize: { "24px": 24, "28px": 28, "32px": 32 },
+  // Rounded is the sourced Figma radius — a full circle. Squared is this
+  // system's own addition, not in the design file; 4px keeps it a square with
+  // soft corners rather than a sharp one, in step with the rest of the system.
+  boxRadius: { Rounded: 100, Squared: 4 },
   boxBorder: "#E7ECF2", // gray-10
   boxChecked: "#186BF3", // blue-100
-  tick: 12,
   tickColor: "#FFFFFF",
-  fontSize: 14,
-  lineHeight: 1.45,
-  label: "#828FA5", // gray-50
-  labelChecked: "#020F1F", // gray-90
-  labelDisabled: "#7C92AE", // GreyBlue
   fillHover: "#F5F6FA", // BackgroundGrey
   disabledOpacity: 0.5,
 };
 
-// Height, padding and the font are absent: the redlines draw the first two on
-// the pill itself, and the font is the system's. The two identical fill rows
-// merged — hover and checked share one value, and stating it twice read as two
-// facts to check rather than one.
-const CHECKBOX_SPECS = [
-  ["Radius", `${T.radius}px`],
-  ["Border", `1px ${T.border} · gray-5`],
-  ["Control", `${T.box}px circle · 1px ${T.boxBorder}`],
-  ["Control · checked", `${T.boxChecked} · ${T.tick}px white tick`],
-  ["Text", `${T.fontSize}px / ${T.lineHeight}`],
-  ["Label", `${T.label} · gray-50`],
-  ["Label · checked", `${T.labelChecked} · gray-90`],
-  ["Label · disabled", `${T.labelDisabled} · greyblue`],
-  ["Fill · hover & checked", T.fillHover],
-  ["Disabled", `${Math.round(T.disabledOpacity * 100)}% opacity`],
-];
+// The tick's own size per control size — roughly 57% of the box at every
+// step, not a flat clearance. A fixed gap shrinks proportionally as the box
+// grows, which is what made the tick read as cramped at 32px; scaling it
+// with the box keeps the same visible breathing room at every size instead.
+const TICK_SIZE = { "24px": 14, "28px": 16, "32px": 18 };
+const tickFor = (size) => TICK_SIZE[size];
+
+// Only the two axes that actually change the markup earn a suffix — the
+// default 28px stays silent the way Rounded already does.
+function configSuffix(shape, size) {
+  const parts = [];
+  if (shape === "Squared") parts.push("Squared");
+  if (size !== "28px") parts.push(size);
+  return parts.length ? `, ${parts.join(", ")}` : "";
+}
+
+function checkboxSpecRows(shape, size) {
+  const rounded = shape !== "Squared";
+  const box = T.boxSize[size];
+  return [
+    ["Size", size],
+    ["Control", `${box}px ${rounded ? "circle" : "square"} · 1px ${T.boxBorder}`],
+    ["Control radius", `${T.boxRadius[shape]}px${rounded ? " — a circle" : ""}`],
+    ["Control · hover", T.fillHover],
+    ["Control · checked", `${T.boxChecked} · ${tickFor(size)}px white tick`],
+    ["Disabled", `${Math.round(T.disabledOpacity * 100)}% opacity`],
+  ];
+}
 
 // The guidance behind the control, stated once. The specs panel shows the
 // headlines; the AI prompt shows these with their reasoning attached.
 export function checkboxRules() {
   return [
     {
-      rule: "The whole pill is the target, not just the circle.",
-      why: 'Build it as a <label> wrapping a native checkbox rather than a button with role="checkbox" — the keyboard, the tab order and the checked state then come for free.',
+      rule: "The circle is the whole target — there's no pill around it.",
+      why: 'Even at the largest size this is a small hit area on its own; build it as a <label> wrapping a native checkbox rather than a button with role="checkbox" so the keyboard, the tab order and the checked state come for free, and give it room from its neighbours since there\'s no padded pill to lean on.',
+    },
+    {
+      rule: "No visible label — the control still needs an accessible name.",
+      why: `aria-label="${LABEL}" on the input carries what a text node used to; a screen reader still announces it even though nothing prints beside the circle.`,
     },
     {
       rule: "Figma calls the checked variant “Focused”. It is the checked state.",
       why: "No focus ring is defined anywhere in the component, so don't build one from that variant name; keyboard focus falls back to the browser default.",
     },
     {
-      rule: "Hover and checked share one fill.",
-      why: "A checked control still reads as checked once the pointer leaves it.",
+      rule: "Checked wins over hover, not the other way round.",
+      why: "Order the checked rule after the hover rule despite equal specificity, so a checked control caught mid-hover still reads as checked rather than flickering back to the hover tint.",
+    },
+    {
+      rule: "Squared is this system's own addition, not a Figma variant.",
+      why: `The sourced component (node 3692:15296) only documents the circular control; Squared swaps its ${T.boxRadius.Rounded}px radius for ${T.boxRadius.Squared}px, same tokens otherwise, for interfaces that read better with corners.`,
+    },
+    {
+      rule: "None of the three sizes is the sourced Figma control either.",
+      why: "That one measures 16px. This scale (24/28/32px) exists for contexts where a bigger, more tappable target matters more than matching the render exactly — the tick scales with the box (about 57% of it at every step) rather than keeping a flat clearance that would leave it cramped at the larger end.",
     },
   ];
 }
 
-export function checkboxSpecs() {
+export function checkboxSpecs({ shape = "Rounded", size = "28px" } = {}) {
   // The state isn't a row — it's the lit canvas pill, already on screen.
-  return { rules: ruleHeadlines(checkboxRules()), rows: CHECKBOX_SPECS };
+  return { rules: ruleHeadlines(checkboxRules()), rows: checkboxSpecRows(shape, size) };
 }
 
-// Checkbox — the Loka Figma "Checkbox / 40" component (node 3692:15296). Figma
-// documents four states, and the canvas pills step through all of them:
+// Checkbox — the Loka Figma "Checkbox / 40" component (node 3692:15296), pared
+// down to the circle alone: no pill, no label, just the control the pill used
+// to wrap. The canvas pills step through the same four states:
 //
-//   Default    resting, empty circle, gray-50 label
-//   Hovered    the same control with the backgroundgrey fill
-//   Checked    Figma's "Focused": circle fills blue-100, label darkens to gray-90
-//   Disabled   half-opacity with a greyblue label
+//   Default    resting, empty circle
+//   Hovered    the same circle with the backgroundgrey fill
+//   Checked    Figma's "Focused": circle fills blue-100
+//   Disabled   half-opacity
 //
 // Hover is pure CSS in real use, so the pinned state is a flag the same rule
 // answers to — otherwise picking "Hovered" from a pill, which moves the cursor
 // away from the control, could never show it.
-// Placeholder copy, like the Filter's and the Tabs'. One control is enough to
-// show every state, since checked and disabled are both driven from outside the
-// pill. Kept short: the pill hugs its label, so a sentence would stretch the box
-// the redlines are measuring.
-const LABEL = "Option label";
-
-export function CheckboxPreview({ state = "Default", setState, bestPractices }) {
+//
+// Shape and Size are both second, independent axes — Rounded (the sourced
+// circle) or Squared, 24/28/32px — so they live as their own controls in the
+// properties panel rather than doubling the canvas pills.
+export function CheckboxPreview({
+  state = "Default",
+  setState,
+  shape = "Rounded",
+  size = "28px",
+  bestPractices,
+}) {
   const checked = state === "Checked";
   const disabled = state === "Disabled";
   const hovered = state === "Hovered";
 
   return (
     <div className="bp-stage" data-bp={bestPractices || undefined}>
-      <SpecOverlay on={bestPractices} padX={8} padY={8} widthMode="hug" heightMode="fixed">
+      {/* No padding to redline — the button is the control itself now, not a
+          pill wrapping it. */}
+      <SpecOverlay on={bestPractices} padX={0} padY={0} widthMode="fixed" heightMode="fixed">
         <button
           type="button"
           role="checkbox"
           aria-checked={checked}
+          aria-label={LABEL}
           className="cbx"
           data-checked={checked || undefined}
           data-hover={hovered || undefined}
+          // Rounded and 28px are the defaults global.css already paints, so
+          // only a non-default value needs a flag — same trick data-checked
+          // and data-hover use above.
+          data-shape={shape === "Squared" ? "Squared" : undefined}
+          data-size={size !== "28px" ? size : undefined}
           disabled={disabled}
           // The control stays live, so the pills follow the click rather than
           // drifting out of step with what's on screen.
           onClick={() => setState?.(checked ? "Default" : "Checked")}
         >
-          <span className="cbx-box">{checked ? <CheckSmall /> : null}</span>
-          {LABEL}
+          {checked ? <CheckSmall size={tickFor(size)} /> : null}
         </button>
       </SpecOverlay>
     </div>
@@ -125,34 +151,39 @@ export function CheckboxPreview({ state = "Default", setState, bestPractices }) 
 
 const CLASS = "loka-checkbox";
 
-// The tick, matching CheckSmall in Icon.jsx.
-const TICK_SVG =
-  `<svg viewBox="6 6 12 12" width="${T.tick}" height="${T.tick}" aria-hidden="true">` +
+// The tick, matching CheckSmall in Icon.jsx, sized for the chosen control size.
+const tickSvg = (size) =>
+  `<svg viewBox="6 6 12 12" width="${tickFor(size)}" height="${tickFor(size)}" aria-hidden="true">` +
   `<path d="M10.4969 15.3333L7 12.1733L7.87423 11.3832L10.4969 13.7533L16.1258 8.66667L17 9.45669L10.4969 15.3333Z" ` +
   `fill="currentColor"/></svg>`;
 
 // The preview drives its states from data-attributes so the canvas pills can
 // pin them; a real checkbox drives them from a native input instead, which is
-// what this emits — no JavaScript, and the keyboard works for free.
-export function checkboxCss() {
+// what this emits — no JavaScript, and the keyboard works for free. Shape and
+// Size both have no equivalent live toggle here — there's no pseudo-class for
+// either the way :checked covers state — so they're baked into the emitted
+// radius and dimensions directly.
+export function checkboxCss({ shape = "Rounded", size = "28px" } = {}) {
+  const box = T.boxSize[size];
+
   return blocks(
-    // The whole pill is the target, not just the circle, so the label is the
-    // control rather than a sibling of it.
+    // The label doubles as the control itself — there's no separate pill to
+    // hold it, so its own border and radius are the circle's.
     rule(`.${CLASS}`, [
+      ["position", "relative"],
       ["display", "inline-flex"],
       ["align-items", "center"],
-      ["gap", `${T.gap}px`],
-      ["height", `${T.height}px`],
-      ["padding", `${T.pad}px`],
-      ["border", `1px solid ${T.border}`],
-      ["border-radius", `${T.radius}px`],
+      ["justify-content", "center"],
+      ["flex", "none"],
+      ["width", `${box}px`],
+      ["height", `${box}px`],
+      ["border", `1px solid ${T.boxBorder}`],
+      // The stroke sits inside, so the tick — sized separately, see tickSvg
+      // below — centres with room around it rather than filling the box.
+      ["border-radius", `${T.boxRadius[shape]}px`],
+      ["color", T.tickColor],
       ["cursor", "pointer"],
-      ["font-family", FONT_STACK],
-      ["font-size", `${T.fontSize}px`],
-      ["font-weight", "400"],
-      ["line-height", T.lineHeight],
-      ["color", T.label],
-      ["transition", "background .12s, color .12s"],
+      ["transition", "background .12s, border-color .12s"],
     ]),
     // The input still exists and still takes focus — it's just not what's
     // painted. Hiding it with display:none would take it out of the tab order.
@@ -164,53 +195,34 @@ export function checkboxCss() {
       ["margin", "0"],
       ["pointer-events", "none"],
     ]),
-    rule(`.${CLASS}__box`, [
-      ["flex", "none"],
-      ["display", "inline-flex"],
-      ["align-items", "center"],
-      ["justify-content", "center"],
-      ["width", `${T.box}px`],
-      ["height", `${T.box}px`],
-      ["border", `1px solid ${T.boxBorder}`],
-      // The stroke sits inside, so the 12px tick centres with 2px of clearance
-      // rather than the box growing to fit it.
-      ["border-radius", `${T.boxRadius}px`],
-      ["color", T.tickColor],
-      ["transition", "background .12s, border-color .12s"],
-    ]),
-    rule(`.${CLASS}__box svg`, [
+    rule(`.${CLASS} svg`, [
       ["flex", "none"],
       ["opacity", "0"],
       ["transition", "opacity .12s"],
     ]),
     rule(`.${CLASS}:hover`, [["background", T.fillHover]]),
-    // :has() is what lets the pill respond to the input nested inside it —
-    // checked and disabled are both states of the input, not of the label.
+    // Declared after :hover with equal specificity, so a checked control
+    // stays blue rather than flickering back to the hover tint mid-pointer.
     rule(`.${CLASS}:has(:checked)`, [
-      ["background", T.fillHover],
-      ["color", T.labelChecked],
-    ]),
-    rule(`.${CLASS}__input:checked ~ .${CLASS}__box`, [
       ["background", T.boxChecked],
       ["border-color", T.boxChecked],
     ]),
-    rule(`.${CLASS}__input:checked ~ .${CLASS}__box svg`, [["opacity", "1"]]),
+    rule(`.${CLASS}:has(:checked) svg`, [["opacity", "1"]]),
     rule(`.${CLASS}:has(:disabled)`, [
       ["opacity", T.disabledOpacity],
-      ["background", "none"],
-      ["color", T.labelDisabled],
       ["cursor", "not-allowed"],
     ]),
-    // No focus ring is defined anywhere in the component, so the pill borrows
-    // the browser's rather than inventing one.
+    // No focus ring is defined anywhere in the component, so the control
+    // borrows the browser's rather than inventing one.
     rule(`.${CLASS}:has(:focus-visible)`, [["outline", "auto"]]),
   );
 }
 
-export function checkboxHtmlSnippet({ state = "Default" }) {
+export function checkboxHtmlSnippet({ state = "Default", shape = "Rounded", size = "28px" }) {
   const attrs = [
     `type="checkbox"`,
     `class="${CLASS}__input"`,
+    `aria-label="${LABEL}"`,
     state === "Checked" ? "checked" : null,
     state === "Disabled" ? "disabled" : null,
   ].filter(Boolean);
@@ -218,9 +230,11 @@ export function checkboxHtmlSnippet({ state = "Default" }) {
   const markup = [
     `<label class="${CLASS}">`,
     indent(`<input ${attrs.join(" ")}>`),
-    indent(`<span class="${CLASS}__box">${TICK_SVG}</span>`),
-    indent(`<span>${LABEL}</span>`),
+    indent(tickSvg(size)),
     "</label>",
+    "",
+    `<!-- No visible text — aria-label carries the name a text node used to,`,
+    `     since the <label> wrapping the input has nothing else to give it. -->`,
   ].join("\n");
 
   const caveat =
@@ -229,55 +243,38 @@ export function checkboxHtmlSnippet({ state = "Default" }) {
       : "";
 
   return htmlDocument({
-    title: `Checkbox — ${state}`,
-    css: checkboxCss(),
+    title: `Checkbox — ${state}${configSuffix(shape, size)}`,
+    css: checkboxCss({ shape, size }),
     markup: markup + caveat,
   });
 }
 
-export function checkboxPromptSnippet({ state = "Default" }) {
+export function checkboxPromptSnippet({ state = "Default", shape = "Rounded", size = "28px" }) {
+  const rounded = shape !== "Squared";
+
   return specPrompt({
     component: "Checkbox",
-    config: state,
+    config: `${state}${configSuffix(shape, size)}`,
     sections: [
-      [
-        "Pill",
-        [
-          ["Width", "hug content — the whole pill is the click target"],
-          ["Height", `${T.height}px`],
-          ["Padding", `${T.pad}px`],
-          ["Gap", `${T.gap}px between control and label`],
-          ["Radius", `${T.radius}px`],
-          ["Border", `1px solid ${tokenRef(T.border)}`],
-          ["Fill", "none at rest"],
-        ],
-      ],
       [
         "Control",
         [
-          ["Size", `${T.box}px square`],
-          ["Radius", `${T.boxRadius}px — a circle`],
+          ["Width", "the control itself is the click target — no pill, no label"],
+          ["Size", `${T.boxSize[size]}px square`],
+          ["Radius", `${T.boxRadius[shape]}px${rounded ? " — a circle" : ""}`],
           ["Border", `1px solid ${tokenRef(T.boxBorder)}`],
-          ["Tick", `${T.tick}px, ${tokenRef(T.tickColor)}, centred with 2px of clearance`],
-        ],
-      ],
-      [
-        "Type",
-        [
-          ["Family", "Alliance No.2"],
-          ["Size", `${T.fontSize}px / ${T.lineHeight}`],
-          ["Weight", "400"],
-          ["Label", tokenRef(T.label)],
+          ["Fill", "none at rest"],
+          ["Tick", `${tickFor(size)}px, ${tokenRef(T.tickColor)}, centred — about 57% of the box, not a flat clearance`],
         ],
       ],
     ],
     states: [
-      `Hover: pill fills ${tokenRef(T.fillHover)} over 120ms. The control and label don't change.`,
-      `Checked: the control fills ${tokenRef(T.boxChecked)} with a matching border and the tick appears; the pill takes the same ${tokenRef(T.fillHover)} fill as hover, and the label darkens to ${tokenRef(T.labelChecked)}.`,
-      `Disabled: ${Math.round(T.disabledOpacity * 100)}% opacity, no fill, label goes ${tokenRef(T.labelDisabled)}, cursor: not-allowed.`,
+      `Hover: fills ${tokenRef(T.fillHover)} over 120ms.`,
+      `Checked: fills ${tokenRef(T.boxChecked)} with a matching border and the tick appears — this wins over the hover fill even mid-pointer.`,
+      `Disabled: ${Math.round(T.disabledOpacity * 100)}% opacity, cursor: not-allowed.`,
       "Focus: no ring is defined in the component. Fall back to the browser default, or this project's existing focus treatment.",
     ],
     notes: ruleTexts(checkboxRules()),
-    reference: checkboxHtmlSnippet({ state }),
+    reference: checkboxHtmlSnippet({ state, shape, size }),
   });
 }

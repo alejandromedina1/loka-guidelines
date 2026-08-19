@@ -124,6 +124,35 @@ export function SearchIcon({ size = 16, strokeWidth = 1.5 }) {
   );
 }
 
+// The Date Picker's trailing glyph. Traced at this size rather than scaled down
+// from the published 24px Calendar icon (see icons.js): that one carries a
+// hairline 0.5px stroked sub-path, which 24→16 would thin to a third of a
+// pixel — the same reason CheckSmall crops its Figma glyph instead of resizing
+// it. Same silhouette as the published icon (body, header band, two tabs), and
+// the same 1.5px stroke the other 16px field glyphs use. The library icon is
+// still the canonical one at 24px.
+export function CalendarIcon({ size = 16, strokeWidth = 1.5 }) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} aria-hidden>
+      <rect x="2" y="3.5" width="12" height="10.5" rx="1.5" fill="none" stroke="currentColor" strokeWidth={strokeWidth} />
+      <path d="M2 7.25h12" stroke="currentColor" strokeWidth={strokeWidth} />
+      <path d="M5.5 2v2.5M10.5 2v2.5" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// A circled "i" — the Tooltip's single-icon variant hangs its longer
+// explanation off this glyph rather than a formatting button.
+export function InfoIcon({ size = 16, strokeWidth = 1.5 }) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} aria-hidden>
+      <circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor" strokeWidth={strokeWidth} />
+      <circle cx="8" cy="5.1" r="0.9" fill="currentColor" />
+      <path d="M8 7.5V11.2" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function SunIcon({ size = 16 }) {
   return (
     <svg viewBox="0 0 20 20" width={size} height={size}>
@@ -164,6 +193,30 @@ export function ChevronToggle({ open, size = 14 }) {
   return (
     <svg viewBox="0 0 16 16" width={size} height={size}>
       <path d={open ? "M4 10l4-4 4 4" : "M4 6l4 4 4-4"} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+// Device toggle pair for the playground's properties panel — Loka Figma
+// "24 / mobile" (node 122:146) and "24 / desktop" (node 122:142). Each is a
+// stroked outer rect (the phone/monitor body) plus a second, solid rect
+// flush against one edge (the phone's top notch, the monitor's stand) — two
+// separate overlapping shapes in Figma, not a cutout carved from the outline.
+// Tracing it as one subtractive path instead reads as a tank top, not a phone.
+export function MobileIcon({ size = 16 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden>
+      <rect x="6" y="3" width="12" height="18" fill="none" stroke="currentColor" strokeWidth="2" />
+      <rect x="9" y="3" width="6" height="4" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function DesktopIcon({ size = 16 }) {
+  return (
+    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden>
+      <rect x="1" y="3" width="22" height="15" fill="none" stroke="currentColor" strokeWidth="2" />
+      <rect x="9" y="17" width="6" height="4" fill="currentColor" />
     </svg>
   );
 }

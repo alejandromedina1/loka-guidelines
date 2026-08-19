@@ -5,16 +5,24 @@ import { SearchTrigger } from "./SearchOverlay.jsx";
 // The fixed header: mobile nav toggle, brand wordmark, search, and the
 // light/dark switch. Three columns, so search sits centred between the two
 // clusters instead of floating over the page.
-export function TopBar({ theme, setTheme, onToggleNav, onOpenSearch }) {
+//
+// The wordmark is the app's home button — the convention every reader already
+// has — so it leaves whichever hub is open and returns to the landing. The
+// sidebar's own "All hubs" row does the same thing; this is the one people reach
+// for without looking.
+export function TopBar({ theme, setTheme, onToggleNav, onOpenSearch, onHome, showNav }) {
   return (
     <header className="topbar">
       <div className="topbar-left">
-        <button className="hamburger" onClick={onToggleNav} aria-label="Toggle navigation">
-          <MenuIcon />
-        </button>
-        <div className="brand">
+        {/* The landing has no sidebar, so there's nothing for this to open. */}
+        {showNav && (
+          <button className="hamburger" onClick={onToggleNav} aria-label="Toggle navigation">
+            <MenuIcon />
+          </button>
+        )}
+        <button className="brand" onClick={onHome} aria-label="Loka Design System — all hubs">
           <LokaLogo height={18} color="var(--ink)" />
-        </div>
+        </button>
       </div>
 
       <SearchTrigger onOpen={onOpenSearch} />

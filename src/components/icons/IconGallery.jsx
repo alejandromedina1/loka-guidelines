@@ -1,7 +1,7 @@
 import { ICON_CATEGORIES } from "../../data/icons.js";
 
 // The icon library, grouped by category and filterable by name or keywords.
-// Clicking a glyph copies its JSX tag (e.g. `<IconCheck />`).
+// Clicking a glyph copies its JSX tag (e.g. `<Check />`).
 export function IconGallery({ filter = "", copied, onCopy }) {
   const q = filter.trim().toLowerCase();
   // Filter and drop-if-empty in one pass rather than mapping every category and

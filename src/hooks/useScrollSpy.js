@@ -7,12 +7,22 @@ const ACTIVE_LINE = 120;
 
 // Tracks which documented section is currently in view and exposes helpers to
 // register section elements and smooth-scroll to them.
-export function useScrollSpy() {
-  const [active, setActive] = useState("introduction");
+//
+// `topId` is what's current when the page is scrolled to the very top, which
+// differs per hub: the landing opens on the introduction, the Brand Hub on
+// Color, the Product Hub on its single Components section. Passing it in is
+// what keeps the sidebar from highlighting nothing at the top of a hub.
+export function useScrollSpy(topId = "introduction") {
+  const [active, setActive] = useState(topId);
   const refs = useRef({});
 
+  // Switching hubs unmounts a whole run of sections and mounts another, so the
+  // registry has to shrink as well as grow: a detached element still answers
+  // getBoundingClientRect (with zeroes), which reads as "just above the active
+  // line" and would win the scan below over anything actually on screen.
   const registerRef = useCallback((id, el) => {
     if (el) refs.current[id] = el;
+    else delete refs.current[id];
   }, []);
 
   const scrollTo = useCallback((id) => {
@@ -22,15 +32,15 @@ export function useScrollSpy() {
   useEffect(() => {
     const onScroll = () => {
       const scroller = document.scrollingElement || document.documentElement;
-      // At the very top, always show Introduction.
+      // At the very top, always show whichever section opens this view.
       if (scroller.scrollTop < 40) {
-        setActive("introduction");
+        setActive(topId);
         return;
       }
 
       // Otherwise pick the section whose top has passed the active line and is
       // closest to it.
-      let current = "introduction";
+      let current = topId;
       let bestDelta = -Infinity;
       for (const id of SPY_IDS) {
         const el = refs.current[id];
@@ -47,7 +57,7 @@ export function useScrollSpy() {
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [topId]);
 
   return { active, registerRef, scrollTo };
 }

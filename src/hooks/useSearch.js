@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { NAV } from "../data/navigation.js";
-import { PALETTE } from "../data/palette.js";
+import { PALETTE, paletteTokens } from "../data/palette.js";
 import { TYPE_SCALE } from "../data/typeScale.js";
 import { SPACING } from "../data/spacing.js";
 import { ICON_CATEGORIES } from "../data/icons.js";
@@ -14,9 +14,12 @@ function buildSearchIndex() {
 
   NAV.forEach((group) =>
     group.items.forEach((it) => {
+      // A `toggleOnly` item (the Components category headers — Actions, Inputs,
+      // ...) is a pure dropdown with nothing of its own to jump to, so it's left
+      // out of the index; its children are indexed below same as any other sub.
       if (it.component) {
         idx.push({ label: it.label, kind: "Component", target: "components", setComponent: it.component });
-      } else {
+      } else if (!it.toggleOnly) {
         idx.push({ label: it.label, kind: "Section", target: it.id });
       }
       // Foundations sub-items are scroll targets; component sub-items are variants
@@ -26,7 +29,10 @@ function buildSearchIndex() {
         idx.push(
           s.component
             ? {
-                label: `${s.component} · ${s.label}`,
+                // Only disambiguate with the component name when the label
+                // doesn't already say it — a plain leaf like Button or Tabs
+                // has label === component, so prefixing would just repeat it.
+                label: s.label === s.component ? s.label : `${s.component} · ${s.label}`,
                 kind: "Component",
                 target: "components",
                 setComponent: s.component,
@@ -39,7 +45,7 @@ function buildSearchIndex() {
   );
 
   ["neutral", "blue", "semantic"].forEach((g) =>
-    PALETTE[g].tokens.forEach((t) =>
+    paletteTokens(PALETTE[g]).forEach((t) =>
       idx.push({ label: t.name, kind: "Color", sub: `#${t.hex.toUpperCase()}`, target: `color-${g}` })
     )
   );
@@ -86,7 +92,7 @@ export function useSearch(onRun) {
         find("Color", "NewBlue") || find("Color", "blue-100"),
         find("Type", "H1"),
         find("Spacing", "space-16"),
-        find("Icon", "IconCalendar"),
+        find("Icon", "Calendar"),
         find("Graphic", "AI & Agentic"),
         find("Component", "Button"),
       ].filter(Boolean);
