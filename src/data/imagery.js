@@ -19,36 +19,42 @@ import { DOT_ANCHORS } from "../utils/imageryStyles.js";
 //
 // They're Figma's own photos, cropped the way Figma crops them, so the numbers
 // below can be checked against the page. `subject` is where the subject sits in the
-// frame — it isn't used to compute anything, it's what the playground shows you
-// when you go looking for somewhere to put the dot field.
+// frame, `maskHint` what that implies for the dot field's fade. Neither computes
+// anything — they're what the playground shows you when you go looking for somewhere
+// to put the field. Kept apart because Usage shows these photos too and has no fade
+// to advise on.
 export const IMAGERY_PHOTOS = [
   {
     id: "presenting",
     label: "Presenter",
     src: presenting,
     alt: "A Loka team member presenting to a room",
-    subject: "Centre, full height — no clear side, so keep the fade short",
+    subject: "Centre, full height",
+    maskHint: "no clear side, so keep the fade short",
   },
   {
     id: "colleagues",
     label: "Colleagues",
     src: colleagues,
     alt: "Two colleagues looking at a phone together",
-    subject: "Lower two thirds — clear window above it, so fade from Top",
+    subject: "Lower two thirds",
+    maskHint: "clear window above them, so fade from Top",
   },
   {
     id: "lab",
     label: "Lab",
     src: lab,
     alt: "A gloved hand holding a petri dish in a laboratory",
-    subject: "Subject in the centre band — the case for fading from Edges",
+    subject: "Centre band, contained",
+    maskHint: "the case for fading from Edges",
   },
   {
     id: "phone",
     label: "Phone",
     src: phone,
     alt: "Someone looking at a map on their phone",
-    subject: "Left and centre — clear along the top edge",
+    subject: "Left and centre",
+    maskHint: "clear along the top edge, so fade from Top",
   },
 ];
 
@@ -188,5 +194,79 @@ export const IMAGERY_STYLES = [
       blur: 10,
     },
     controls: [TEXT_CONTROL(2), ...DOT_CONTROLS, ...BAND_CONTROLS],
+  },
+];
+
+// ── Usage ────────────────────────────────────────────────────────────────────
+// Three ways a photo sits on a page. Unlike the styling treatments these aren't a
+// parameter space — every value below is fixed, and the decision is which of the
+// three you want — so they're documented as a comparison rather than a playground.
+//
+// Two of them are Patterns the system already has, wrapped around a photo instead
+// of a section: On grid is the Line Grid, Lines + dots is the Corner Markers. Only
+// the gray plate is new machinery.
+//
+// Measured off the Usage section of the Figma Imagery page. Every colour resolves
+// to a palette token except the On-grid container's 1px border, #DEE7F4, which
+// isn't in data/palette.js — see the note on that entry.
+export const IMAGERY_USAGE = [
+  {
+    id: "gray-container",
+    name: "Gray container",
+    photo: "colleagues",
+    lede: "A flat gray-10 plate with the photo revealed by an even 10px on all four sides. Use it when the page behind is white and the image would otherwise float with no edge to sit against.",
+    surface: "#E7ECF2", // gray-10
+    radius: 8,
+    reveal: 10,
+    specs: [
+      ["Plate", "gray-10 · #E7ECF2"],
+      ["Radius", "8px"],
+      ["Reveal", "10px, all four sides"],
+    ],
+  },
+  {
+    id: "on-grid",
+    name: "On the grid",
+    photo: "presenting",
+    lede: "The photo inset by whole grid cells on a ruled container, so its edges land on the lines rather than near them. Use it where the grid is already visible and the image has to belong to it.",
+    surface: "#F5F6FA", // BackgroundGrey
+    // Not a palette token. It sits between gray-20 and gray-10 but is bluer than
+    // both, so it's kept as the literal Figma value rather than snapped to a token
+    // that would visibly change it. Either add it to the ramp or move the border
+    // to gray-20 — flagged rather than quietly decided.
+    border: "#DEE7F4",
+    rule: "#D8E2F6",
+    radius: 12,
+    cell: 36,
+    // Two cells, not 72px. Expressing it in cells is what keeps it on the grid if
+    // the cell ever changes.
+    insetCells: 2,
+    // The container is whole cells as well, which is what lands the photo's right
+    // and bottom edges on rules rather than only its left and top. 15 x 10 keeps
+    // the 3:2 the other placements use — 540 x 360 at a 36px cell.
+    frameCols: 15,
+    frameRows: 10,
+    specs: [
+      ["Container", "BackgroundGrey · #F5F6FA"],
+      ["Rules", "1px · #D8E2F6 on a 36px cell"],
+      ["Grid", "15 × 10 cells · 540 × 360"],
+      ["Inset", "2 cells · 72px"],
+      ["Radius", "12px"],
+    ],
+  },
+  {
+    id: "lines-dots",
+    name: "Lines + dots",
+    photo: "lab",
+    lede: "A hairline box with blue squares straddling its corners, the photo inset 16px inside. The markers read as grid crossings, so the image is pinned to the layout rather than decorated.",
+    border: "#BDCFF5", // blue-20
+    marker: "#186BF3", // blue-100
+    markerSize: 8,
+    inset: 16,
+    specs: [
+      ["Box", "1px · blue-20 · #BDCFF5"],
+      ["Markers", "8px · blue-100 · #186BF3"],
+      ["Inset", "16px"],
+    ],
   },
 ];

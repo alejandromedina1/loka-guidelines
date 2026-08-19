@@ -431,7 +431,10 @@
    here. Each <i> in the band is one step of the blur ramp, <b> is the tint
    painted over it. */
 .imagery{position:relative;}
-.imagery > img{display:block;width:100%;height:100%;object-fit:cover;}
+/* Both labs' photos fill their frame the same way. Usage's container is
+   .imagery-frame rather than .imagery, and leaving it out of this rule is what had
+   its previews rendering the photo at its intrinsic size instead of filling. */
+.imagery > img,.imagery-frame > img{display:block;width:100%;height:100%;object-fit:cover;}
 .imagery-scrim,.imagery-dots{position:absolute;inset:0;}
 /* No height — the caption inside sets it, and the band's own Y padding is the
    only other term. The ramp and the tint fill the padding box, so they cover the
@@ -439,12 +442,22 @@
 .imagery-band{position:absolute;inset:auto 0 0;}
 .imagery-band>i,.imagery-band>b{position:absolute;inset:0;}
 .imagery-caption{position:relative;display:block;color:#fff;text-align:center;}
-/* Lab-only: the frame the treatments are demoed in. It's a container so the
-   captions below can be sized in cqw — both type sizes are lifted off Figma
-   frames three to four times this wide, and a px size tuned for one card width
-   would be wrong at the next breakpoint. */
-.img-frame{margin:0;width:100%;max-width:560px;aspect-ratio:3/2;
-   container-type:inline-size;background:var(--line-2);}
+/* Lab-only: the frame both Imagery labs demo in. Defined once and shared, so
+   Styling and Usage are the same size on the page and can't drift apart. */
+.img-demo{margin:0;width:100%;max-width:560px;aspect-ratio:3/2;}
+/* On-grid's wrapper. It exists so the grid cell can be a fraction of the frame:
+   cqw measures the nearest ancestor container and an element can't query itself, so
+   the frame that uses the unit has to sit inside the box being measured. Its own
+   max-width and ratio come in inline, off the cell count. */
+.imagery-grid{width:100%;container-type:inline-size;}
+.imagery-grid > .imagery-frame{width:100%;height:100%;}
+/* Styling's own additions. It's a container so the captions below can be sized in
+   cqw — both type sizes are lifted off Figma frames three to four times this wide,
+   and a px size tuned for one card width would be wrong at the next breakpoint. The
+   placeholder fill belongs here and not on .img-demo: a Usage placement sets its
+   own background, and Lines + dots deliberately has none, so its inset has to show
+   the canvas through rather than a grey plate. */
+.img-frame{container-type:inline-size;background:var(--line-2);}
 /* The type on the two Figma examples. Sizes and measures are both in cqw, so the
    caption wraps to the same three lines it does there whatever the frame's width
    — which matters here, because the band's depth follows that line count.
@@ -510,6 +523,20 @@
 .img-ctrl-group > .pg-row:first-of-type{border-top:none;}
 .img-ctrl-empty{font-size:12.5px;line-height:1.55;color:var(--ink-4);
   padding:14px 0 0;border-top:1px solid var(--line-2);}
+
+/* Imagery / Usage — one placement at a time on the same .pg frame as Styling.
+   .imagery-frame carries the copied rule set; this only sizes the demo. The three
+   differ in proportion (one landscape, two square) so the frame is capped rather
+   than stretched, and .pg-canvas-center's own padding is what keeps the corner
+   markers — which straddle the edge — from being clipped. */
+/* No knobs on a placement, so the properties panel carries the spec instead. Rows
+   match .pg-row's rhythm, since they sit where those rows would. */
+.imguse-specs{margin:0;display:flex;flex-direction:column;}
+.imguse-spec{display:flex;align-items:baseline;justify-content:space-between;gap:12px;
+  padding:9px 0;border-top:1px solid var(--line-2);}
+.imguse-spec dt{font-size:13px;color:var(--ink-3);}
+.imguse-spec dd{margin:0;font-family:var(--mono);font-size:11.5px;color:var(--ink);
+  text-align:right;}
 /* Compound selector on purpose: `.pg-row` is defined later in this file, so a
    bare `.pg-row-range` would lose its `align-items` to that rule's `center` and
    the head would shrink-wrap its text instead of spanning the row. */

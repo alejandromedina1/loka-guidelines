@@ -28,7 +28,9 @@ export function dotGrid({ size, gap, color, background }) {
 }
 
 // Two edges of the cell — one vertical, one horizontal — so tiling closes the grid.
-function lineGrid({ thickness, gap, color, background }) {
+// Exported as well as registered below: Imagery's On-grid usage rules a container
+// with the same grid before placing a photo on it.
+export function lineGrid({ thickness, gap, color, background }) {
   const cell = thickness + gap;
   const marks =
     `<rect width='${thickness}' height='${cell}' fill='${color}'/>` +

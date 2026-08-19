@@ -6,7 +6,7 @@ import { SPACING } from "../data/spacing.js";
 import { ICON_CATEGORIES } from "../data/icons.js";
 import { GRAPHICS } from "../data/graphics.js";
 import { PATTERNS } from "../data/patterns.js";
-import { IMAGERY_STYLES } from "../data/imagery.js";
+import { IMAGERY_STYLES, IMAGERY_USAGE } from "../data/imagery.js";
 
 // Builds a flat, searchable index spanning every part of the system: nav
 // sections, color/type/spacing tokens, icons, and graphics. Computed once.
@@ -72,7 +72,11 @@ function buildSearchIndex() {
   );
 
   IMAGERY_STYLES.forEach((s) =>
-    idx.push({ label: s.name, kind: "Imagery", target: "imagery", setImagery: s.id })
+    idx.push({ label: s.name, kind: "Imagery", target: "imagery-styling", setImagery: s.id })
+  );
+
+  IMAGERY_USAGE.forEach((u) =>
+    idx.push({ label: u.name, kind: "Imagery", target: "imagery-usage", setUsage: u.id })
   );
 
   return idx;

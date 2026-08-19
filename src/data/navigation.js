@@ -156,7 +156,14 @@ const FOUNDATIONS = {
     { id: "icons", label: "Icons" },
     { id: "graphics", label: "Graphics" },
     { id: "patterns", label: "Patterns" },
-    { id: "imagery", label: "Imagery" },
+    {
+      id: "imagery",
+      label: "Imagery",
+      sub: [
+        { id: "imagery-styling", label: "Styling" },
+        { id: "imagery-usage", label: "Usage" },
+      ],
+    },
   ],
 };
 
@@ -206,6 +213,8 @@ export const HUB_SPY_IDS = {
     "graphics",
     "patterns",
     "imagery",
+    "imagery-styling",
+    "imagery-usage",
   ],
   product: ["components"],
 };

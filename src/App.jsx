@@ -28,6 +28,9 @@ const SUB_SECTION_PARENT = new Map([
   ["typography", "typography"],
   ["type-desktop", "typography"],
   ["type-mobile", "typography"],
+  ["imagery", "imagery"],
+  ["imagery-styling", "imagery"],
+  ["imagery-usage", "imagery"],
 ]);
 
 // Maps a possibly-nested active section id to the top-level nav id, so a parent
@@ -68,6 +71,7 @@ export default function App() {
   const [componentVariant, setComponentVariant] = useState("Text");
   const [selectedPattern, setSelectedPattern] = useState("dot-grid");
   const [selectedImagery, setSelectedImagery] = useState("simple");
+  const [selectedUsage, setSelectedUsage] = useState("gray-container");
   const [expandedRow, setExpandedRow] = useState(null);
 
   const toggleRow = useCallback((id) => setExpandedRow((c) => (c === id ? null : id)), []);
@@ -131,6 +135,7 @@ export default function App() {
       if (r.setVariant) setComponentVariant(r.setVariant);
       if (r.setPattern) setSelectedPattern(r.setPattern);
       if (r.setImagery) setSelectedImagery(r.setImagery);
+      if (r.setUsage) setSelectedUsage(r.setUsage);
       navigate(r.target);
     },
     [navigate]
@@ -225,6 +230,8 @@ export default function App() {
                 onCopy={copy}
                 selectedImagery={selectedImagery}
                 setSelectedImagery={setSelectedImagery}
+                selectedUsage={selectedUsage}
+                setSelectedUsage={setSelectedUsage}
               />
             </>
           )}

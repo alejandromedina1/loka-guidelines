@@ -1,4 +1,4 @@
-import { dotGrid } from "./patternStyles.js";
+import { cornerMarkersCss, dotGrid, lineGrid } from "./patternStyles.js";
 
 // Builds the CSS for the four imagery treatments. A styled image is a stack of
 // layers over the photograph, always in this order:
@@ -225,5 +225,112 @@ export function imageryCss(layers, values) {
     );
   }
 
+  return rules.join("\n");
+}
+
+// ── Usage ────────────────────────────────────────────────────────────────────
+// Where a photo sits on the page, as opposed to what's laid over it. Three
+// containers, and two of them are Patterns the system already has: On grid rules
+// the container with the Line Grid before placing the photo, and Lines + dots
+// wraps it in the Corner Markers. Only the gray plate is new. That's worth saying
+// out loud in the docs — usage isn't a fourth kind of machinery, it's the patterns
+// applied to photography.
+
+// A photo on a flat plate, revealed by an even margin on all four sides. The plate
+// is what separates the image from the page when the page is also white; the
+// reveal is what stops it reading as a border.
+export function grayContainerStyle({ surface, radius, reveal }) {
+  return { background: surface, borderRadius: `${radius}px`, padding: `${reveal}px` };
+}
+
+// A photo landing on the layout grid — all four of its edges on rules, not just
+// the two the inset happens to control. Three things have to hold at once:
+//
+//   the inset is whole cells      so the left and top edges land
+//   the container is whole cells  so the right and bottom ones do too
+//   the hairline doesn't shift the grid
+//
+// That last one is why the outline is a `box-shadow` and not a `border`. A border
+// is inside the element but outside the padding box, and the background — the grid
+// — is painted from the padding box, so a 1px border slides every rule 1px in and
+// shortens the run by 2px. Every edge then misses by a pixel. An inset box-shadow
+// draws the same hairline without taking part in layout.
+export function onGridStyle({ surface, border, radius, cell, rule, insetCells, frameCols }) {
+  // A fixed px cell only lands the far edges when the container happens to be a
+  // whole number of cells, which a fluid container isn't at most widths. So the
+  // cell is a fraction of the container instead: the grid is always exactly
+  // frameCols across, the inset is always whole cells, and every edge lands at any
+  // width. At the reference size the fraction works out to `cell` exactly.
+  //
+  // cqw and not %: percentage padding resolves against the *parent's* inline size,
+  // not the element's own, so it wouldn't track the frame. cqw needs a container to
+  // measure and an element can't query itself, hence the wrapper — see usageCss.
+  const step = `calc(100cqw / ${frameCols})`;
+  return {
+    ...lineGrid({ thickness: 1, gap: cell - 1, color: rule, background: surface }),
+    backgroundSize: `${step} ${step}`,
+    boxShadow: `inset 0 0 0 1px ${border}`,
+    borderRadius: `${radius}px`,
+    padding: `calc(${step} * ${insetCells})`,
+  };
+}
+
+// A photo pinned to the grid by markers straddling its corners. The container
+// carries the hairline and the inset; the four squares are real nodes, so this
+// reuses the .frame-markers rule set from the Corner Markers pattern rather than
+// declaring its own.
+export function linesDotsStyle({ border, marker, markerSize, inset }) {
+  return {
+    border: `1px solid ${border}`,
+    padding: `${inset}px`,
+    "--marker-size": `${markerSize}px`,
+    "--marker-color": marker,
+  };
+}
+
+const USAGE_BUILDERS = {
+  "gray-container": grayContainerStyle,
+  "on-grid": onGridStyle,
+  "lines-dots": linesDotsStyle,
+};
+
+export function usageStyle(usage) {
+  return USAGE_BUILDERS[usage.id](usage);
+}
+
+// The copyable rule set for one usage. Emitted against `.imagery-frame` — the
+// container — plus whatever that container needs inside it, so a paste is
+// self-contained the way the styling recipes are.
+export function usageCss(usage) {
+  const rules = [
+    rule(".imagery-frame", usageStyle(usage)),
+    rule(".imagery-frame > img", {
+      display: "block",
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+    }),
+  ];
+  if (usage.id === "on-grid") {
+    rules.push(
+      `/* The frame sits in a container ${usage.frameCols} x ${usage.frameRows} cells in proportion. That's what`,
+      "   the cell is a fraction of, so the photo's edges stay on rules at any width —",
+      `   and at ${usage.frameCols * usage.cell}px wide the cell is exactly ${usage.cell}px. */`,
+      rule(".imagery-grid", {
+        width: "100%",
+        maxWidth: `${usage.frameCols * usage.cell}px`,
+        aspectRatio: `${usage.frameCols} / ${usage.frameRows}`,
+        containerType: "inline-size",
+      }),
+      rule(".imagery-grid > .imagery-frame", { width: "100%", height: "100%" }),
+    );
+  }
+
+  if (usage.id === "lines-dots") {
+    rules.push(
+      "/* The four corner squares — the Corner Markers pattern, straddling the edge */",
+      cornerMarkersCss({ size: usage.markerSize, color: usage.marker }),
+    );
+  }
   return rules.join("\n");
 }

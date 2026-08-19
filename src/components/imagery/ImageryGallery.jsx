@@ -12,6 +12,7 @@ import { PgRange } from "../playground/controls/PgRange.jsx";
 import { PgSelect } from "../playground/controls/PgSelect.jsx";
 import { PgText } from "../playground/controls/PgText.jsx";
 import { PgToggle } from "../playground/controls/PgToggle.jsx";
+import { PhotoSwitcher } from "./PhotoSwitcher.jsx";
 import { CheckIcon, CopyIcon } from "../common/Icon.jsx";
 
 // One playground for the four treatments, same shape as the Patterns lab: the
@@ -74,25 +75,10 @@ export function ImageryGallery({ copied, onCopy, selected, setSelected }) {
     <div className="pg img-lab">
       <div className="pg-stage">
         <div className="pg-canvas grey">
-          {/* Above the image, not down in the properties panel: swapping the photo
-              is the first thing worth trying, and it belongs next to the thing it
-              changes. */}
-          <div className="pg-canvas-nav img-photos">
-            <span className="img-photos-label">Photo</span>
-            {IMAGERY_PHOTOS.map((p) => (
-              <button
-                key={p.id}
-                className="img-photo-btn"
-                data-active={p.id === photo.id}
-                onClick={() => setPhotos((cur) => ({ ...cur, [style.id]: p.id }))}
-                title={`${p.label} — ${p.subject}`}
-                aria-label={`Show this treatment on the ${p.label} photo`}
-                aria-pressed={p.id === photo.id}
-              >
-                <img src={p.src} alt="" />
-              </button>
-            ))}
-          </div>
+          <PhotoSwitcher
+            current={photo.id}
+            onPick={(id) => setPhotos((cur) => ({ ...cur, [style.id]: id }))}
+          />
 
           <div className="pg-canvas-center">
             <ImageryPreview
@@ -108,7 +94,9 @@ export function ImageryGallery({ copied, onCopy, selected, setSelected }) {
           {/* Where the subject sits, in words, under the image it describes. This
               is what the mask has to work around, and it's the reason the same
               settings don't carry from one photo to the next. */}
-          <p className="img-subject">{photo.subject}</p>
+          <p className="img-subject">
+            {photo.subject} — {photo.maskHint}
+          </p>
 
           <div className="pg-canvas-foot">
             <div className="canvas-variants">
@@ -252,7 +240,7 @@ function ImageryPreview({ photo, caption, layers, hasText, args, guide }) {
   const showCaption = caption && hasText && args.text?.trim();
 
   return (
-    <figure className="imagery img-frame">
+    <figure className="imagery img-demo img-frame">
       <img src={photo.src} alt={photo.alt} />
 
       {layers.scrim && <span className="imagery-scrim" style={scrimOverlay} />}
