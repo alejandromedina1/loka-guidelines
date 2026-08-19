@@ -20,7 +20,9 @@ function tile(cell, marks, background) {
   };
 }
 
-function dotGrid({ size, gap, color, background }) {
+// Exported as well as registered below: the Imagery styling layers the same
+// dot field over a photograph, with a transparent background instead of a surface.
+export function dotGrid({ size, gap, color, background }) {
   const marks = `<rect width='${size}' height='${size}' fill='${color}'/>`;
   return tile(size + gap, marks, background);
 }

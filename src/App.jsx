@@ -13,6 +13,7 @@ import { SpacingSection } from "./components/sections/SpacingSection.jsx";
 import { IconsSection } from "./components/sections/IconsSection.jsx";
 import { GraphicsSection } from "./components/sections/GraphicsSection.jsx";
 import { PatternsSection } from "./components/sections/PatternsSection.jsx";
+import { ImagerySection } from "./components/sections/ImagerySection.jsx";
 import { ComponentsSection } from "./components/sections/ComponentsSection.jsx";
 import { hubForSection } from "./data/navigation.js";
 
@@ -66,6 +67,7 @@ export default function App() {
   // than one state per component, since only one is ever on stage at a time.
   const [componentVariant, setComponentVariant] = useState("Text");
   const [selectedPattern, setSelectedPattern] = useState("dot-grid");
+  const [selectedImagery, setSelectedImagery] = useState("simple");
   const [expandedRow, setExpandedRow] = useState(null);
 
   const toggleRow = useCallback((id) => setExpandedRow((c) => (c === id ? null : id)), []);
@@ -128,6 +130,7 @@ export default function App() {
       if (r.setComponent) setSelectedComponent(r.setComponent);
       if (r.setVariant) setComponentVariant(r.setVariant);
       if (r.setPattern) setSelectedPattern(r.setPattern);
+      if (r.setImagery) setSelectedImagery(r.setImagery);
       navigate(r.target);
     },
     [navigate]
@@ -215,6 +218,13 @@ export default function App() {
                 theme={theme}
                 selectedPattern={selectedPattern}
                 setSelectedPattern={setSelectedPattern}
+              />
+              <ImagerySection
+                registerRef={registerRef}
+                copied={copied}
+                onCopy={copy}
+                selectedImagery={selectedImagery}
+                setSelectedImagery={setSelectedImagery}
               />
             </>
           )}

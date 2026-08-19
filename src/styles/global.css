@@ -420,6 +420,96 @@
 .frame-markers>i:nth-child(2){top:calc(var(--marker-size)/-2);right:calc(var(--marker-size)/-2);}
 .frame-markers>i:nth-child(3){bottom:calc(var(--marker-size)/-2);left:calc(var(--marker-size)/-2);}
 .frame-markers>i:nth-child(4){bottom:calc(var(--marker-size)/-2);right:calc(var(--marker-size)/-2);}
+
+/* Imagery — the four photo treatments, on the same .pg playground grid as
+   Patterns, but keeping .pg-canvas-center's padding so the frame reads as a
+   picture on a surface rather than a full-bleed canvas. */
+.img-lab .pg-controls{gap:0;}
+/* The treatment itself — the same rule set imageryCss copies out, so the preview
+   is the thing being documented. Everything that a control moves (scrim, dot
+   tile, band height, blur radii, masks) arrives inline; only what's invariant is
+   here. Each <i> in the band is one step of the blur ramp, <b> is the tint
+   painted over it. */
+.imagery{position:relative;}
+.imagery > img{display:block;width:100%;height:100%;object-fit:cover;}
+.imagery-scrim,.imagery-dots{position:absolute;inset:0;}
+/* No height — the caption inside sets it, and the band's own Y padding is the
+   only other term. The ramp and the tint fill the padding box, so they cover the
+   padding too rather than stopping at the text. */
+.imagery-band{position:absolute;inset:auto 0 0;}
+.imagery-band>i,.imagery-band>b{position:absolute;inset:0;}
+.imagery-caption{position:relative;display:block;color:#fff;text-align:center;}
+/* Lab-only: the frame the treatments are demoed in. It's a container so the
+   captions below can be sized in cqw — both type sizes are lifted off Figma
+   frames three to four times this wide, and a px size tuned for one card width
+   would be wrong at the next breakpoint. */
+.img-frame{margin:0;width:100%;max-width:560px;aspect-ratio:3/2;
+   container-type:inline-size;background:var(--line-2);}
+/* The type on the two Figma examples. Sizes and measures are both in cqw, so the
+   caption wraps to the same three lines it does there whatever the frame's width
+   — which matters here, because the band's depth follows that line count.
+   Measure is 77% of the frame, as in Figma (341 of 445). Scoped under .img-frame
+   rather than added to the .imagery-caption rule above, so what belongs to the
+   treatment and what belongs to the demo stay separable. */
+.img-frame .imagery-caption{padding:0 11.5cqw;white-space:pre-line;
+  font-size:5.4cqw;font-weight:400;line-height:1.15;text-shadow:0 0 10px rgba(0,0,0,.25);}
+/* The headline has no band to sit in — 72px Medium at 90%, centred on the frame. */
+.img-headline{position:absolute;inset:0;display:grid;place-items:center;
+  color:#fff;text-align:center;white-space:pre-line;
+  font-size:4.3cqw;font-weight:500;line-height:.9;letter-spacing:-.01em;
+  text-shadow:0 0 4px rgba(0,0,0,.15);}
+/* Where the dot field runs out, drawn on the photo while the mask is being set.
+   Dashed and in the blue so it never reads as part of the treatment, and its label
+   sits on whichever side of the line has the field on it. */
+.img-guide{position:absolute;left:0;right:0;height:0;border-top:1px dashed var(--blue);
+  pointer-events:none;z-index:2;}
+.img-guide > span{position:absolute;right:6px;padding:2px 6px;border-radius:3px;
+  background:var(--blue);color:#fff;font-size:10px;font-weight:600;letter-spacing:.02em;
+  white-space:nowrap;}
+.img-guide[data-anchor="Top"] > span{bottom:4px;}
+.img-guide[data-anchor="Bottom"] > span{top:4px;}
+/* The radial mask's boundary: the circle the field clears. Sized by height with a
+   1:1 ratio because `closest-side` measures the gradient against the frame's
+   nearer edge, which on a 3:2 frame is its height — so this ring is the ring in
+   the CSS rather than a stand-in for it. */
+.img-guide-radial{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  aspect-ratio:1;border:1px dashed var(--blue);border-radius:50%;
+  display:grid;place-items:center;pointer-events:none;z-index:2;}
+.img-guide-radial > span{padding:2px 6px;border-radius:3px;background:var(--blue);color:#fff;
+  font-size:10px;font-weight:600;letter-spacing:.02em;white-space:nowrap;}
+
+/* Photo switcher, above the canvas. Thumbnails rather than names: which photo it
+   is matters less than what's in it, and the whole point of the row is that the
+   mask settings below depend on that. */
+.img-photos{align-items:center;gap:8px;}
+.img-photos-label{margin-right:auto;font-size:11px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-4);}
+.app button.img-photo-btn{width:44px;height:30px;padding:0;overflow:hidden;flex:none;
+  border:1px solid var(--line-strong);border-radius:4px;opacity:.55;
+  transition:opacity .14s,border-color .14s,box-shadow .14s;}
+.app button.img-photo-btn:hover{opacity:.85;}
+.app button.img-photo-btn[data-active="true"]{opacity:1;border-color:var(--blue);
+  box-shadow:0 0 0 2px var(--blue-soft);}
+.img-photo-btn img{width:100%;height:100%;object-fit:cover;display:block;}
+/* Where the subject sits — the constraint the mask works around, under the image
+   it applies to. */
+.img-subject{padding:0 16px 4px;text-align:center;font-size:11.5px;color:var(--ink-4);}
+
+/* Controls panel: a Reset beside the style name, and the rows gathered into the
+   subsystem each belongs to. */
+.pg-ctrl-titlerow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
+.app button.img-reset{flex:none;font-size:11.5px;font-weight:600;color:var(--ink-4);
+  padding:2px 0;transition:color .14s;}
+.app button.img-reset:hover{color:var(--blue);}
+.img-ctrl-group{display:flex;flex-direction:column;padding-top:14px;}
+.img-ctrl-group:first-of-type{padding-top:0;}
+.img-ctrl-group-label{font-size:11px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-4);padding-bottom:2px;}
+/* The group heading already separates them, so the first row in each group drops
+   the divider it would otherwise draw against that heading. */
+.img-ctrl-group > .pg-row:first-of-type{border-top:none;}
+.img-ctrl-empty{font-size:12.5px;line-height:1.55;color:var(--ink-4);
+  padding:14px 0 0;border-top:1px solid var(--line-2);}
 /* Compound selector on purpose: `.pg-row` is defined later in this file, so a
    bare `.pg-row-range` would lose its `align-items` to that rule's `center` and
    the head would shrink-wrap its text instead of spanning the row. */
@@ -608,6 +698,17 @@
 .pg-row-label{font-size:13px;color:var(--ink-3);}
 .pg-row-control select{font-family:var(--display);font-size:13px;font-weight:600;color:var(--ink);
   border:none;background:none;cursor:pointer;text-align:right;padding-right:2px;}
+/* Text rows stack — see PgText.jsx. The compound selector is needed for the same
+   reason .pg-row-range's is: `.pg-row` above sets align-items:center, so a bare
+   .pg-row-text would centre the label against the field instead of sitting it on
+   top. Resize is vertical-only; horizontal would drag the field out of a panel
+   that has no width to give. */
+.pg-row.pg-row-text{flex-direction:column;align-items:stretch;gap:7px;}
+.pg-textarea{width:100%;resize:vertical;min-height:52px;padding:8px 9px;
+  border:1px solid var(--line-strong);border-radius:6px;background:var(--bg);
+  font-family:var(--mono);font-size:12px;line-height:1.5;color:var(--ink);
+  transition:border-color .14s,box-shadow .14s;}
+.pg-textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
 /* Both selectors need the `.app button` prefix, and it's load-bearing on the off
    state in particular: `.app button{background:none}` outranks a bare .pg-toggle,
    so the track was rendering transparent — reading as white against the panel —

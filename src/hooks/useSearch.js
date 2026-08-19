@@ -6,6 +6,7 @@ import { SPACING } from "../data/spacing.js";
 import { ICON_CATEGORIES } from "../data/icons.js";
 import { GRAPHICS } from "../data/graphics.js";
 import { PATTERNS } from "../data/patterns.js";
+import { IMAGERY_STYLES } from "../data/imagery.js";
 
 // Builds a flat, searchable index spanning every part of the system: nav
 // sections, color/type/spacing tokens, icons, and graphics. Computed once.
@@ -70,13 +71,17 @@ function buildSearchIndex() {
     idx.push({ label: p.name, kind: "Pattern", target: "patterns", setPattern: p.id })
   );
 
+  IMAGERY_STYLES.forEach((s) =>
+    idx.push({ label: s.name, kind: "Imagery", target: "imagery", setImagery: s.id })
+  );
+
   return idx;
 }
 
 // Command-palette search: owns the query, open state, ⌘K/Esc shortcut, and the
 // filtered results. `onRun` is invoked with the chosen result so the caller can
-// navigate and (optionally) select a component or pattern — both sections show
-// one canvas at a time, so scrolling to them isn't enough on its own.
+// navigate and (optionally) select a component, pattern or imagery style — those
+// sections show one canvas at a time, so scrolling to them isn't enough on its own.
 export function useSearch(onRun) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");

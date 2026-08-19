@@ -156,6 +156,7 @@ const FOUNDATIONS = {
     { id: "icons", label: "Icons" },
     { id: "graphics", label: "Graphics" },
     { id: "patterns", label: "Patterns" },
+    { id: "imagery", label: "Imagery" },
   ],
 };
 
@@ -204,6 +205,7 @@ export const HUB_SPY_IDS = {
     "icons",
     "graphics",
     "patterns",
+    "imagery",
   ],
   product: ["components"],
 };
