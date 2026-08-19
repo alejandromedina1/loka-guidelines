@@ -78,10 +78,13 @@
 .theme-toggle-btn[data-active="true"]{background:var(--bg);color:var(--ink);box-shadow:0 1px 3px rgba(1,8,18,.15);}
 .hamburger{display:none;padding:6px;border-radius:0;color:var(--ink-2);}
 .hamburger:hover{background:var(--line-2);}
-.brand{display:flex;align-items:center;gap:10px;}
+.brand{display:flex;align-items:center;gap:10px;padding:0;cursor:pointer;}
 
 /* Shell */
 .shell{display:grid;grid-template-columns:264px minmax(0,1fr);}
+/* The landing renders no sidebar, so the content takes the whole width — which
+   also puts the split closer to the 1920px frame's own proportions. */
+.shell[data-nonav]{grid-template-columns:minmax(0,1fr);}
 
 /* Sidebar */
 .sidebar{position:sticky;top:56px;align-self:start;height:calc(100vh - 56px);overflow-y:auto;
@@ -103,6 +106,17 @@
 .nav-caret{display:grid;place-items:center;width:14px;height:14px;color:var(--ink-4);transition:transform .16s;flex:none;border-radius:0;}
 .nav-caret[data-open="true"]{transform:rotate(90deg);}
 .nav-caret:hover{background:var(--line);color:var(--ink-2);}
+/* Inside a hub the nav lists that hub's group and nothing else, so the way back
+   out can't be a row in it — a "leave" item sitting inside Foundations would
+   read as a foundation. It goes above the list instead, with the hub's name
+   under it as the heading for what follows. */
+.app button.nav-back{display:flex;align-items:center;gap:7px;width:100%;padding:6px 10px;
+  border-radius:999px;font-size:12.5px;font-weight:500;color:var(--ink-3);text-align:left;
+  transition:color .12s,background .12s;}
+.app button.nav-back:hover{color:var(--ink);background:var(--line-2);}
+.nav-back svg{flex:none;}
+.nav-hub-title{display:block;padding:14px 10px 18px;font-family:var(--display);font-size:19px;
+  font-weight:600;letter-spacing:-.02em;color:var(--ink);}
 .nav-sub{display:flex;flex-direction:column;margin:2px 0 4px 18px;padding-left:10px;border-left:1px solid var(--line);}
 .nav-subitem{text-align:left;font-size:13px;color:var(--ink-4);padding:5px 10px;border-radius:999px;transition:color .12s,background .12s;}
 .nav-subitem:hover{color:var(--ink-2);background:var(--line-2);}
@@ -133,78 +147,130 @@
 .fig-btn{flex:none;text-decoration:none;}
 .sub-anchor{scroll-margin-top:72px;}
 .sub-anchor + .sub-anchor{margin-top:44px;}
+/* Color's three ranges (Neutral, Blue, Semantic) get more breathing room than
+   the shared default — scoped to #color so Typography's Desktop/Mobile split
+   keeps the tighter spacing. */
+#color .sub-anchor + .sub-anchor{margin-top:120px;}
 .sub-head{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;margin-bottom:18px;}
 .sub-title{font-family:var(--display);font-size:19px;font-weight:600;letter-spacing:-.01em;margin:0;}
 
+/* Nested sub-groups within a sub-anchor, e.g. Semantic's Named/Red/Amber/Green.
+   Matches the 120px given to Color's top-level ranges above, so Named → Red →
+   Amber → Green reads with the same breathing room. */
+.group-block+.group-block{margin-top:120px;}
+.group-head{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:start;margin-bottom:14px;}
+.group-title{font-family:var(--display);font-size:15px;font-weight:600;letter-spacing:-.01em;margin:0;}
+.group-desc{font-size:13px;line-height:1.6;color:var(--ink-3);max-width:60ch;margin:0;}
+
 /* Intro — single brand hero, then Introduction / Skills / Contents row blocks */
 .intro{display:flex;flex-direction:column;padding-bottom:0;}
+/* Landing — Figma "start", file iwZ7QLk8pxnbyw2sGJNki3 node 168:8. The frame is
+   1920x1080: a gray-5 ground, a 16px inset, and two 936.5px halves with a 16px
+   gutter and 8px corners. Percentages and tokens rather than the frame's pixel
+   widths, so the same proportions hold in the content column at any viewport.
+
+   Where the numbers come from: geometry (the 16px inset and gutter, the pill's
+   72px box and 20px padding, the dot pitch, the vector bar) is read from the
+   frame's own metadata, and so is the palette — black #010812, gray-5 #EFF1F5,
+   gray-10 #E7ECF2 and Dark 100 #050517 are variables the frame binds. The
+   gradient stops and the dot alpha are sampled off the exported render at known
+   points, because the frame was too large for Figma to return its CSS.
+
+   The 8px in the height is the body's default margin, which this stylesheet
+   never resets — see .section's own min-height, which accounts for it the same
+   way. Without it the hero overhangs the viewport by exactly that much. */
 .brand-hero{
   position:relative;
-  min-height:calc(100vh - 56px - 32px);
-  margin:0 -16px;
-  border-radius:0;
-  background:#060B14;
+  height:calc(100vh - 56px - 8px);
+  margin:-16px -16px 0;
+  padding:16px;
+  background:#EFF1F5;
   overflow:hidden;
-  display:grid;place-items:stretch;
-}
-/* grid lines removed */
-.hero-grid{display:none;}
-/* blue glow that follows the mouse */
-.hero-glow{position:absolute;inset:0;z-index:0;pointer-events:none;
-  background:radial-gradient(360px circle at var(--mx,50%) var(--my,45%),
-    rgba(25,87,244,.55), rgba(80,140,255,.22) 35%, transparent 70%);
-  mix-blend-mode:screen;transition:background .08s ease;}
-
-/* bento — 4×3, fills full width, mixed square + rectangle tiles, logo card centre */
-.hero-ring{position:relative;z-index:2;
   display:grid;
-  grid-template-columns:repeat(4, 1fr);
-  grid-template-rows:repeat(3, 1fr);
-  gap:0;padding:0;}
-.hchip{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
-  box-shadow:inset 0 0 0 1px rgba(120,150,220,.32);background:rgba(18,30,58,.35);backdrop-filter:blur(4px);
-  cursor:pointer;transition:box-shadow .18s ease,background .18s ease;}
-.hchip:hover{box-shadow:inset 0 0 0 1px rgba(120,150,220,.75);background:rgba(18,30,58,.6);}
-.hchip-art{display:grid;place-items:center;color:rgba(255,255,255,.85);}
-.hchip-aa{font-family:var(--display);font-size:56px;font-weight:600;color:#fff;line-height:1;}
-.hchip-swatch{display:flex;gap:6px;}
-.hchip-swatch i{width:26px;height:26px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.2);}
-.hchip-button{display:grid;place-items:center;height:40px;padding:0 22px;font-family:var(--display);font-size:14px;font-weight:600;
-  color:#fff;background:var(--blue);border-radius:999px;}
-.hchip-spacing{display:flex;align-items:flex-end;gap:7px;height:52px;}
-.hchip-spacing i{width:11px;background:rgba(255,255,255,.8);}
-.hchip-spacing i:nth-child(1){height:20px;}
-.hchip-spacing i:nth-child(2){height:36px;}
-.hchip-spacing i:nth-child(3){height:52px;}
-.hchip-ph{color:rgba(255,255,255,.55);}
-.hchip-ph svg{width:58px;height:46px;}
-.hchip-cards{display:grid;}
-.hchip-cards i{width:66px;height:28px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);background:rgba(255,255,255,.06);}
-.hchip-cards i:nth-child(1){transform:translate(7px,7px);}
-.hchip-cards i:nth-child(2){margin-top:-19px;}
-/* real graphic + icon inside intro tiles */
-.hchip-realgfx{color:#CCD4E0;transition:color .18s ease,transform .28s cubic-bezier(.34,1.56,.64,1);}
-.hchip-realgfx svg{width:76px;height:76px;display:block;}
-.hchip:hover .hchip-realgfx{color:#2F85F3;transform:translateY(-4px);}
-.hchip-realicon{color:#186BF3;transition:transform .28s cubic-bezier(.34,1.56,.64,1);}
-.hchip-realicon svg{width:44px;height:44px;display:block;}
-.hchip:hover .hchip-realicon{transform:scale(1.12);}
+}
+/* The frame is a fixed light artboard; on the dark theme the ground follows the
+   app instead, so the two panels don't sit in a glaring white surround. */
+.app[data-theme="dark"] .brand-hero{background:var(--bg-soft);}
 
-/* tile placements — squares and rectangles */
-.hchip:nth-of-type(1){grid-column:1;grid-row:1;}          /* Typography */
-.hchip:nth-of-type(2){grid-column:2;grid-row:1;}          /* Color */
-.hchip:nth-of-type(3){grid-column:3 / span 2;grid-row:1;} /* Buttons — wide */
-.hchip:nth-of-type(4){grid-column:1;grid-row:2;}          /* Spacing */
-.hchip:nth-of-type(5){grid-column:4;grid-row:2;}          /* Icons */
-.hchip:nth-of-type(6){grid-column:1 / span 2;grid-row:3;} /* Graphics — wide */
-.hchip:nth-of-type(7){grid-column:3;grid-row:3;}          /* Imagery */
-.hchip:nth-of-type(8){grid-column:4;grid-row:3;}          /* Cards */
+.hub-split{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 
-/* centre logo card — bigger, spans the middle 2 cells */
-.hero-logo-card{grid-column:2 / span 2;grid-row:2;
-  display:grid;place-items:center;
-  background:linear-gradient(160deg,#0C1830,#04070E);
-  box-shadow:inset 0 0 0 1px rgba(120,150,220,.28), 0 20px 60px rgba(0,0,0,.45);}
+/* Each half is one button: the pill is a label inside it, not the hit target, so
+   the whole surface is clickable the way a split screen implies. */
+.app button.hubcard{position:relative;display:grid;place-items:center;overflow:hidden;
+  border-radius:8px;padding:24px;cursor:pointer;}
+/* The pill carries the hover, so the panel no longer brightens as a whole: a
+   brightness filter over the whole surface also lifts the pill, and 1.06 on
+   gray-10 lands back at near-white — the fill change below would cancel itself
+   out. :focus-visible gets the same treatment, since a hover-only affordance
+   leaves a keyboard on this button with nothing to see. */
+.app button.hubcard:hover .hubcard-pill,
+.app button.hubcard:focus-visible .hubcard-pill{background:#E7ECF2;}
+
+/* Brand: black ground under a wide, flat glow across the middle. The frame draws
+   it as a 2136x638 ellipse on a 936-wide panel — 114% of its width by 30% of its
+   height — centred on the panel's own centre. The stops run out to 50% (the
+   panel's half-height) rather than the ellipse's radius so the falloff reaches
+   black at the top and bottom edges, which is where the render puts it. */
+.hubcard[data-hub="brand"]{
+  background:radial-gradient(ellipse 114% 50% at 50% 50%,
+    #1B4276 0%, #173B6B 17%, #0F2D55 34%, #081D38 50%,
+    #030F20 67%, #020915 83%, #010812 100%);
+}
+
+/* Product: the lit half — a glow cored high and centred, over a ground falling to
+   near-black at the foot. Two layers because the render's vertical and horizontal
+   falloffs have different shapes and one ellipse can't be both. Fitted against
+   the export by sampling both axes: this is the closest of three attempts, mean
+   error ~7/255 per channel (a decomposed core-plus-wash pair measured worse —
+   CSS interpolates premultiplied, so stacked partial alphas darken faster than
+   the arithmetic suggests). The frame itself draws a group of three nested
+   ellipses, 1088/875/498px across. */
+.hubcard[data-hub="product"]{
+  background:
+    radial-gradient(ellipse 62% 52% at 50% 25%,
+      rgba(174,185,206,1) 0%, rgba(169,181,203,.98) 12%, rgba(140,164,201,.9) 30%,
+      rgba(99,133,186,.72) 48%, rgba(67,102,161,.45) 64%, rgba(44,73,128,.18) 82%,
+      rgba(30,51,96,0) 100%),
+    linear-gradient(180deg, #35538A 0%, #2E4B80 25%, #2B497F 45%,
+      #1F335B 68%, #15213E 80%, #0C152B 91%, #061021 100%);
+}
+
+/* The dot field rides over the Brand gradient as its own layer — the pattern
+   builder in utils/patternStyles.js paints the tile, this just places it. */
+.hub-dots{position:absolute;inset:0;pointer-events:none;}
+
+/* The vector motif at the export's own box — 656.605x138.119 sitting at
+   (139.24, 711.19) in the frame's 936.5x1048 panel, which is where the blurred
+   arc's bleed is already accounted for. Percentages, so it holds its place as
+   the panel scales. */
+.hub-vector{position:absolute;left:14.87%;top:67.86%;width:70.11%;height:auto;pointer-events:none;}
+
+/* The pill — the frame's own values, read off Dev Mode rather than measured:
+   20px padding, a 500px radius, a 20px backdrop blur, Alliance No.2 *Regular*
+   (an earlier pass had this at 600 from the type scale's H3 step, which was
+   wrong), #050517, and -0.22px of tracking at the frame's 44px, kept here as
+   the equivalent -.005em so it holds at any size.
+
+   The type is 24px rather than the frame's 44px, at the user's direction. Padding
+   stays at the frame's absolute 20px, so the pill lands at 57px tall instead of
+   the frame's 72px.
+
+   line-height stands in for the frame's `text-box-trim: trim-both` with
+   `text-box-edge: cap alphabetic` — the pill's box is trimmed to the cap height,
+   which for this face is .727em. The real properties are Chromium-only, and a
+   unitless line-height reproduces the same box everywhere. */
+.hubcard-pill{position:relative;z-index:2;display:inline-flex;align-items:center;justify-content:center;
+  padding:20px;border-radius:500px;background:#FFFFFF;color:#050517;
+  backdrop-filter:blur(20px);transition:background .16s ease;
+  font-family:var(--display);font-size:24px;font-weight:400;
+  line-height:.727;letter-spacing:-.005em;white-space:nowrap;}
+
+/* Side by side is the comparison the landing is asking for, so the halves only
+   turn into a stack when two columns stop being readable. It stays a 50/50
+   split either way — top and bottom instead of left and right. */
+@media (max-width: 700px){
+  .hub-split{grid-template-columns:1fr;grid-template-rows:1fr 1fr;}
+}
 
 .intro-block{
   display:grid;grid-template-columns:1fr 1fr;gap:40px;
@@ -415,6 +481,7 @@
    280px floor is what keeps the component legible once it has. */
 .pg-canvas{flex:1;position:relative;display:flex;flex-direction:column;min-height:280px;transition:background .2s ease;}
 .pg-canvas.dark{background:#0A0F17;}
+.pg-canvas.grey{background:var(--bg-soft);}
 .pg-canvas-nav{display:flex;justify-content:flex-end;gap:6px;padding:12px 16px;}
 .pg-arrow{display:grid;place-items:center;width:26px;height:26px;border-radius:0;color:var(--ink-4);transition:color .12s,background .12s;}
 .pg-arrow:hover{color:var(--ink);background:var(--line-2);}
@@ -445,8 +512,12 @@
 .pg-canvas-center{position:relative;flex:1;display:grid;place-items:center;padding:40px;}
 .btn-variants{display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap;justify-content:center;}
 .btn-cell{display:inline-flex;flex-direction:column;align-items:center;}
-/* room for the redline callouts that sit above, below, and left of the button */
-.btn-cell.bp-on{padding:26px 0 26px 52px;}
+/* Room for the redline callouts that sit above, below, and left of the
+   button. Symmetric left/right (rather than 0 on the right, where nothing
+   sits) even though: align-items:center on this column recenters the button
+   within whatever box the padding leaves, so an unequal left/right would
+   shift the button itself the moment Best practices turns on. */
+.btn-cell.bp-on{padding:26px 52px;}
 .btn-box{position:relative;display:inline-flex;}
 /* The Button's Figma stroke is a linear gradient at 10%, and a CSS border can't
    hold a gradient. So the ring is a gradient filling the border box with its
@@ -522,8 +593,7 @@
    the canvas keeps the larger half and the panel scrolls inside what it gets. */
 #components .pg-code{max-height:52%;}
 /* in-canvas variant switcher (bottom-left, aligned with View code) */
-.canvas-variants{display:inline-flex;gap:2px;padding:3px;background:var(--bg-soft);border:1px solid var(--line);border-radius:999px;}
-.pg-canvas.dark .canvas-variants{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.12);}
+.canvas-variants{display:inline-flex;gap:2px;padding:3px;border-radius:999px;}
 .canvas-variant-btn{padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--ink-3);border-radius:999px;transition:all .14s;}
 .canvas-variant-btn:hover{color:var(--ink);}
 .pg-canvas.dark .canvas-variant-btn{color:rgba(255,255,255,.6);}
@@ -548,6 +618,25 @@
 .app button.pg-toggle[data-on="true"]{background:var(--blue);}
 .pg-toggle-knob{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:999px;background:#fff;transition:transform .16s;box-shadow:0 1px 3px rgba(1,8,18,.3);}
 .pg-toggle[data-on="true"] .pg-toggle-knob{transform:translateX(16px);}
+/* Device's two-icon switch — same segmented-pill pattern as the TopBar's
+   light/dark toggle, sized down to fit this panel's rows. Each tab is wider
+   than it is tall (48x32 rather than a square) — a bigger, easier-to-hit
+   target than the icon alone needs. Needs the `.app button` prefix for the
+   same reason .pg-toggle above does: outranking the base button reset's
+   background:none is what makes the active pill's fill actually show. */
+.pg-icon-toggle{display:inline-flex;gap:2px;background:var(--line-2);border-radius:999px;padding:2px;flex:none;}
+.app button.pg-icon-toggle-btn{display:grid;place-items:center;width:48px;height:32px;
+  border-radius:999px;color:var(--ink-4);transition:background .14s,color .14s;}
+.app button.pg-icon-toggle-btn[data-active="true"]{background:var(--bg);color:var(--ink);
+  box-shadow:0 1px 3px rgba(1,8,18,.15);}
+/* Avatar's Initials color picker — a row of swatches rather than dropdown
+   text. Needs the `.app button` prefix for the same reason .pg-toggle above
+   does: the base button reset's background:none would otherwise win. */
+.pg-color-picker{display:inline-flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;}
+.app button.pg-color-swatch{width:20px;height:20px;border-radius:999px;padding:0;
+  border:1px solid rgba(1,8,18,.12);cursor:pointer;transition:box-shadow .14s,transform .1s;}
+.app button.pg-color-swatch:hover{transform:scale(1.1);}
+.app button.pg-color-swatch[data-active="true"]{box-shadow:0 0 0 2px var(--bg),0 0 0 4px var(--ink);}
 
 /* Input Field — label sits a full space-10 above its control; text/textarea/
    select share one fill+border+radius so the field family reads as one component */
@@ -556,9 +645,19 @@
    this container gap is the whole distance; it carries no margin of its own. */
 .field-demo{--field-gap:10px;display:flex;flex-direction:column;gap:var(--field-gap);
   width:100%;max-width:380px;}
-/* Select only: its panel is absolute, so it adds no height and would hang past
-   the canvas bottom from a centred start. The other field types stay centred. */
-.field-demo[data-type="Select"]{align-self:start;}
+/* Any field whose control opens an absolutely-positioned panel below it — the
+   Input Field's Select type, the standalone Dropdown — adds no height when
+   open and would hang past the canvas bottom from a centred start. Pinned to
+   the stage's top always, closed or open: a fixed position is what guarantees
+   the control opens reliably everywhere, rather than one computed at runtime
+   from the container's measured height and animated into place. */
+.field-demo[data-lift]{align-self:start;}
+/* Same fix as the filter bar's, and for the same reason: opting out of the
+   stage's centering to pin near the top means Best practices' extra padding
+   on the (fixed-size, place-self:stretch) stage displaces this control
+   directly instead of being absorbed by recentering. Pull it back up by the
+   same amount so it doesn't visibly drop when the toggle turns on. */
+.bp-stage[data-bp] .field-demo[data-lift]{margin-top:-42px;}
 .field{display:flex;flex-direction:column;}
 .field-label{font-size:13.5px;font-weight:500;color:var(--ink-2);
   margin-bottom:var(--field-gap,10px);}
@@ -607,8 +706,17 @@
    lands the search row exactly where the closed control was. */
 .ms-anchor{position:relative;width:100%;min-height:48px;}
 .ms{width:100%;border:1px solid #E7ECF2;border-radius:12px;background:#FAFBFC;}
+/* Figma's Dropdown component (node 52:212): open, the panel takes its own
+   16px radius rather than the closed control's 12px, since it's a floating
+   surface rather than a form field. Figma's own gray-5 border (#EFF1F5) reads
+   as a soft, nearly-invisible haze against this blue-5 fill — still a true
+   1px stroke, but too low-contrast against its own background to read as
+   one — so this steps up to gray-20 (#D6DCE6, --line-strong's light value)
+   instead, crisp against the tint the way gray-10 is crisp against the closed
+   control's plain white. A literal, not the token: this whole block stays
+   light regardless of app theme, and --line-strong resolves dark there. */
 .ms[data-open]{position:absolute;top:0;left:0;z-index:20;
-  background:#EEF2FE;border-color:#EFF1F5;overflow:clip;
+  background:#EEF2FE;border-color:#D6DCE6;border-radius:16px;overflow:clip;
   backdrop-filter:blur(30px);}
 .ms[data-error]{border-color:var(--danger);}
 .ms[data-disabled]{opacity:.55;}
@@ -616,24 +724,30 @@
    blue ring the text controls draw, and the Focus pill needs something to show.
    Closed only: open, Figma gives the panel its own gray-5 border, and a blue ring
    around a 396px panel isn't what the Opened variant looks like. :focus-within
-   covers a keyboard reaching the closed control, [data-focus] the pinned state,
-   and the ring replaces the button's own outline rather than doubling it. */
+   covers a keyboard reaching the closed control — the caret button is the only
+   focusable thing in it — [data-focus] the pinned state, and the ring replaces
+   the caret's own outline rather than doubling it. */
 .ms:not([data-open]):focus-within,.ms:not([data-open])[data-focus]{
   border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
-.ms:not([data-open]):focus-within .ms-control{outline:none;}
+.ms:not([data-open]):focus-within .ms-caret{outline:none;}
 
 /* closed control */
 /* Height is pinned to the same 48px as .ms-search below: the closed control and
    the open search row are different elements, so without this the top row would
    jump a few px the moment the dropdown opens. */
-.app button.ms-control{width:100%;height:48px;display:flex;align-items:center;
+/* A plain row, not a button — the caret inside it is the click target now,
+   so this just lays the value text and the caret out; it takes no cursor or
+   :disabled styling of its own. */
+.ms-control{width:100%;height:48px;display:flex;align-items:center;
   justify-content:space-between;gap:12px;padding:0 16px;font-family:var(--sans);
-  font-size:14.5px;line-height:1.3;font-weight:400;color:#A8B3CA;cursor:pointer;text-align:left;}
-.app button.ms-control:disabled{cursor:not-allowed;}
+  font-size:14.5px;line-height:1.3;font-weight:400;color:#A8B3CA;text-align:left;}
+/* Single-select fills the closed control with the chosen label instead of a
+   tag, so it needs to read as a value rather than a placeholder. */
+.ms-control[data-filled]{color:var(--ink);}
 
 /* search row, shown while open */
 .ms-search{display:flex;align-items:center;gap:12px;height:48px;padding:0 16px;
-  background:#FAFBFC;border-bottom:1px solid #ECECEE;border-radius:11px 11px 0 0;}
+  background:#FAFBFC;border-bottom:1px solid #ECECEE;border-radius:12px 12px 0 0;}
 .ms-search-input{flex:1;min-width:0;border:none;background:none;outline:none;
   font-family:var(--sans);font-size:14.5px;font-weight:400;line-height:1.3;color:#186BF3;}
 .ms-search-input::placeholder{color:#A8B3CA;}
@@ -643,11 +757,10 @@
 .ms-search[data-max] .ms-search-input{cursor:not-allowed;}
 .ms-search[data-max] .ms-search-input::placeholder{color:#CCD4E0;}
 .app .ms-search[data-max] button.ms-caret{color:#A8B3CA;}
-/* Same 20px box closed (a span) and open (a button), so the glyph lands on the
-   identical pixel either way — a bare 12px svg closed would sit ~4px further
-   right than one centred in the open state's 20px hit area. */
-/* Figma's arrow component colours its two states differently: wrapped (closed,
-   a span here) is gray-40, unwrapped (open, a button) is gray-50. */
+/* Same 20px box closed and open, so the glyph lands on the identical pixel
+   either way — a bare 12px svg would sit ~4px further right than one centred
+   in this 20px hit area, and the box is the real click target now in both
+   states, not just where the glyph happens to sit. */
 /* padding:0 and a non-shrinking glyph are both load-bearing: `.app button` resets
    border and background but not the UA's default button padding, so as a <button>
    this 20px box loses ~12px of content width and the svg — a flex item that
@@ -655,11 +768,12 @@
 .ms-caret{flex:none;display:inline-flex;align-items:center;justify-content:center;
   width:20px;height:20px;padding:0;color:#A8B3CA;}
 .ms-caret svg{flex:none;}
-/* `.app button{color:inherit}` outranks a bare `.ms-caret`, so the open-state
-   caret needs the class restated on the button or it inherits body ink. No
-   hover colour: the arrow reads purely as a state indicator here, matching the
-   filter chip's, where the two gray steps are the only thing it ever does. */
+/* `.app button{color:inherit}` outranks a bare `.ms-caret`, so a real button
+   needs the class restated on it or it inherits body ink. Gray-50 rather than
+   the base gray-40, closed or open: a real, clickable trigger reads as one
+   consistently, rather than stepping up only once the panel's already open. */
 .app button.ms-caret{color:#828FA5;cursor:pointer;}
+.app button.ms-caret:disabled{color:#A8B3CA;cursor:not-allowed;}
 
 /* option list */
 .ms-list{max-height:348px;overflow-y:auto;overscroll-behavior:contain;
@@ -702,40 +816,300 @@
 .ms-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 4px 4px 8px;
   border:1px solid #D8E2F6;border-radius:100px;background:#EEF2FE;
   font-size:14.5px;font-weight:400;line-height:1.3;color:#186BF3;}
-/* Box tracks the 24px glyph, and padding:0 keeps it that way — see .ms-caret:
-   the UA's button padding would otherwise squeeze the svg well under 24px. */
+/* Figma's dropdown-tag (node 11:2259): the "x" sits in a 20px box around its
+   15px glyph, not the 24px the tag icon used before syncing to this update.
+   padding:0 keeps it that way — see .ms-caret: the UA's button padding would
+   otherwise squeeze the svg below its intended size. */
 .app button.ms-tag-x{display:inline-flex;align-items:center;justify-content:center;
-  width:24px;height:24px;padding:0;color:#5C6A82;cursor:pointer;transition:color .12s;}
+  width:20px;height:20px;padding:0;color:#5C6A82;cursor:pointer;transition:color .12s;}
 .ms-tag-x svg{flex:none;}
 .app button.ms-tag-x:hover{color:#186BF3;}
 .app button.ms-tag-x:disabled{cursor:not-allowed;}
 
-/* Checkbox — Loka Figma "Checkbox / 40" (node 3692:15296).
-   Tokens: gray-5 #EFF1F5 (pill border), gray-10 #E7ECF2 (empty circle),
-   gray-50 #828FA5 (label), gray-90 #020F1F (checked label), blue-100 #186BF3
-   (checked circle), backgroundgrey #F5F6FA (hover and checked fill), and
-   greyblue #7C92AE for the disabled label — that last one isn't in the
-   documented palette, it comes straight from the Figma variable. Literals for
-   the same reason as the multi-select and filter: specified against the light
-   surface it ships on. */
-.app button.cbx{display:inline-flex;align-items:center;gap:8px;height:40px;padding:8px;
+/* Dark theme. Every colour above is a light-surface literal by design — see
+   the note at the top of this block — so left alone the control renders as a
+   stark white card sitting on the dark canvas, borders included, regardless
+   of the app's theme. This maps each one to the dark palette's equivalent
+   step (--bg-soft for the light literal fill, --line for gray-10 borders,
+   --ink-N for the gray-NN text scale) rather than turning literals into
+   theme tokens throughout the block above, since the light surface is still
+   what every non-dark reader of this file should see at a glance. */
+.app[data-theme="dark"] .ms{border-color:var(--line);background:var(--bg-soft);}
+.app[data-theme="dark"] .ms[data-open]{background:var(--blue-soft);border-color:var(--line-strong);}
+.app[data-theme="dark"] .ms-control:not([data-filled]){color:var(--ink-4);}
+.app[data-theme="dark"] .ms-search{background:var(--bg-soft);border-bottom-color:var(--line);}
+.app[data-theme="dark"] .ms-search-input{color:var(--blue);}
+.app[data-theme="dark"] .ms-search-input::placeholder{color:var(--ink-4);}
+.app[data-theme="dark"] .ms-search[data-max] .ms-search-input::placeholder{color:var(--line-strong);}
+.app[data-theme="dark"] .ms-search[data-max] button.ms-caret{color:var(--ink-4);}
+.app[data-theme="dark"] .ms-caret{color:var(--ink-4);}
+.app[data-theme="dark"] button.ms-caret{color:var(--ink-3);}
+.app[data-theme="dark"] button.ms-caret:disabled{color:var(--ink-4);}
+.app[data-theme="dark"] .ms-list{background:var(--bg-soft);border-color:var(--line);}
+.app[data-theme="dark"] .ms-list::-webkit-scrollbar-track{background:var(--line);}
+.app[data-theme="dark"] .ms-list::-webkit-scrollbar-thumb{background:var(--line-strong);}
+.app[data-theme="dark"] .ms-empty{color:var(--ink-3);}
+.app[data-theme="dark"] .ms-group{border-bottom-color:var(--line-2);}
+.app[data-theme="dark"] .ms-group-label{color:var(--ink-2);}
+.app[data-theme="dark"] button.ms-option{background:var(--line-2);}
+.app[data-theme="dark"] button.ms-option:hover,
+.app[data-theme="dark"] button.ms-option[data-selected]{background:var(--line);}
+.app[data-theme="dark"] button.ms-option:disabled:hover{background:var(--line-2);}
+.app[data-theme="dark"] button.ms-option:disabled .ms-option-text{color:var(--ink-4);}
+.app[data-theme="dark"] .ms-option-text{color:var(--ink-3);}
+.app[data-theme="dark"] .ms-option svg{color:var(--blue);}
+.app[data-theme="dark"] .ms-max{color:var(--ink-3);}
+.app[data-theme="dark"] .ms-tag{border-color:#2C3F5C;background:var(--blue-soft);color:var(--blue);}
+.app[data-theme="dark"] button.ms-tag-x{color:var(--ink-3);}
+.app[data-theme="dark"] button.ms-tag-x:hover{color:var(--blue);}
+
+/* Date Picker — no sourced Figma node, so both halves are borrowed rather than
+   invented. The trigger is the Input Field family's box (48px, 12px radius,
+   gray-10 border, bg-soft fill, the same blue/danger rings) carrying a trailing
+   calendar glyph at the Search Input's icon inset; the panel is the Dropdown's
+   own open panel directly above (blue-5 on gray-20, 16px radius, blurred) with
+   its 48px option row re-cut as a 36px day cell. Literals for the same reason
+   as those two: the control is specified against the light surface it ships on,
+   with the dark theme mapped at the end of this block.
+
+   Unlike the Dropdown, the panel doesn't replace the field — a calendar has to
+   show you what it's filling in, so the trigger stays put and the panel hangs
+   8px below it. The anchor reserves only the trigger's 48px, so opening still
+   overlays the page instead of pushing it down. */
+.dp-anchor{position:relative;width:100%;min-height:48px;}
+.dp{position:relative;display:flex;align-items:center;width:100%;height:48px;
+  border:1px solid #E7ECF2;border-radius:12px;background:#FAFBFC;
+  transition:border-color .14s,box-shadow .14s;}
+/* :focus-within rather than :focus — the calendar button sits outside the input,
+   so a ring on the input alone would leave the trigger unlit while it's the
+   thing holding focus.
+
+   The one deliberate exception to this block's literals, and the same call
+   .field-input and .ms make about their own rings: a 3px blue-5 halo is a
+   near-white one, so hardcoding it would ring the field in white against the
+   dark canvas. The tokens resolve per theme instead. (.sch hardcodes its ring
+   and does show that; it's the outlier here, not the pattern.) */
+.dp:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
+.dp[data-error]{border-color:var(--danger);}
+.dp[data-error]:focus-within{box-shadow:0 0 0 3px var(--danger-soft);}
+/* 40px of right padding — 16px inset + the 16px glyph + an 8px gap — reserved
+   whether a date is set or not, so a long value never runs under the trigger.
+   The input is bare: the box above carries the border, or the two would draw
+   competing outlines under the glyph. */
+.dp-input{flex:1;min-width:0;height:100%;padding:0 40px 0 16px;border:none;background:none;outline:none;
+  font-family:var(--sans);font-size:14.5px;color:#010812;}
+.dp-input::placeholder{color:#A8B3CA;}
+/* Range mode's field is read-only — the panel is the only way in — so it reads
+   as a trigger rather than a text box. */
+.dp-input:read-only{cursor:pointer;}
+/* Gray-50 closed or open, the same call .ms-caret makes: a real, clickable
+   trigger reads as one consistently. Needs the `.app button` prefix or
+   `.app button{color:inherit}` outranks it and the glyph inherits body ink. */
+.app button.dp-trigger{position:absolute;right:16px;display:inline-flex;align-items:center;
+  justify-content:center;width:20px;height:20px;padding:0;color:#828FA5;cursor:pointer;}
+.app button.dp-trigger:disabled{color:#A8B3CA;cursor:not-allowed;}
+/* padding:0 above and a non-shrinking glyph here are both load-bearing, same as
+   .ms-caret: the UA's default button padding would squeeze the svg below its
+   intended size inside this 20px hit box. */
+.dp-trigger svg{flex:none;}
+
+/* panel */
+.dp-panel{position:absolute;top:calc(100% + 8px);left:0;right:0;z-index:20;
+  background:#EEF2FE;border:1px solid #D6DCE6;border-radius:16px;overflow:clip;
+  backdrop-filter:blur(30px);}
+.dp-head{display:flex;align-items:center;justify-content:space-between;gap:12px;height:48px;
+  padding:0 16px;background:#FAFBFC;border-bottom:1px solid #ECECEE;}
+.dp-month{font-family:var(--sans);font-size:14.5px;font-weight:500;line-height:1.3;color:#2E3F5A;}
+.app button.dp-nav{display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;padding:0;color:#828FA5;cursor:pointer;}
+.dp-nav svg{flex:none;}
+.dp-cal{padding:12px;background:#FAFBFC;}
+
+/* The weekday row shares the option group's label scale — 12px caps at gray-70,
+   which reads as a label rather than as body copy next to the day numbers. */
+.dp-week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;}
+.dp-week span{display:grid;place-items:center;height:24px;font-size:12px;font-weight:500;
+  line-height:1.3;letter-spacing:.06em;text-transform:uppercase;color:#2E3F5A;}
+/* Always six rows — a five-row month followed by a six-row one would change the
+   panel's height mid-interaction and move the cell under the cursor. */
+.dp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;}
+/* The option row's radius and text colour on a smaller box: 36px keeps six rows
+   inside the canvas, where the list's own 48px would not. Declaration order is
+   what settles the overlaps below — hover first, then today, then the range
+   fill, then the selection, so a selected day stays blue under the cursor and a
+   selected endpoint outranks the range band it terminates. */
+.app button.dp-day{display:grid;place-items:center;height:36px;padding:0;border-radius:12px;
+  font-family:var(--sans);font-size:14.5px;font-weight:400;line-height:1.3;color:#5C6A82;
+  cursor:pointer;transition:background .12s,color .12s;}
+.app button.dp-day:hover{background:#EFF1F5;}
+.app button.dp-day[data-outside]{color:#A8B3CA;}
+/* Text only, never a fill: today is a landmark, not a selection, and giving it
+   one would make the two indistinguishable at a glance. */
+.app button.dp-day[data-today]{color:#186BF3;font-weight:500;}
+.app button.dp-day[data-range]{background:#D8E2F6;}
+.app button.dp-day[data-selected]{background:#186BF3;color:#FFFFFF;font-weight:500;}
+/* For min/max bounds. `:hover` still matches a disabled button, so the fill has
+   to be restated or an unavailable day would light up under a cursor that can't
+   do anything with it — the same fix .ms-option:disabled needs. */
+.app button.dp-day:disabled{color:#CCD4E0;cursor:not-allowed;}
+.app button.dp-day:disabled:hover{background:none;}
+
+/* Footer: range mode only, and only once there's a start date — with nothing
+   picked the panel ends flush at the grid, the same way the Dropdown's ends
+   flush at its list. The chip is the dropdown tag exactly. */
+.dp-foot{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px;
+  border-top:1px solid #ECECEE;}
+.dp-hint{margin:0;font-size:14.5px;font-weight:400;line-height:1.3;color:#5C6A82;}
+.dp-chip{display:inline-flex;align-items:center;gap:6px;padding:4px 4px 4px 8px;
+  border:1px solid #D8E2F6;border-radius:100px;background:#EEF2FE;
+  font-size:14.5px;font-weight:400;line-height:1.3;color:#186BF3;}
+.app button.dp-chip-x{display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;padding:0;color:#5C6A82;cursor:pointer;transition:color .12s;}
+.dp-chip-x svg{flex:none;}
+.app button.dp-chip-x:hover{color:#186BF3;}
+
+/* Dark theme — every colour above is a light-surface literal by design, so left
+   alone the control renders as a white card on the dark canvas. Same mapping the
+   .ms block ends with: --bg-soft for the light fills, --line for gray-10
+   borders, --ink-N for the gray text scale. */
+.app[data-theme="dark"] .dp{border-color:var(--line);background:var(--bg-soft);}
+.app[data-theme="dark"] .dp-input{color:var(--ink);}
+.app[data-theme="dark"] .dp-input::placeholder{color:var(--ink-4);}
+.app[data-theme="dark"] button.dp-trigger{color:var(--ink-3);}
+.app[data-theme="dark"] button.dp-trigger:disabled{color:var(--ink-4);}
+.app[data-theme="dark"] .dp-panel{background:var(--blue-soft);border-color:var(--line-strong);}
+.app[data-theme="dark"] .dp-head{background:var(--bg-soft);border-bottom-color:var(--line);}
+.app[data-theme="dark"] .dp-month{color:var(--ink-2);}
+.app[data-theme="dark"] button.dp-nav{color:var(--ink-3);}
+.app[data-theme="dark"] .dp-cal{background:var(--bg-soft);}
+.app[data-theme="dark"] .dp-week span{color:var(--ink-2);}
+.app[data-theme="dark"] button.dp-day{color:var(--ink-3);}
+.app[data-theme="dark"] button.dp-day:hover{background:var(--line-2);}
+.app[data-theme="dark"] button.dp-day[data-outside]{color:var(--ink-4);}
+.app[data-theme="dark"] button.dp-day[data-today]{color:var(--blue);}
+.app[data-theme="dark"] button.dp-day[data-range]{background:#2C3F5C;}
+.app[data-theme="dark"] button.dp-day[data-selected]{background:#186BF3;color:#FFFFFF;}
+.app[data-theme="dark"] button.dp-day:disabled{color:var(--line-strong);}
+.app[data-theme="dark"] button.dp-day:disabled:hover{background:none;}
+.app[data-theme="dark"] .dp-foot{border-top-color:var(--line);}
+.app[data-theme="dark"] .dp-hint{color:var(--ink-3);}
+.app[data-theme="dark"] .dp-chip{border-color:#2C3F5C;background:var(--blue-soft);color:var(--blue);}
+.app[data-theme="dark"] button.dp-chip-x{color:var(--ink-3);}
+.app[data-theme="dark"] button.dp-chip-x:hover{color:var(--blue);}
+
+/* Checkbox — Loka Figma "Checkbox / 40" (node 3692:15296), pared down to the
+   circle alone: no pill, no label. Tokens: gray-10 #E7ECF2 (empty circle),
+   blue-100 #186BF3 (checked circle), backgroundgrey #F5F6FA (hover fill).
+   Literals for the same reason as the multi-select and filter: specified
+   against the light surface it ships on. Squared (below) is this system's
+   own addition, not in the design file — a 4px radius in place of the
+   sourced circle, same tokens otherwise. No label beside the circle, so
+   there's no text to carry — give it an aria-label instead of a visible one.
+   Size is a third addition, also not sourced (the Figma control measures
+   16px): 28px is the default, with 24/32px as properties-panel overrides —
+   the tick's own size follows via the CheckSmall icon's size prop in React,
+   so it isn't set here. */
+.app button.cbx{flex:none;display:inline-flex;align-items:center;justify-content:center;
+  width:28px;height:28px;padding:0;border:1px solid #E7ECF2;border-radius:100px;
+  color:#FFFFFF;cursor:pointer;transition:background .12s,border-color .12s;}
+/* [data-hover] is the playground pinning the hovered state from its canvas pills:
+   picking that pill moves the cursor to the pill, so the state can't rely on
+   :hover. Declared before [data-checked] so a checked control stays blue
+   rather than flickering back to this tint mid-pointer. */
+.app button.cbx:hover,.app button.cbx[data-hover]{background:#F5F6FA;}
+.app button.cbx[data-checked]{background:#186BF3;border-color:#186BF3;}
+.app button.cbx:disabled{opacity:.5;background:none;cursor:not-allowed;}
+/* [data-shape="Squared"] is the properties-panel toggle, off the sourced
+   circle — same box, same tokens, just a 4px radius instead of a full round. */
+.app button.cbx[data-shape="Squared"]{border-radius:4px;}
+.app button.cbx[data-size="24px"]{width:24px;height:24px;}
+.app button.cbx[data-size="32px"]{width:32px;height:32px;}
+
+/* Radio Button — no sourced Figma node yet, so every dimension below is
+   carried over from the Checkbox's own box and pill directly above rather
+   than measured off a design file. The one deliberate difference is the
+   control itself: a ring + dot instead of a filled box + tick, since that's
+   what tells "pick one of these" apart from "toggle this on its own" at a
+   glance. Same tokens as the Checkbox for the same reason. */
+.app button.rdo{display:inline-flex;align-items:center;gap:8px;height:40px;padding:8px;
   border:1px solid #EFF1F5;border-radius:12px;cursor:pointer;
   font-family:var(--sans);font-size:14px;font-weight:400;line-height:1.45;color:#828FA5;
   transition:background .12s,color .12s;}
-/* [data-hover] is the playground pinning the hovered state from its canvas pills:
-   picking that pill moves the cursor to the pill, so the state can't rely on
-   :hover. Same fill either way, and the same trick the field controls use for
-   their pinned focus. */
-.app button.cbx:hover,.app button.cbx[data-hover]{background:#F5F6FA;}
-.app button.cbx[data-checked]{background:#F5F6FA;color:#020F1F;}
-.app button.cbx:disabled{opacity:.5;background:none;color:#7C92AE;cursor:not-allowed;}
-/* 16px measured off the Figma render — the stroke sits inside, so the 12px tick
-   centres with 2px of clearance rather than the box growing to fit it. */
-.cbx-box{flex:none;display:inline-flex;align-items:center;justify-content:center;
-  width:16px;height:16px;border:1px solid #E7ECF2;border-radius:100px;color:#FFFFFF;
-  transition:background .12s,border-color .12s;}
-.cbx[data-checked] .cbx-box{background:#186BF3;border-color:#186BF3;}
-.cbx-box svg{flex:none;}
+.app button.rdo:hover,.app button.rdo[data-hover]{background:#F5F6FA;}
+.app button.rdo[data-checked]{background:#F5F6FA;color:#020F1F;}
+.app button.rdo:disabled{opacity:.5;background:none;color:#7C92AE;cursor:not-allowed;}
+.rdo-box{flex:none;display:inline-flex;align-items:center;justify-content:center;
+  width:16px;height:16px;border:1px solid #E7ECF2;border-radius:100px;
+  transition:border-color .12s;}
+.rdo[data-checked] .rdo-box{border-color:#186BF3;}
+.rdo-dot{flex:none;width:8px;height:8px;border-radius:100px;background:#186BF3;}
+
+/* Toggle Switch — no sourced Figma node, and no pill either: unlike the
+   Checkbox and the Radio Button directly above, this one ships as the bare
+   switch, no label and no border/background wrapped around it. blue-100 here
+   is the same token those two use for their own "on" state, on purpose, not
+   this app's own chrome accent (var(--blue) drives the properties panel's
+   own toggles, a couple of sections down) — this is a Loka component being
+   documented, not a setting in this tool's UI, and the two shouldn't be tied
+   together. */
+/* 38×24px track, 18px knob — 2px inset on the sides (16px left to travel),
+   3px inset top and bottom to stay centred in the taller track rather than
+   drifting toward the top edge. */
+.app button.tgl{position:relative;flex:none;width:38px;height:24px;padding:0;border:none;
+  border-radius:100px;background:#E7ECF2;cursor:pointer;transition:background .12s;}
+/* [data-hover] pins the state from the playground's canvas pills — same
+   trick the Checkbox and the Radio Button use. There's no pill to fill this
+   time, so the affordance is the track itself darkening a step. */
+.app button.tgl:hover,.app button.tgl[data-hover]{background:#D6DCE6;}
+.app button.tgl[data-on]{background:#186BF3;}
+.app button.tgl:disabled{opacity:.5;cursor:not-allowed;}
+.tgl-knob{position:absolute;top:3px;left:2px;width:18px;height:18px;border-radius:100px;
+  background:#FFFFFF;box-shadow:0 1px 3px rgba(1,8,18,.3);transition:transform .16s;}
+.tgl[data-on] .tgl-knob{transform:translateX(16px);}
+
+/* Spinner — no sourced Figma node either. gray-10 and blue-100 are the same
+   track/indicator tokens the rest of this family already uses (the
+   Checkbox's empty box, the Toggle Switch's "on" track), so a loading state
+   reads as part of the same system rather than a fourth blue borrowed from
+   nowhere. The border-color trick: a full ring, one edge recolored, rotated —
+   one element, no pseudo-elements, no JavaScript. */
+.spn{display:inline-block;width:24px;height:24px;border-radius:100px;
+  border:3px solid #E7ECF2;border-top-color:#186BF3;
+  animation:spn-spin .8s linear infinite;}
+.spn[data-size="Small"]{width:16px;height:16px;border-width:2px;}
+.spn[data-size="Large"]{width:32px;height:32px;border-width:4px;}
+@keyframes spn-spin{to{transform:rotate(360deg);}}
+/* Slowed rather than stopped — freezing it reads as stuck, not as "reduced". */
+@media (prefers-reduced-motion: reduce){.spn{animation-duration:2.4s;}}
+
+/* Search Input — shares the Input Field family's own box (height, radius,
+   border, fill) rather than a second one; only the icon and the clear button
+   are this control's own. The wrapper carries the box since the icon and the
+   clear button are its siblings, not its children — the bare input inside
+   would clip them if it carried the border itself. */
+.sch{position:relative;display:inline-flex;align-items:center;width:100%;max-width:380px;
+  height:48px;border:1px solid #E7ECF2;border-radius:12px;background:#FAFBFC;
+  transition:border-color .14s,box-shadow .14s;}
+/* [data-focus] pins the state from the playground's canvas pills — same
+   trick the Checkbox and the Radio Button use. Real focus uses :focus-within
+   instead of :focus, since the icon and the clear button sit outside the
+   input itself. */
+.sch:focus-within,.sch[data-focus]{border-color:#1957F4;box-shadow:0 0 0 3px #EEF2FE;}
+.sch:has(.sch-input:disabled){opacity:.55;}
+.sch-icon{position:absolute;left:16px;display:flex;color:#5C6A82;pointer-events:none;}
+.sch-input{flex:1;width:100%;height:100%;padding:0 40px;border:none;background:none;outline:none;
+  font-family:var(--sans);font-size:14.5px;color:#010812;}
+.sch-input::placeholder{color:#A8B3CA;}
+.sch-input:disabled{cursor:not-allowed;}
+/* Its slot is always reserved — 40px either side, whether it's showing or
+   not — so it fades in rather than being inserted and the caret never jumps.
+   :not(:placeholder-shown) reads "has a query" straight off the input, the
+   same trick the exported snippet uses — no data attribute, no JavaScript. */
+.sch-clear{position:absolute;right:14px;display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;padding:0;border:none;background:none;color:#5C6A82;cursor:pointer;
+  opacity:0;pointer-events:none;transition:opacity .12s,color .12s;}
+.sch:has(.sch-input:not(:placeholder-shown)) .sch-clear{opacity:1;pointer-events:auto;}
+.sch-clear:hover{color:#2E3F5A;}
 
 /* Link — Loka Figma "Link / Light" (node 30:2487).
    Tokens: gray-80 #041D3E (default text), blue-100 #186BF3 (hover text + dot).
@@ -757,10 +1131,24 @@
    same reason as the multi-select above: specified against the light surface it
    ships on, not the app's theme variables. Body text is Figma's 16px here — the
    filter is standalone, so it has no Input Field family to track. */
-/* The panel is absolute, so it contributes no height — the bar pins to the top
-   of the canvas rather than centring, or the open panel hangs off the bottom. */
-.filt{position:relative;width:100%;max-width:366px;align-self:start;}
-.filt-bar{display:flex;align-items:center;gap:6px;background:#EFF1F5;border-radius:500px;}
+/* The panel is absolute, so it contributes no height — centering the bar like
+   every other preview doesn't grow the box when the panel opens, it just
+   overlays below. width:fit-content, not width:100% — the open panel is
+   width:100% of this box, so stretching it to fill the canvas (up to
+   max-width) made the panel wider than the bar it hangs from the moment the
+   bar itself started hugging its chips instead of stretching too. Hugging
+   here is what keeps the two in sync; max-width stays on as a ceiling for a
+   bar with many/longer chips. */
+/* Nudged up from the canvas's own centered position — transform rather than
+   a margin or align-self change, since it's a paint-time offset that can't
+   perturb the centering math itself (or drag the open panel's position out
+   of step with the bar, since a transform carries its descendants with it). */
+.filt{position:relative;width:fit-content;max-width:366px;transform:translateY(-80px);}
+/* inline-flex, not flex — a block-level flex container stretches to fill
+   .filt's own 366px width regardless of how few chips are in it, leaving
+   visible empty gray pill background to the right of the last one. The bar
+   is supposed to hug its chips on both axes, not just height. */
+.filt-bar{display:inline-flex;align-items:center;gap:6px;background:#EFF1F5;border-radius:500px;}
 .app button.filt-toggle{display:flex;align-items:center;justify-content:center;gap:6px;
   height:36px;padding:12px;border-radius:80px;overflow:clip;cursor:pointer;
   font-family:var(--sans);font-size:16px;font-weight:400;line-height:1.3;color:#041D3E;
@@ -771,8 +1159,14 @@
 .filt-toggle svg{flex:none;color:#A8B3CA;}
 .filt-toggle[data-open] svg{color:#828FA5;}
 
-/* 8px below the 36px bar, matching Figma's top:44px. */
+/* 8px below the 36px bar, matching Figma's top:44px. width matches the bar
+   (see .filt above) so it doesn't overhang past the last chip — but
+   Single select's bar is one narrow chip, far too narrow for its own rows
+   to stay on one line. min-width holds the panel to a readable floor
+   without pushing past 338px, the three-chip bar's own width, so Multiple
+   select still gets an exact match rather than a wider one. */
 .filt-panel{position:absolute;left:0;top:calc(100% + 8px);z-index:2;width:100%;
+  min-width:300px;
   display:flex;flex-direction:column;gap:2px;padding:4px;
   background:#F5F6FA;border:1px solid #EFF1F5;border-radius:12px;
   filter:drop-shadow(0 3px 3px rgba(43,64,92,.05)) drop-shadow(0 11px 5.5px rgba(43,64,92,.04))
@@ -791,6 +1185,183 @@
 .filt-count{flex:none;width:22px;color:#A8B3CA;}
 .filt-option-label{color:#041D3E;}
 .filt-empty{margin:0;padding:12px;font-size:16px;line-height:1.3;color:#5C6A82;}
+
+/* Floating Action Button — Loka Figma "Frame 2121455575" (node 118:125): a
+   job-count chip and a "See roles" call to action sharing one blurred bar.
+   Figma tokens: colors/neutral-opacity/dark-60 rgba(5,5,23,.6) (pill fill),
+   white-100 (chip fill, label, icon), gray-70 #2E3F5A (chip text), white at
+   20% opacity (pill border). Literals for the same reason the filter bar
+   keeps them: specified as opacity overlays over whatever the pill floats
+   above, not the app's own theme variables. It's a real button — hover and
+   press share one fill-and-border step, same convention as the Button's own
+   variants, and press adds the same 0.97 scale. Text runs at 16px, the
+   Button's own size, rather than Figma's literal 20px — it's a button in
+   every other respect, so its label shouldn't stand out oversized. */
+.app button.fab{display:inline-flex;align-items:center;gap:10px;padding:4px 10px 4px 4px;
+  border:1px solid rgba(255,255,255,.2);border-radius:14px;
+  background:rgba(5,5,23,.6);backdrop-filter:blur(8px);cursor:pointer;
+  transition:background .12s,border-color .12s,transform .08s;}
+.app button.fab[data-state="hover"],.app button.fab[data-state="pressed"]{
+  background:rgba(5,5,23,.72);border-color:rgba(255,255,255,.32);}
+.app button.fab[data-state="pressed"]{transform:scale(0.97);}
+.fab-chip{display:flex;align-items:center;justify-content:center;padding:8px 10px;
+  background:#FFFFFF;border-radius:10px;overflow:clip;white-space:nowrap;
+  font-family:var(--sans);font-size:16px;font-weight:400;line-height:1.3;color:#2E3F5A;}
+.fab-cta{display:flex;align-items:center;gap:6px;}
+.fab-label{white-space:nowrap;font-family:var(--sans);font-size:16px;font-weight:400;
+  line-height:1.3;color:#FFFFFF;}
+.fab-icon{display:flex;flex:none;align-items:center;justify-content:center;
+  width:24px;height:24px;color:#FFFFFF;}
+
+/* Avatar — Loka Figma "Avatar/Initials" component set (node 147:36) for the
+   Initials variant; the Image variant and the size range beyond 32px extend
+   past what Figma defines, matching the same square/no-radius box instead of
+   inventing a second shape convention. Size, fill and text color all come
+   from AvatarPreview.jsx as inline styles rather than data-attribute
+   selectors here, since they're picked from a live control, and none of the
+   six pastel/ink pairs are published palette tokens to point a CSS rule at
+   anyway. */
+.avatar-initials{display:flex;align-items:center;justify-content:center;
+  flex:none;font-weight:500;line-height:1.4;text-align:center;overflow:hidden;}
+.avatar-initials--image{background:#E7ECF2;}
+.avatar-initials--image img{width:100%;height:100%;object-fit:cover;display:block;}
+
+/* Tags — Loka Figma "20 / tag" (node 149:412): a bordered, unfilled box
+   holding one uppercase label. The layer's named "20" but measures 24px —
+   that's the sourced size; 20 and 28px are this system's own range around
+   it. Height and horizontal padding come from TagsPreview.jsx as inline
+   styles since they're picked from the canvas toggle; everything else here
+   is fixed regardless of size. */
+.tag-chip{display:inline-flex;align-items:center;justify-content:center;
+  flex:none;border:1px solid #EFF1F5;border-radius:8px;font-size:14px;
+  font-weight:500;line-height:1;letter-spacing:1.12px;text-transform:uppercase;
+  color:#828FA5;white-space:nowrap;}
+
+/* Card — two Loka Figma component sets share one tile shape and one hover
+   interaction: "CardGraphic" (node 147:307, icon-led, .card-tile--graphic)
+   and "CardImage" (node 147:324, photo-led, .card-tile--image). No radius
+   anywhere in either, matching both sourced specs exactly. The base rules
+   below default to the Graphic variant's own fixed 405×280 box; the
+   --image modifier overrides what differs (width, height, border, hover
+   fill) rather than restating everything from scratch. */
+.card-tile{display:flex;flex-direction:column;gap:4px;width:405px;height:280px;
+  padding:4px;background:#fff;border:1px solid #ECECEE;text-decoration:none;
+  cursor:pointer;transition:background .16s,border-color .16s;}
+.card-tile:hover{background:#1877F2;border-color:#1877F2;}
+.card-tile-content{display:flex;flex-direction:column;gap:16px;flex:1 0 0;
+  min-height:0;padding:16px;background:#fff;}
+/* Same gray-to-blue currentColor swap the Graphics gallery's own .gfx-art
+   uses (see graphics.js) — reused here rather than a second accent color. */
+.card-tile-icon{display:grid;place-items:center;width:64px;height:64px;
+  flex:none;color:#A8B3CA;transition:color .18s;}
+.card-tile-icon svg{width:64px;height:64px;display:block;}
+.card-tile:hover .card-tile-icon{color:#2F85F3;}
+.card-tile-text{display:flex;flex-direction:column;gap:8px;flex:1 0 0;min-height:0;}
+.card-tile-title{margin:0;font-family:var(--display);font-size:24px;font-weight:400;
+  line-height:1.15;color:#020F1F;}
+/* The tile's own sourced copy says "maximum 2 lines if possible" — enforced
+   here as a real clamp rather than a comment nobody reads. */
+.card-tile-desc{margin:0;font-size:18px;font-weight:400;line-height:1.4;color:#5C6A82;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+/* Occupies its 44px + 4px gap at rest — opacity:0, not display:none — so
+   revealing it on hover doesn't grow the tile or shift the content above it. */
+.card-tile-cta{display:flex;align-items:center;justify-content:center;gap:12px;
+  height:44px;flex:none;padding:12px 16px;backdrop-filter:blur(10px);
+  opacity:0;transition:opacity .32s ease;}
+.card-tile:hover .card-tile-cta{opacity:1;}
+/* Label and icon start pulled apart and slide together on hover — not in
+   the sourced spec, added on top of it. Same ease-out curve, same duration
+   as the fade, so the "join" reads as one motion rather than two. */
+.card-tile-cta-label{font-family:var(--display);font-size:16px;font-weight:500;
+  color:#fff;white-space:nowrap;transform:translateX(8px);
+  transition:transform .32s cubic-bezier(.22,1,.36,1);}
+.card-tile-cta-icon{display:flex;align-items:center;justify-content:center;
+  width:18px;height:18px;flex:none;color:#fff;transform:translateX(-8px);
+  transition:transform .32s cubic-bezier(.22,1,.36,1);}
+.card-tile:hover .card-tile-cta-label,
+.card-tile:hover .card-tile-cta-icon{transform:translateX(0);}
+
+/* Card — Image variant (node 147:324): width and border differ from the
+   Graphic variant, and height is intrinsic rather than fixed, since a real
+   photo's aspect ratio — not a magic pixel number — is what should decide
+   how tall the tile is. The hover fill is blue-100 here, not the Graphic
+   variant's blue-80 — each sourced node uses its own shade. The action row,
+   its join-in-the-middle motion and the outer box's base rules above are
+   all shared with the Graphic variant. */
+.card-tile--image{width:545px;height:auto;border-color:#EFF1F5;}
+.card-tile.card-tile--image:hover{background:#186BF3;border-color:#186BF3;}
+.card-tile-media-content{display:flex;flex-direction:column;gap:20px;
+  width:100%;padding:20px;background:#fff;}
+.card-tile-meta{display:flex;align-items:center;justify-content:space-between;
+  width:100%;}
+.card-tile-meta-group{display:flex;align-items:center;gap:12px;}
+.card-tile-eyebrow{font-size:14px;font-weight:500;letter-spacing:1.12px;
+  text-transform:uppercase;color:#828FA5;white-space:nowrap;}
+/* 1px gray-20, approximated — Figma exports this divider as an asset, not
+   a literal hex. */
+.card-tile-divider{width:1px;height:8.5px;flex:none;background:#D6DCE6;}
+.card-tile-media{width:100%;aspect-ratio:505/300;overflow:hidden;flex:none;}
+.card-tile-media img{width:100%;height:100%;object-fit:cover;display:block;}
+.card-tile-media-text{display:flex;flex-direction:column;gap:4px;width:100%;}
+.card-tile-image-title{margin:0;font-family:var(--display);font-size:24px;
+  font-weight:400;line-height:1.15;color:#020F1F;white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;}
+.card-tile-image-desc{margin:0;font-size:16px;font-weight:400;line-height:1.3;
+  color:#5C6A82;display:-webkit-box;-webkit-line-clamp:2;
+  -webkit-box-orient:vertical;overflow:hidden;}
+
+/* Tooltip — Loka Figma "Tooltip" component set (node 150:473): a mini
+   formatting toolbar with one shared tooltip that slides to whichever
+   button is hovered/focused, rather than a bubble nested in each button.
+   Figma's own hovered variant only shows this for Bold; the same
+   hover/focus treatment applies to every button here, not just the one
+   sourced example — see the rules in TooltipPreview.jsx. Padding is 4px,
+   not Figma's sourced 2px, so the shell reads at 32px tall instead of
+   28px — the button itself keeps its sourced 24×24 size. */
+.tooltip-bar{position:relative;display:inline-flex;align-items:center;
+  gap:2px;padding:4px;background:#F5F6FA;border-radius:2px;}
+.app button.tooltip-bar-btn{position:relative;display:flex;align-items:center;
+  justify-content:center;width:24px;height:24px;padding:3px 6px;
+  box-sizing:border-box;transition:background .12s ease;}
+.app button.tooltip-bar-btn:hover,
+.app button.tooltip-bar-btn:focus-visible{background:#FDFDFD;}
+.tooltip-bar-letter{font-size:14px;line-height:1;letter-spacing:1.12px;
+  text-transform:uppercase;color:#020F1F;}
+.tooltip-bar-icon{display:flex;align-items:center;justify-content:center;
+  width:16px;height:16px;color:#020F1F;}
+.tooltip-bar-icon svg{width:16px;height:16px;display:block;}
+/* Base bubble look, shared with the Icon variant below. left:50% is a
+   harmless default — the Toolbar always overrides it with an inline px
+   value measured off whichever button is active. */
+.tooltip-bubble{position:absolute;left:50%;bottom:calc(100% + 6px);
+  transform:translateX(-50%);background:#041D3E;color:#fff;font-size:14px;
+  font-weight:500;white-space:nowrap;padding:4px 6px;border-radius:4px;
+  opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s ease;}
+/* The Toolbar's one shared tooltip: its `left` is set in JS off the active
+   button's own offsetLeft/offsetWidth, and transitions there smoothly when
+   the active button changes — that's the "slide" a plain :hover reveal
+   can't do, since a bubble nested per button can only crossfade. */
+.tooltip-bubble--shared{transition:opacity .15s ease,left .22s cubic-bezier(.22,1,.36,1);}
+.tooltip-bubble--shared[data-visible="true"]{opacity:1;visibility:visible;}
+
+/* Tooltip — Icon variant: this system's own addition, not sourced from
+   Figma. A single circular trigger (no toolbar shell to group) whose
+   tooltip carries a full sentence instead of a one-word label — hence the
+   --long modifier's wrap/width/left-align, layered on the same
+   .tooltip-bubble base and reveal rule above. */
+.app button.tooltip-icon-btn{position:relative;display:flex;align-items:center;
+  justify-content:center;width:24px;height:24px;border-radius:999px;
+  color:#5C6A82;transition:background .12s ease,color .12s ease;}
+.app button.tooltip-icon-btn:hover,
+.app button.tooltip-icon-btn:focus-visible{background:#E7ECF2;color:#020F1F;}
+.tooltip-icon-btn:hover .tooltip-bubble,
+.tooltip-icon-btn:focus-visible .tooltip-bubble{opacity:1;visibility:visible;}
+/* width, not max-width: the bubble is absolutely positioned inside a 24px
+   trigger, so a wrapping box sized by shrink-to-fit measures itself against
+   that tiny containing block and never reaches a max-width ceiling — it
+   just wraps at whichever single word is longest instead. */
+.tooltip-bubble--long{white-space:normal;width:220px;line-height:1.4;
+  text-align:left;}
 
 /* Tabs — Loka Figma "service-icon-item" (node 4007:23097), in the bar that hosts
    it (node 4253:19091). Tokens: blue-100 #186BF3, LineOpaque #DFDFE1, DarkBlue
@@ -912,11 +1483,17 @@
 /* Room for the annotations comes from the stage, never from a margin on the
    redlined element: the filter bar hugs its chips, so margining one chip would
    stretch the very component being measured.
-   The left gutter is wider than the others because the height dimension line
-   reads up that edge with its tag outside it. It used to be 272px to seat the
-   spec panel's column; the panel moved into the properties column, so the
-   canvas gets that width back. */
-.bp-stage[data-bp]{padding:34px 60px 42px 96px;}
+   Symmetric on each axis rather than sized to each side's own annotation —
+   this stage centers its child with place-items:center, so unequal left/right
+   or top/bottom padding recenters the component itself when the padding
+   turns on, which reads as the component jumping when Best practices is
+   toggled. Matched to the larger side of each axis (96px was the old left
+   gutter, sized for the height dimension line that reads up that edge with
+   its tag outside it; 42px was the old bottom) so nothing that fit before
+   loses room — it's just given evenly instead of only where one component
+   needed it. It used to be 272px to seat the spec panel's column; the panel
+   moved into the properties column, so the canvas gets that width back. */
+.bp-stage[data-bp]{padding:42px 96px;}
 .rl-band{position:absolute;background:rgba(22,163,74,.35);pointer-events:none;z-index:2;}
 .rl-band-l{top:0;bottom:0;left:0;}
 .rl-band-r{top:0;bottom:0;right:0;}
@@ -988,12 +1565,8 @@
   .topbar{padding:0 16px;gap:10px;grid-template-columns:1fr auto 1fr;}
   .app button.topbar-search{width:auto;padding:0 10px;}
   .topbar-search-text,.topbar-search-kbd{display:none;}
-  .brand-hero{min-height:auto;padding:24px 0;}
-  .hero-ring{grid-template-columns:repeat(3, minmax(0,1fr));grid-template-rows:repeat(3, 96px);gap:8px;width:100%;max-width:340px;}
-  .hchip-aa{font-size:30px;}
-  .hchip-button{height:28px;padding:0 12px;font-size:11px;}
   .intro-block{grid-template-columns:1fr;gap:16px;margin:0 -16px;padding:32px 16px;}
-  .section-head,.sub-head{grid-template-columns:1fr;gap:8px;}
+  .section-head,.sub-head,.group-head{grid-template-columns:1fr;gap:8px;}
   .intro-block:first-of-type{padding-top:28px;}
   .intro-heading{font-size:28px;}
   .contents-grid{grid-template-columns:repeat(2,1fr);}

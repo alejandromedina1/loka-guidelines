@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { MultiSelectField } from "./MultiSelectField.jsx";
 import { SpecOverlay } from "../SpecOverlay.jsx";
 import {
   FONT_STACK,
@@ -37,7 +36,6 @@ const T = {
   ink: "#010812", // var(--ink) · black
   inkLabel: "#2E3F5A", // var(--ink-2) · gray-70
   placeholder: "#A8B3CA", // gray-40
-  caret: "#5C6A82", // gray-60
   blue: "#1957F4", // var(--blue) · NewBlue
   blueSoft: "#EEF2FE", // var(--blue-soft) · blue-5
   danger: "#D64545", // var(--danger)
@@ -48,24 +46,21 @@ const PCT = (n) => `${Math.round(n * 100)}%`;
 
 // Padding the redline bands are drawn at, per type. Textarea is the only one
 // with vertical padding; the rest centre a single line in a fixed 48px box.
-// Select is measured closed — open, the panel leaves the flow entirely.
 const FIELD_REDLINE = {
   Text: { padX: T.padX, padY: 0, heightMode: "fixed" },
   Email: { padX: T.padX, padY: 0, heightMode: "fixed" },
   Textarea: { padX: T.padX, padY: T.padY, heightMode: "min · resizes" },
-  Select: { padX: T.padX, padY: 0, heightMode: "fixed" },
 };
 
 // Placeholder copy. Text and Email keep standard form vocabulary because the
 // label is what tells the two apart — the visual spec is identical, and only
 // the keyboard a phone raises differs. The Textarea's used to be a question
 // lifted from a real contact form; it's generic now, but still the longest of
-// the four, since a long label above the box is worth showing.
+// the three, since a long label above the box is worth showing.
 const FIELD_COPY = {
   Text: { label: "Full name", placeholder: "John" },
   Email: { label: "Company Email", placeholder: "john@company.com" },
   Textarea: { label: "Additional details", placeholder: "Type your message…" },
-  Select: { label: "Multi-select", placeholder: "Type to search" },
 };
 
 // Shared across the family. Height and padding are absent on purpose — the
@@ -89,15 +84,6 @@ const TEXTLIKE_SPECS = [
   ["Placeholder", `${T.placeholder} · gray-40`],
 ];
 
-// Only Select adds rows of its own: its panel is a second surface with values
-// nothing on the canvas reports, since the redlines measure it closed.
-const SELECT_PANEL_SPECS = [
-  ["Panel fill", `${T.blueSoft} · blue-5`],
-  ["List", "348px max · scrolls"],
-  ["Option", `${T.height}px · radius ${T.radius}px · #EFF1F5`],
-  ["Tag", "#EEF2FE on 1px #D8E2F6"],
-];
-
 const FIELD_TYPE_SPECS = {
   Text: TEXTLIKE_SPECS,
   Email: TEXTLIKE_SPECS,
@@ -105,7 +91,6 @@ const FIELD_TYPE_SPECS = {
     ["Text", `${T.fontSize}px / ${T.lineHeight}`],
     ["Placeholder", `${T.placeholder} · gray-40`],
   ],
-  Select: [...TEXTLIKE_SPECS, ...SELECT_PANEL_SPECS],
 };
 
 // The guidance behind the family, stated once. The specs panel shows the
@@ -114,7 +99,7 @@ export function inputFieldRules({ type }) {
   return [
     {
       rule: "Every control in the family shares one fill, border and radius.",
-      why: "That shared box is what makes text, email, textarea and select read as a single component, so don't restyle one of them in isolation.",
+      why: "That shared box is what makes text, email and textarea read as a single component, so don't restyle one of them in isolation.",
     },
     {
       rule: `One ${T.gap}px gap governs both sides — label above, error below.`,
@@ -140,22 +125,6 @@ export function inputFieldRules({ type }) {
           },
         ]
       : []),
-    ...(type === "Select"
-      ? [
-          {
-            rule: "The panel overlays the page — it never pushes content down.",
-            why: "It's absolutely positioned, so it adds no height. Clicking the control again collapses it.",
-          },
-          {
-            rule: "At three selections the unpicked rows disable, so a swap starts by unticking.",
-            why: "The panel stays open while that happens rather than closing on the third pick.",
-          },
-          {
-            rule: `Body text is ${T.fontSize}px, matching the family rather than the standalone Figma frame.`,
-            why: "The frame specifies 16px; matching the field family wins over matching the frame.",
-          },
-        ]
-      : []),
   ];
 }
 
@@ -170,8 +139,8 @@ export function inputFieldSpecs({ type, state }) {
 }
 
 // Live Input Field preview — label sits a full space-10 above the control, and
-// every control (text, textarea, select) shares the same fill/border/radius
-// so the field family reads as one component.
+// every control (text and textarea) shares the same fill/border/radius so the
+// field family reads as one component.
 export function InputFieldPreview({ type, state = "Default", bestPractices }) {
   const [text, setText] = useState("");
   const copy = FIELD_COPY[type];
@@ -185,7 +154,7 @@ export function InputFieldPreview({ type, state = "Default", bestPractices }) {
 
   return (
     <div className="bp-stage" data-bp={bestPractices || undefined}>
-      <div className="field-demo" data-type={type}>
+      <div className="field-demo">
         <label className="field">
           <span className="field-label">{copy.label}</span>
           {/* `fill` because every control in the family is width:100% of the
@@ -198,13 +167,6 @@ export function InputFieldPreview({ type, state = "Default", bestPractices }) {
                 data-focus={focus}
                 placeholder={copy.placeholder}
                 disabled={disabled}
-              />
-            ) : type === "Select" ? (
-              <MultiSelectField
-                disabled={disabled}
-                error={error}
-                focus={focus}
-                placeholder={copy.placeholder}
               />
             ) : (
               <input
@@ -239,13 +201,6 @@ const slugId = (label) =>
     .slice(0, 32)
     .replace(/^-|-$/g, "");
 
-// The native select's caret, as a data URI so the snippet carries its own icon.
-// `#` has to be percent-encoded or the URL terminates at the colour.
-const CARET_URI =
-  `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' ` +
-  `viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%23${T.caret.slice(1)}' ` +
-  `stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")`;
-
 // The stylesheet for the field family, resolved to literals so it renders
 // identically wherever it's pasted. Only the rules the chosen type needs are
 // emitted — a Text field shouldn't ship the textarea's overrides.
@@ -267,7 +222,7 @@ export function inputFieldCss({ type }) {
     ["color", T.inkLabel],
   ]);
 
-  // Text, textarea and select share one fill, border and radius, which is what
+  // Text and textarea share one fill, border and radius, which is what
   // makes the family read as a single component.
   const control = rule(`.${CLASS}__control`, [
     ["width", "100%"],
@@ -320,27 +275,12 @@ export function inputFieldCss({ type }) {
         ])
       : "";
 
-  const select =
-    type === "Select"
-      ? rule(`.${CLASS}__control--select`, [
-          ["appearance", "none"],
-          ["-webkit-appearance", "none"],
-          ["cursor", "pointer"],
-          // Room for the caret, which sits at the same 16px inset as the text.
-          ["padding-right", `${T.padX * 2 + 12}px`],
-          ["background-image", CARET_URI],
-          ["background-repeat", "no-repeat"],
-          ["background-position", `right ${T.padX}px center`],
-        ])
-      : "";
-
   return blocks(
     wrapper,
     label,
     control,
     placeholder,
     textarea,
-    select,
     focus,
     disabled,
     error,
@@ -352,9 +292,7 @@ export function inputFieldCss({ type }) {
 // A self-contained HTML + CSS block for the current configuration.
 //
 // Focus isn't reproducible in static markup — it's a state the browser owns —
-// so the Focus pill emits the default field plus a note. Select emits a native
-// <select> in the family's box: the library's multi-select is a custom widget
-// that needs JavaScript, and its full spec lives in the AI prompt instead.
+// so the Focus pill emits the default field plus a note.
 export function inputFieldHtmlSnippet({ type, state }) {
   const copy = FIELD_COPY[type];
   const id = slugId(copy.label);
@@ -362,28 +300,17 @@ export function inputFieldHtmlSnippet({ type, state }) {
   const disabled = state === "Disabled";
 
   const attrs = [
-    `class="${CLASS}__control${type === "Textarea" ? ` ${CLASS}__control--textarea` : ""}${
-      type === "Select" ? ` ${CLASS}__control--select` : ""
-    }"`,
+    `class="${CLASS}__control${type === "Textarea" ? ` ${CLASS}__control--textarea` : ""}"`,
     `id="${id}"`,
-    type === "Textarea" || type === "Select" ? null : `type="${type === "Email" ? "email" : "text"}"`,
-    type === "Select" ? null : `placeholder="${copy.placeholder}"`,
+    type === "Textarea" ? null : `type="${type === "Email" ? "email" : "text"}"`,
+    `placeholder="${copy.placeholder}"`,
     disabled ? "disabled" : null,
     error ? 'aria-invalid="true"' : null,
     error ? `aria-describedby="${id}-error"` : null,
   ].filter(Boolean);
 
   const open = attrs.join(" ");
-  const control =
-    type === "Textarea"
-      ? `<textarea ${open}></textarea>`
-      : type === "Select"
-        ? `<select ${open}>\n` +
-          `  <option value="" disabled selected>${copy.placeholder}</option>\n` +
-          `  <option>Option one</option>\n` +
-          `  <option>Option two</option>\n` +
-          `</select>`
-        : `<input ${open}>`;
+  const control = type === "Textarea" ? `<textarea ${open}></textarea>` : `<input ${open}>`;
 
   const markup = [
     `<div class="${CLASS}">`,
@@ -395,12 +322,7 @@ export function inputFieldHtmlSnippet({ type, state }) {
     .filter((line) => line !== null)
     .join("\n");
 
-  // Both can apply at once — a focused Select needs to hear about the widget
-  // and about why the state isn't in the markup.
   const caveats = [
-    type === "Select"
-      ? "<!-- A native select in the family's box. The library's multi-select is a\n     custom widget that needs JavaScript — see the AI prompt tab for its spec. -->"
-      : null,
     state === "Focus"
       ? "<!-- Focus is a browser state, so it isn't in the markup — the :focus rule above draws it. -->"
       : null,
@@ -416,7 +338,6 @@ export function inputFieldHtmlSnippet({ type, state }) {
 // The same configuration as a spec an agent can build from.
 export function inputFieldPromptSnippet({ type, state }) {
   const copy = FIELD_COPY[type];
-  const isSelect = type === "Select";
 
   return specPrompt({
     component: "Input Field",
@@ -428,11 +349,7 @@ export function inputFieldPromptSnippet({ type, state }) {
           ["Width", "fills its container"],
           [
             "Height",
-            isSelect
-              ? `${T.height}px closed`
-              : type === "Textarea"
-                ? `${T.textareaMin}px minimum, resizes vertically`
-                : `${T.height}px`,
+            type === "Textarea" ? `${T.textareaMin}px minimum, resizes vertically` : `${T.height}px`,
           ],
           [
             "Padding",
@@ -460,24 +377,13 @@ export function inputFieldPromptSnippet({ type, state }) {
         ],
       ],
       ["Content", [["Label", `"${copy.label}"`], ["Placeholder", `"${copy.placeholder}"`]]],
-      ...(isSelect ? [["Multi-select panel", SELECT_PANEL_SPECS]] : []),
     ],
     states: [
       `Focus: border becomes ${tokenRef(T.blue)} with a ${T.ring}px ${tokenRef(T.blueSoft)} ring, transitioned over 140ms. Replace the browser's default outline rather than doubling it.`,
       `Error: border becomes ${tokenRef(T.danger)}, the focus ring becomes ${tokenRef(T.dangerSoft)}, and a ${T.errorSize}px message in ${tokenRef(T.danger)} appears below the control at the same ${T.gap}px gap.`,
       `Disabled: ${PCT(T.disabledOpacity)} opacity, cursor: not-allowed.`,
-      ...(isSelect
-        ? ["Open: the panel is absolutely positioned and overlays what's below rather than pushing the page down. Clicking the control again collapses it. At three selections the panel stays open and the unpicked rows disable, so a swap starts by unticking."]
-        : []),
     ],
-    notes: [
-      ...ruleTexts(inputFieldRules({ type })),
-      ...(isSelect
-        ? [
-            "The library's select is a custom multi-select, not a native one: it needs a search row, checkable options, removable tags, and a three-selection ceiling.",
-          ]
-        : []),
-    ],
+    notes: ruleTexts(inputFieldRules({ type })),
     reference: inputFieldHtmlSnippet({ type, state }),
   });
 }
