@@ -334,3 +334,177 @@ export function usageCss(usage) {
   }
   return rules.join("\n");
 }
+
+// ── Project images ───────────────────────────────────────────────────────────
+// The client-work frame. Unlike the treatments above there are no knobs here, so
+// this isn't building a parameter space — it's holding one construction to a
+// reference frame that isn't the one it's drawn on.
+//
+// Figma draws it at 532 × 370. The hub demos it on the shared 3:2 frame, and a
+// project card will be some third size, so every measurement that's a proportion
+// of the frame is emitted as a proportion: the 24px inset is 6.486% of 370, the
+// box takes its width from an aspect ratio rather than a pixel count, and the
+// lockup's width is a fraction of the frame's. What stays in absolute pixels is
+// what shouldn't scale — the rules, the markers, the chrome — for the same reason
+// the Corner Markers pattern keeps its 8px square at every size.
+const PROJECT_FRAME = { width: 532, height: 370 };
+
+// The box's distance from the top and bottom of the frame. Both, always, in all
+// three layouts — it's the one number the format never varies, which is why the
+// aspect can be left to do the rest.
+const PROJECT_INSET = 24;
+
+// Held here and not in data/imagery.js because they aren't documented values,
+// they're what the reference numbers turn into: the rules the box is drawn with
+// and the chrome inside it, straight off the Figma nodes.
+const PROJECT_RULE = 2; // the box outline, a centred stroke
+const PROJECT_RUN = 1; // the same four lines continuing to the frame's edges
+const PROJECT_MARKER = 8;
+const PROJECT_DOT = { size: 8, gap: 4, offset: 9 };
+const PROJECT_NOTCH = { width: 32, height: 8, top: 13 };
+
+// The lockup's own proportion, so a client logo swapped into the frame is scaled
+// by width and can't be stretched to fill a box it doesn't fit.
+const PROJECT_LOGO_RATIO = "205 / 72";
+
+const frac = (n, of) => Number(((n / of) * 100).toFixed(3));
+
+// Exposed as strings rather than numbers: the lab draws its measurement overlay
+// on the same geometry the CSS uses, and the only way that can't drift is for both
+// to read the same values.
+export const PROJECT_BOX = {
+  top: `${frac(PROJECT_INSET, PROJECT_FRAME.height)}cqh`,
+  height: `${frac(PROJECT_FRAME.height - 2 * PROJECT_INSET, PROJECT_FRAME.height)}cqh`,
+};
+
+export const projectLogoWidth = (logo) => `${frac(logo, PROJECT_FRAME.width)}cqw`;
+
+export function projectSafeStyle({ aspect }) {
+  return {
+    top: PROJECT_BOX.top,
+    height: PROJECT_BOX.height,
+    aspectRatio: aspect,
+    "--marker-size": `${PROJECT_MARKER}px`,
+    "--marker-color": "#186BF3", // blue-100
+  };
+}
+
+export function projectLogoStyle({ logo }) {
+  return { width: projectLogoWidth(logo), aspectRatio: PROJECT_LOGO_RATIO };
+}
+
+// Where each of the four continuing lines sits. `b:nth-of-type` and not
+// `nth-child`, because the four corner markers are `i` and have to stay the first
+// four children for .frame-markers' own selectors to reach them.
+//
+// The overhang is a full frame in each direction — the frame clips, so any length
+// past its edge does, and a frame's worth is the one figure that can't be too
+// short for the narrowest box the format has.
+const PROJECT_RUNS = [
+  { left: `${-PROJECT_RUN / 2}px`, width: `${PROJECT_RUN}px`, top: "-100cqh", bottom: "-100cqh" },
+  { right: `${-PROJECT_RUN / 2}px`, width: `${PROJECT_RUN}px`, top: "-100cqh", bottom: "-100cqh" },
+  { top: `${-PROJECT_RUN / 2}px`, height: `${PROJECT_RUN}px`, left: "-100cqw", right: "-100cqw" },
+  { bottom: `${-PROJECT_RUN / 2}px`, height: `${PROJECT_RUN}px`, left: "-100cqw", right: "-100cqw" },
+];
+
+// The copyable rule set for one layout — the whole frame, not just the container,
+// because a project image is a stack and half of it is useless on its own.
+export function projectImageCss(layout) {
+  const rules = [
+    "/* A project image: photo, scrim, safe box, lockup. The frame is a size",
+    "   container — the inset, the box's width and the lockup all measure against",
+    "   it, so the construction holds at whatever size the card is. */",
+    rule(".project-image", {
+      position: "relative",
+      overflow: "hidden",
+      containerType: "size",
+    }),
+    rule(".project-image > img", {
+      display: "block",
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+    }),
+    "/* Carries the white lockup and nothing else. Fixed — see the note in the panel. */",
+    // Figma paints this scrim in #020F1F, a hair cooler and darker than the ink the
+    // treatments above use. At 20% the two are indistinguishable, so it's snapped to
+    // INK rather than kept: one dark in the system beats two that can't be told
+    // apart. Noted rather than quietly done, and worth undoing if it ever gets
+    // heavier — at full strength they aren't the same colour.
+    rule(".project-scrim", { position: "absolute", inset: "0", background: `rgba(${INK}, 0.2)` }),
+    `/* The safe box: ${PROJECT_INSET}px off the top and bottom of the reference frame, centred,`,
+    "   its width left to the aspect. The stroke is two 1px box-shadows, one in and",
+    "   one out, which is a centred stroke the way Figma draws it — and neither a",
+    "   border, which would move the box the markers are positioned against, nor an",
+    "   outline, which paints after every descendant and so would cross the markers.",
+    "   A shadow paints with the element's own background, i.e. under them.",
+    "",
+    "   Selected as a child of the frame, not on its own, so this outranks the",
+    "   `position: relative` the .frame-markers block below sets on the same element.",
+    "   At equal specificity that block wins on order and the box loses its",
+    "   positioning — which is a paste that silently doesn't work. */",
+    rule(".project-image > .project-safe", {
+      position: "absolute",
+      left: "50%",
+      transform: "translateX(-50%)",
+      ...projectSafeStyle(layout),
+      boxShadow: `inset 0 0 0 ${PROJECT_RULE / 2}px #fff, 0 0 0 ${PROJECT_RULE / 2}px #fff`,
+    }),
+    "/* The same four lines, at half the weight, running out to the frame's edges. */",
+    rule(".project-safe > b", { position: "absolute", background: "#fff" }),
+    ...PROJECT_RUNS.map((run, i) => rule(`.project-safe > b:nth-of-type(${i + 1})`, run)),
+    "/* The four corner squares — the Corner Markers pattern, straddling the edge.",
+    "   Lifted a layer, because the squares sit on top of every line they straddle",
+    "   and DOM order can't do it: .frame-markers reaches them with :nth-child, so",
+    "   they have to stay the first four children, ahead of the runs above. */",
+    rule(".project-safe > i", { zIndex: "1" }),
+    cornerMarkersCss({ size: PROJECT_MARKER, color: "#186BF3" }),
+    "/* Centred on the frame rather than fitted to the box: all three layouts put",
+    "   the box's centre on the frame's, so one rule covers them, and a lockup that",
+    "   sized itself to the box would change proportion with the layout. */",
+    rule(".project-logo", {
+      position: "absolute",
+      top: "50%",
+      left: "50%",
+      transform: "translate(-50%, -50%)",
+      ...projectLogoStyle(layout),
+    }),
+    rule(".project-logo > img", { display: "block", width: "100%", height: "100%" }),
+  ];
+
+  if (layout.chrome === "dots") {
+    rules.push(
+      "/* The only cue that the box holds a product. Inside its top-left corner. */",
+      rule(".project-chrome", {
+        position: "absolute",
+        top: `${PROJECT_DOT.offset}px`,
+        left: `${PROJECT_DOT.offset}px`,
+        display: "flex",
+        gap: `${PROJECT_DOT.gap}px`,
+      }),
+      rule(".project-chrome > span", {
+        width: `${PROJECT_DOT.size}px`,
+        height: `${PROJECT_DOT.size}px`,
+        borderRadius: "50%",
+        background: "#fff",
+      }),
+    );
+  }
+
+  if (layout.chrome === "notch") {
+    rules.push(
+      rule(".project-notch", {
+        position: "absolute",
+        top: `${PROJECT_NOTCH.top}px`,
+        left: "50%",
+        transform: "translateX(-50%)",
+        width: `${PROJECT_NOTCH.width}px`,
+        height: `${PROJECT_NOTCH.height}px`,
+        borderRadius: "999px",
+        background: "#fff",
+      }),
+    );
+  }
+
+  return rules.join("\n");
+}

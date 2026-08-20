@@ -118,15 +118,8 @@ import {
   tooltipPromptSnippet,
   tooltipSpecs,
 } from "./previews/TooltipPreview.jsx";
-import {
-  ArrowLeft,
-  ArrowRight,
-  ChevronToggle,
-  CheckIcon,
-  CopyIcon,
-  DesktopIcon,
-  MobileIcon,
-} from "../common/Icon.jsx";
+import { ArrowLeft, ArrowRight, DesktopIcon, MobileIcon } from "../common/Icon.jsx";
+import { CodePanel, CodeToggle } from "./CodePanel.jsx";
 
 // Tabs documents two things at once — the item and the bar it sits in.
 const TABS_VIEWS = ["Item", "Full bar"];
@@ -173,23 +166,6 @@ const LINK_TONE = { Default: "default", Hover: "active" };
 // reader already has our component installed is documentation dressed up as
 // code. These both work on their own: the first renders anywhere it's pasted,
 // the second builds the component in whatever stack the reader actually uses.
-const CODE_VIEWS = [
-  {
-    id: "html",
-    label: "HTML + CSS",
-    ext: "html",
-    copy: "Copy snippet",
-    hint: "Self-contained — paste it into any page and it renders. Move the CSS into your stylesheet and rename the classes to suit.",
-  },
-  {
-    id: "prompt",
-    label: "AI prompt",
-    ext: "md",
-    copy: "Copy prompt",
-    hint: "Paste into Claude Code, Cursor, or any coding agent to build this component in your own framework and conventions.",
-  },
-];
-
 // The component documentation surface: a live preview canvas, a prev/next
 // cycler, per-component property controls, and a copyable code snippet.
 // The Button is the fully-built reference component; others show a placeholder.
@@ -227,7 +203,6 @@ export function ComponentPlayground({
   const [disabled, setDisabled] = useState(false);
   const [bestPractices, setBestPractices] = useState(false);
   const [showCode, setShowCode] = useState(false);
-  const [codeView, setCodeView] = useState("html");
   const [btnState, setBtnState] = useState("default"); // default | hover | pressed
 
   const [tabsView, setTabsView] = useState("Item");
@@ -416,9 +391,6 @@ export function ComponentPlayground({
   // just their redlines, which are the part that has to sit on the component.
   const specs = bestPractices && built ? built.specs(built.args) : null;
 
-  const view = CODE_VIEWS.find((v) => v.id === codeView) ?? CODE_VIEWS[0];
-  const code = snippets?.[view.id] ?? "";
-  const filename = `${selected.toLowerCase().replace(/\s+/g, "-")}.${view.ext}`;
   // The pill strip under the canvas is the switcher for whichever component is
   // on stage: the Button picks its style variant there, the Input Field and the
   // Checkbox the state they're in, Tabs whether it's showing one item or the whole
@@ -636,55 +608,13 @@ export function ComponentPlayground({
               <span />
             )}
             {snippets && (
-              <button className="pg-viewcode" onClick={() => setShowCode((v) => !v)}>
-                {showCode ? "Hide code" : "Get the code"}
-                <ChevronToggle open={showCode} />
-              </button>
+              <CodeToggle open={showCode} onToggle={() => setShowCode((v) => !v)} />
             )}
           </div>
         </div>
 
         {showCode && snippets && (
-          <div className="pg-code">
-            <div className="pg-code-head">
-              <div className="pg-code-tabs" role="tablist" aria-label="Code format">
-                {CODE_VIEWS.map((v) => (
-                  <button
-                    key={v.id}
-                    role="tab"
-                    className="pg-code-tab"
-                    data-active={v.id === view.id}
-                    aria-selected={v.id === view.id}
-                    onClick={() => setCodeView(v.id)}
-                  >
-                    {v.label}
-                  </button>
-                ))}
-              </div>
-              <button className="pg-code-copy" onClick={() => onCopy(code, `pg-code-${view.id}`)}>
-                {copied === `pg-code-${view.id}` ? (
-                  <>
-                    <CheckIcon /> Copied
-                  </>
-                ) : (
-                  <>
-                    <CopyIcon /> {view.copy}
-                  </>
-                )}
-              </button>
-            </div>
-            {/* What the format is for. Without it the tabs read as two flavours
-                of the same thing, and the prompt tab in particular isn't
-                self-explanatory. */}
-            <div className="pg-code-hint">
-              <span>{view.hint}</span>
-              <span className="pg-code-file">{filename}</span>
-            </div>
-            <pre className="pg-code-body">
-              <span className="pg-ln">{code.split("\n").map((_, i) => i + 1).join("\n")}</span>
-              <code>{code}</code>
-            </pre>
-          </div>
+          <CodePanel snippets={snippets} name={selected} copied={copied} onCopy={onCopy} />
         )}
       </div>
 

@@ -135,6 +135,7 @@ const GETTING_STARTED = {
 const FOUNDATIONS = {
   group: "Foundations",
   items: [
+    { id: "logo", label: "Logo" },
     {
       id: "color",
       label: "Color",
@@ -162,6 +163,7 @@ const FOUNDATIONS = {
       sub: [
         { id: "imagery-styling", label: "Styling" },
         { id: "imagery-usage", label: "Usage" },
+        { id: "imagery-project", label: "Project images" },
       ],
     },
   ],
@@ -201,6 +203,7 @@ export const HUB_NAV = {
 // so it has exactly one.
 export const HUB_SPY_IDS = {
   brand: [
+    "logo",
     "color",
     "color-neutral",
     "color-blue",
@@ -215,6 +218,7 @@ export const HUB_SPY_IDS = {
     "imagery",
     "imagery-styling",
     "imagery-usage",
+    "imagery-project",
   ],
   product: ["components"],
 };

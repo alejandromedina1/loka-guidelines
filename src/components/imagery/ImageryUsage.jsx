@@ -1,7 +1,9 @@
 import { useState } from "react";
-import { IMAGERY_PHOTOS, IMAGERY_USAGE } from "../../data/imagery.js";
+import { IMAGERY_USAGE, findPhoto } from "../../data/imagery.js";
 import { usageCss, usageStyle } from "../../utils/imageryStyles.js";
 import { CheckIcon, CopyIcon } from "../common/Icon.jsx";
+import { FIGMA_NODES } from "../../data/figma.js";
+import { FigmaLink } from "../common/FigmaLink.jsx";
 import { PhotoSwitcher } from "./PhotoSwitcher.jsx";
 
 // The three placements, one at a time, on the same playground frame as Styling —
@@ -9,7 +11,7 @@ import { PhotoSwitcher } from "./PhotoSwitcher.jsx";
 // following along. There are no knobs here (every value in a placement is fixed),
 // so the panel carries the spec instead: the numbers are the thing worth reading
 // off a placement, and this is where the eye already goes for them.
-export function ImageryUsage({ copied, onCopy, selected, setSelected }) {
+export function ImageryUsage({ copied, onCopy, selected, setSelected, local, onPickLocal }) {
   const usage = IMAGERY_USAGE.find((u) => u.id === selected) || IMAGERY_USAGE[0];
 
   // Keyed by placement, so trying a photo on one and switching away doesn't discard
@@ -18,7 +20,7 @@ export function ImageryUsage({ copied, onCopy, selected, setSelected }) {
   const [photos, setPhotos] = useState(() =>
     Object.fromEntries(IMAGERY_USAGE.map((u) => [u.id, u.photo])),
   );
-  const photo = IMAGERY_PHOTOS.find((p) => p.id === photos[usage.id]) ?? IMAGERY_PHOTOS[0];
+  const photo = findPhoto(photos[usage.id], local);
   const copyId = `imguse-${usage.id}`;
 
   // The only thing here that can be wandered off is the photo, so that's all Reset
@@ -33,6 +35,8 @@ export function ImageryUsage({ copied, onCopy, selected, setSelected }) {
           <PhotoSwitcher
             current={photo.id}
             onPick={(id) => setPhotos((cur) => ({ ...cur, [usage.id]: id }))}
+            local={local}
+            onPickLocal={onPickLocal}
           />
 
           <div className="pg-canvas-center">
@@ -51,17 +55,20 @@ export function ImageryUsage({ copied, onCopy, selected, setSelected }) {
                 </button>
               ))}
             </div>
-            <button className="pg-code-copy" onClick={() => onCopy(usageCss(usage), copyId)}>
-              {copied === copyId ? (
-                <>
-                  <CheckIcon /> Copied
-                </>
-              ) : (
-                <>
-                  <CopyIcon /> Copy CSS
-                </>
-              )}
-            </button>
+            <div className="pg-foot-actions">
+              <FigmaLink node={FIGMA_NODES["imagery-usage"]} />
+              <button className="pg-code-copy" onClick={() => onCopy(usageCss(usage), copyId)}>
+                {copied === copyId ? (
+                  <>
+                    <CheckIcon /> Copied
+                  </>
+                ) : (
+                  <>
+                    <CopyIcon /> Copy CSS
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

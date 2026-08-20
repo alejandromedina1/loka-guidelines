@@ -6,7 +6,8 @@ import { SPACING } from "../data/spacing.js";
 import { ICON_CATEGORIES } from "../data/icons.js";
 import { GRAPHICS } from "../data/graphics.js";
 import { PATTERNS } from "../data/patterns.js";
-import { IMAGERY_STYLES, IMAGERY_USAGE } from "../data/imagery.js";
+import { IMAGERY_PROJECT, IMAGERY_STYLES, IMAGERY_USAGE } from "../data/imagery.js";
+import { LOGO_COLORS, LOGO_LOCKUPS } from "../data/logo.js";
 
 // Builds a flat, searchable index spanning every part of the system: nav
 // sections, color/type/spacing tokens, icons, and graphics. Computed once.
@@ -57,6 +58,15 @@ function buildSearchIndex() {
     )
   );
 
+  // Both axes, because either is a way somebody looks for it: "Mark" when they
+  // want the shape, "White" when they know which file they need.
+  LOGO_LOCKUPS.forEach((l) =>
+    idx.push({ label: l.name, kind: "Logo", target: "logo", setLogo: l.id })
+  );
+  LOGO_COLORS.forEach((c) =>
+    idx.push({ label: c.name, kind: "Logo", sub: c.hex, target: "logo" })
+  );
+
   SPACING.forEach((t) => idx.push({ label: t.name, kind: "Spacing", sub: `${t.value}px`, target: "spacing" }));
 
   ICON_CATEGORIES.forEach((cat) =>
@@ -77,6 +87,18 @@ function buildSearchIndex() {
 
   IMAGERY_USAGE.forEach((u) =>
     idx.push({ label: u.name, kind: "Imagery", target: "imagery-usage", setUsage: u.id })
+  );
+
+  // Named by layout, so "Desktop" and "Mobile" reach the frame they belong to —
+  // and `sub` because on their own those two words could be half the system.
+  IMAGERY_PROJECT.forEach((l) =>
+    idx.push({
+      label: l.name,
+      kind: "Imagery",
+      sub: "Project image",
+      target: "imagery-project",
+      setProject: l.id,
+    })
   );
 
   return idx;

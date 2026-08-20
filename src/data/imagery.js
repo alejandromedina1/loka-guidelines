@@ -2,6 +2,7 @@ import phone from "../assets/imagery/phone.jpg";
 import colleagues from "../assets/imagery/colleagues.jpg";
 import presenting from "../assets/imagery/presenting.jpg";
 import lab from "../assets/imagery/lab.jpg";
+import laptop from "../assets/imagery/laptop.jpg";
 import { DOT_ANCHORS } from "../utils/imageryStyles.js";
 
 // Photography treatments. The four styles are cumulative rather than
@@ -56,7 +57,30 @@ export const IMAGERY_PHOTOS = [
     subject: "Left and centre",
     maskHint: "clear along the top edge, so fade from Top",
   },
+  // The Project images photo, and in the set rather than kept beside that lab for
+  // the same reason the other four are shared: a frame or a treatment is only
+  // legible once you have seen it hold over a photo it wasn't drawn on.
+  {
+    id: "laptop",
+    label: "Laptop",
+    src: laptop,
+    alt: "Two people laughing at a laptop screen",
+    subject: "Left and centre, faces up top",
+    maskHint: "their hair reaches the top edge, so fade from Bottom",
+  },
 ];
+
+// A photo by id, including one the reader dropped into the switcher — which isn't
+// in the list above, because it only exists for as long as the tab is open. Every
+// lab resolves through here so none of them has to know that.
+export function findPhoto(id, local) {
+  if (local && id === local.id) return local;
+  return IMAGERY_PHOTOS.find((p) => p.id === id) ?? IMAGERY_PHOTOS[0];
+}
+
+// The id a dropped photo takes. One slot, replaced rather than added to: the point
+// is to try a photo, not to build a library in a tab that will be closed.
+export const LOCAL_PHOTO_ID = "local";
 
 // The dot field. The square is fixed at 2px — see utils/imageryStyles.js — so
 // what's left to set is the gap between them and how much they carry.
@@ -270,3 +294,107 @@ export const IMAGERY_USAGE = [
     ],
   },
 ];
+
+// ── Project images ───────────────────────────────────────────────────────────
+// The client-work format: a project photograph, a scrim over it, the client's
+// lockup in white, and a ruled box with blue markers straddling its corners.
+//
+// It sits apart from Styling and Usage because it's the one imagery format whose
+// content isn't ours — the photograph is of a client's product in use and the
+// lockup is their logo — so what's documented here is the frame those two drop
+// into. Nothing below is a treatment applied to a photo; it's a construction a
+// photo is placed in.
+//
+// And the choice between the three isn't aesthetic the way Usage's is: it follows
+// from what the engagement delivered. So every `lede` opens with the condition
+// rather than with the geometry — you arrive already knowing which one you need,
+// and the first clause is what confirms it.
+//
+// The construction is identical in all three. The box is inset 24px from the top
+// and bottom of the frame and centred horizontally, so the only thing that varies
+// is its aspect — and the aspect is the shape of the thing the project produced.
+// Measured off the layout=Desktop|Mobile|Logo variants of the Image component on
+// the Figma Imagery page, against its 532 × 370 frame: at 322 tall, 3:2 is Figma's
+// 484, 1:1 its 321 and 9:19 its 152, each within a pixel. Ratios rather than those
+// widths, because the ratio is what survives the frame being a different size.
+//
+// `figmaNode` is the variant itself, not the component set: the whole point of the
+// link is that you land on the layout you were looking at. Styling and Usage link
+// to their Figma sections instead — see FIGMA_NODES in data/figma.js — because
+// those sections lay their variants out side by side, so the section is already
+// the tightest useful target.
+//
+// `chrome` is the only device cue in the format and the only optional part of it.
+// `logo` is the lockup's width at the reference frame, held there rather than as a
+// fraction of the box because the lockup is centred on the frame, not fitted to
+// the box — see utils/imageryStyles.js.
+//
+// `specs` carries only the three values that differ between the layouts. The rest
+// of the construction — the inset, the 2px/1px rules, the markers, the scrim — is
+// the same in all three, so listing it per layout would be one spec printed three
+// times. It's stated once in the code drawer, and Measurements draws it.
+
+// Chip text for the lab's measurement overlay — the three numbers the frame is
+// actually built from, in the terse register a chip on an image can carry. The
+// inset is the same in all three layouts, which is the point of it.
+const PROJECT_MEASURE = (box, logo) => ({ inset: "24px", box, logo });
+
+export const IMAGERY_PROJECT = [
+  {
+    id: "desktop",
+    figmaNode: "183:3173",
+    name: "Desktop",
+    photo: "laptop",
+    aspect: "3 / 2",
+    chrome: "dots",
+    logo: 205,
+    lede: "For work that shipped a web app. 3:2, and the only layout with chrome — three dots inside the box's top-left corner, the whole of what says the thing behind the lockup was software.",
+    measure: PROJECT_MEASURE("3:2 · 484 × 322", "205 × 72"),
+    specs: [
+      ["Safe box", "3:2 · 484 × 322"],
+      ["Lockup", "205px wide, centred on the frame"],
+      ["Chrome", "3 × 8px dots, 9px in from the corner"],
+    ],
+  },
+  {
+    id: "mobile",
+    figmaNode: "183:3231",
+    name: "Mobile",
+    photo: "laptop",
+    aspect: "9 / 19",
+    chrome: "notch",
+    // 141px, not 205. At 205 the lockup would be wider than the 152px box and
+    // cross the rules on both sides, and the rules are the format — so the lockup
+    // steps down with the box rather than the box giving way to it. The step is
+    // ~69%, which is what leaves the 5px it clears the rules by in Figma.
+    logo: 141,
+    lede: "For work that shipped a phone app. The box narrows to 9:19 and takes a notch instead of dots, and the lockup steps down with it — at its full 205 it would be wider than the box and cross the rules.",
+    measure: PROJECT_MEASURE("9:19 · 152 × 322", "141 × 50"),
+    specs: [
+      ["Safe box", "9:19 · 152 × 322"],
+      ["Lockup", "141px wide, centred on the frame"],
+      ["Chrome", "32 × 8px notch, 13px below the top edge"],
+    ],
+  },
+  {
+    id: "logo",
+    figmaNode: "183:3287",
+    name: "Logo",
+    photo: "laptop",
+    aspect: "1 / 1",
+    chrome: null,
+    logo: 205,
+    lede: "For work with nothing on a screen to show — a brand, a strategy, a platform nobody looks at. Square, and no chrome, so nothing in the frame claims an interface that doesn't exist.",
+    measure: PROJECT_MEASURE("1:1 · 321 × 322", "205 × 72"),
+    specs: [
+      ["Safe box", "1:1 · 321 × 322"],
+      ["Lockup", "205px wide, centred on the frame"],
+      ["Chrome", "None"],
+    ],
+  },
+];
+
+// Said on every layout, because it's the one way the format fails and it fails
+// silently: nothing in the construction adapts to the photograph under it.
+export const PROJECT_NOTE =
+  "The lockup is white and the scrim is fixed at 20%, so a bright photo will swallow it. Brief the photograph darker — not the scrim.";

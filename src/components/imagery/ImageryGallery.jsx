@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { IMAGERY_GROUPS, IMAGERY_PHOTOS, IMAGERY_STYLES } from "../../data/imagery.js";
+import { IMAGERY_GROUPS, IMAGERY_STYLES, findPhoto } from "../../data/imagery.js";
 import {
   BAND_TINT,
   bandLayers,
@@ -12,6 +12,8 @@ import { PgRange } from "../playground/controls/PgRange.jsx";
 import { PgSelect } from "../playground/controls/PgSelect.jsx";
 import { PgText } from "../playground/controls/PgText.jsx";
 import { PgToggle } from "../playground/controls/PgToggle.jsx";
+import { FIGMA_NODES } from "../../data/figma.js";
+import { FigmaLink } from "../common/FigmaLink.jsx";
 import { PhotoSwitcher } from "./PhotoSwitcher.jsx";
 import { CheckIcon, CopyIcon } from "../common/Icon.jsx";
 
@@ -25,7 +27,7 @@ import { CheckIcon, CopyIcon } from "../common/Icon.jsx";
 // sits on top of another. So the photo is a control too, and the mask's extent
 // draws itself on the image while you're setting it — otherwise "Reach 15%" is a
 // number with nothing to check it against.
-export function ImageryGallery({ copied, onCopy, selected, setSelected }) {
+export function ImageryGallery({ copied, onCopy, selected, setSelected, local, onPickLocal }) {
   const style = IMAGERY_STYLES.find((s) => s.id === selected) || IMAGERY_STYLES[0];
 
   // Both keyed by style id, so tuning one and switching away doesn't discard it.
@@ -51,7 +53,7 @@ export function ImageryGallery({ copied, onCopy, selected, setSelected }) {
   // `linear-gradient(to undefined, ...)`, which browsers drop whole, silently
   // taking the mask with it.
   const args = { ...style.defaults, ...values[style.id] };
-  const photo = IMAGERY_PHOTOS.find((p) => p.id === photos[style.id]) ?? IMAGERY_PHOTOS[0];
+  const photo = findPhoto(photos[style.id], local);
   const copyId = `img-${style.id}`;
 
   // Only a style that can turn its text off declares `hasText`; the rest always
@@ -78,6 +80,8 @@ export function ImageryGallery({ copied, onCopy, selected, setSelected }) {
           <PhotoSwitcher
             current={photo.id}
             onPick={(id) => setPhotos((cur) => ({ ...cur, [style.id]: id }))}
+            local={local}
+            onPickLocal={onPickLocal}
           />
 
           <div className="pg-canvas-center">
@@ -94,9 +98,12 @@ export function ImageryGallery({ copied, onCopy, selected, setSelected }) {
           {/* Where the subject sits, in words, under the image it describes. This
               is what the mask has to work around, and it's the reason the same
               settings don't carry from one photo to the next. */}
-          <p className="img-subject">
-            {photo.subject} — {photo.maskHint}
-          </p>
+          {photo.subject && (
+            <p className="img-subject">
+              {photo.subject} — {photo.maskHint}
+            </p>
+          )}
+
 
           <div className="pg-canvas-foot">
             <div className="canvas-variants">
@@ -111,20 +118,23 @@ export function ImageryGallery({ copied, onCopy, selected, setSelected }) {
                 </button>
               ))}
             </div>
-            <button
-              className="pg-code-copy"
-              onClick={() => onCopy(imageryCss(layers, args), copyId)}
-            >
-              {copied === copyId ? (
-                <>
-                  <CheckIcon /> Copied
-                </>
-              ) : (
-                <>
-                  <CopyIcon /> Copy CSS
-                </>
-              )}
-            </button>
+            <div className="pg-foot-actions">
+              <FigmaLink node={FIGMA_NODES["imagery-styling"]} />
+              <button
+                className="pg-code-copy"
+                onClick={() => onCopy(imageryCss(layers, args), copyId)}
+              >
+                {copied === copyId ? (
+                  <>
+                    <CheckIcon /> Copied
+                  </>
+                ) : (
+                  <>
+                    <CopyIcon /> Copy CSS
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

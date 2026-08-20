@@ -7,6 +7,7 @@ import { Sidebar } from "./components/layout/Sidebar.jsx";
 import { SearchOverlay } from "./components/layout/SearchOverlay.jsx";
 import { IntroSection } from "./components/sections/IntroSection.jsx";
 import { FigmaLibrarySection } from "./components/sections/FigmaLibrarySection.jsx";
+import { LogoSection } from "./components/sections/LogoSection.jsx";
 import { ColorSection } from "./components/sections/ColorSection.jsx";
 import { TypographySection } from "./components/sections/TypographySection.jsx";
 import { SpacingSection } from "./components/sections/SpacingSection.jsx";
@@ -31,6 +32,7 @@ const SUB_SECTION_PARENT = new Map([
   ["imagery", "imagery"],
   ["imagery-styling", "imagery"],
   ["imagery-usage", "imagery"],
+  ["imagery-project", "imagery"],
 ]);
 
 // Maps a possibly-nested active section id to the top-level nav id, so a parent
@@ -41,7 +43,7 @@ function toActiveTop(active) {
 
 // Which section is current when a view is scrolled to the top. Each hub mounts
 // its own run of sections, so "the first one" differs per hub — see useScrollSpy.
-const TOP_SECTION = { brand: "color", product: "components" };
+const TOP_SECTION = { brand: "logo", product: "components" };
 
 // Sentinel for "the top of this view" as a scroll destination — see pendingScroll.
 const TOP = Symbol("top");
@@ -69,9 +71,11 @@ export default function App() {
   // entries, not a control inside the canvas. Shared across components rather
   // than one state per component, since only one is ever on stage at a time.
   const [componentVariant, setComponentVariant] = useState("Text");
+  const [selectedLogo, setSelectedLogo] = useState("wordmark");
   const [selectedPattern, setSelectedPattern] = useState("dot-grid");
   const [selectedImagery, setSelectedImagery] = useState("simple");
   const [selectedUsage, setSelectedUsage] = useState("gray-container");
+  const [selectedProject, setSelectedProject] = useState("desktop");
   const [expandedRow, setExpandedRow] = useState(null);
 
   const toggleRow = useCallback((id) => setExpandedRow((c) => (c === id ? null : id)), []);
@@ -133,9 +137,11 @@ export default function App() {
     (r) => {
       if (r.setComponent) setSelectedComponent(r.setComponent);
       if (r.setVariant) setComponentVariant(r.setVariant);
+      if (r.setLogo) setSelectedLogo(r.setLogo);
       if (r.setPattern) setSelectedPattern(r.setPattern);
       if (r.setImagery) setSelectedImagery(r.setImagery);
       if (r.setUsage) setSelectedUsage(r.setUsage);
+      if (r.setProject) setSelectedProject(r.setProject);
       navigate(r.target);
     },
     [navigate]
@@ -205,6 +211,13 @@ export default function App() {
 
           {hub === "brand" && (
             <>
+              <LogoSection
+                registerRef={registerRef}
+                copied={copied}
+                onCopy={copy}
+                selectedLogo={selectedLogo}
+                setSelectedLogo={setSelectedLogo}
+              />
               <ColorSection registerRef={registerRef} copied={copied} onCopy={copy} />
               <TypographySection
                 registerRef={registerRef}
@@ -232,6 +245,8 @@ export default function App() {
                 setSelectedImagery={setSelectedImagery}
                 selectedUsage={selectedUsage}
                 setSelectedUsage={setSelectedUsage}
+                selectedProject={selectedProject}
+                setSelectedProject={setSelectedProject}
               />
             </>
           )}

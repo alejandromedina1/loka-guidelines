@@ -115,6 +115,27 @@ export function ArrowInline({ size = 14 }) {
   );
 }
 
+// Saves a file. Arrow into a tray — the convention, and what separates a download
+// from the copy action sitting next to it in the same row.
+export function DownloadIcon({ size = 13 }) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} aria-hidden>
+      <path d="M8 2.5v6.5M5.25 6.75L8 9.5l2.75-2.75" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3 12.75h10" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+// Leaves the site — the conventional glyph for it, and the only thing that
+// distinguishes an outbound link here from the in-page ones.
+export function ArrowUpRight({ size = 13 }) {
+  return (
+    <svg viewBox="0 0 16 16" width={size} height={size} aria-hidden>
+      <path d="M5 11L11 5M11 5H6M11 5V10" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function SearchIcon({ size = 16, strokeWidth = 1.5 }) {
   return (
     <svg viewBox="0 0 16 16" width={size} height={size}>

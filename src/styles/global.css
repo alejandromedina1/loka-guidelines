@@ -403,6 +403,118 @@
 .gfx-card:hover .gfx-art > svg{filter:drop-shadow(0 10px 14px rgba(25,87,244,.22));}
 .gfx-label{font-size:13px;font-weight:500;color:var(--ink-2);text-align:center;}
 
+/* Foundations / Logo — one playground, on the same .pg grid as Patterns.
+
+   The canvas sizes to its content like the Patterns lab rather than pinning a
+   height like the Components one, so the plate sets the stage's height. */
+/* The plate fills the canvas, the way .pat-swatch does — a surface is not a
+   picture sitting on a surface, and a floating plate leaves the stage's 520px
+   floor as dead space above and below it. */
+.logo-lab .pg-canvas-center{padding:0;}
+/* Documentation rather than styling: a white logo on a white canvas is an empty
+   box, so the surface is a control and this is what it sets. */
+/* 64px of padding rather than 40: clear space doubles the lettermark's footprint,
+   and the zone has to have somewhere to be drawn. */
+/* Padding rather than 40: the clear-space zone doubles the lettermark's footprint,
+   and the 2x dimension stands a further 22px outside it on the left. */
+.logo-plate{width:100%;height:100%;min-height:360px;display:grid;place-items:center;
+  padding:64px 64px 64px 104px;transition:background .18s ease;}
+/* Sized by height with the file's own ratio, so both lockups sit at the proportion
+   they were exported at rather than stretched to the plate. A size container, so the
+   clear-space zone can express x in cqh and have one number work on both axes. */
+.logo-figure{position:relative;max-width:100%;container-type:size;}
+.logo-art{display:block;width:100%;height:100%;}
+.logo-art svg{display:block;width:100%;height:100%;}
+/* Clear space: two boxes, the ink's own bounds and x out from them on every side.
+   The inner one is faint because it's a reference edge rather than the rule; the
+   dashed outer one is the rule. Outline rather than border, so neither takes part
+   in layout and the inner box lands exactly on the artwork's edge. */
+.logo-clear-ink,.logo-clear-zone{position:absolute;pointer-events:none;}
+.logo-clear-ink{outline:1px solid var(--blue);opacity:.3;}
+.logo-clear-zone{outline:1px dashed var(--blue);}
+/* x as a dimension line: it spans the band, with an arrowhead at each end pointing
+   at the two edges it measures. The band's own extent is the measurement, so the
+   line fills it and the arrowheads land exactly on the ink box and the zone.
+
+   `color` is set once on the wrapper and everything below is currentColor, so the
+   dark-surface override is a single declaration rather than four. */
+.logo-dim{position:absolute;pointer-events:none;color:var(--blue);}
+.logo-plate[data-dark="true"] .logo-dim{color:#fff;}
+.logo-dim > b{position:absolute;background:currentColor;}
+.logo-dim > b::before,.logo-dim > b::after{content:"";position:absolute;}
+.logo-dim > i{position:absolute;font-style:normal;font-weight:600;font-size:13px;
+  line-height:1;letter-spacing:.01em;}
+
+/* Vertical: the line runs the height of the band, centred across it, label to the
+   right. The arrowheads are border triangles — 1px of line can't carry a glyph, and
+   a triangle drawn this way stays crisp at any zoom. */
+.logo-dim[data-axis="y"] > b{top:0;bottom:0;left:50%;width:1px;transform:translateX(-50%);}
+.logo-dim[data-axis="y"] > b::before{top:0;left:50%;transform:translateX(-50%);
+  border-left:3px solid transparent;border-right:3px solid transparent;
+  border-bottom:4px solid currentColor;}
+.logo-dim[data-axis="y"] > b::after{bottom:0;left:50%;transform:translateX(-50%);
+  border-left:3px solid transparent;border-right:3px solid transparent;
+  border-top:4px solid currentColor;}
+.logo-dim[data-axis="y"] > i{left:50%;top:50%;transform:translate(7px,-50%);}
+
+/* Horizontal: the same, turned. Label above the line rather than beside it, since
+   the band is narrow and there's nowhere to the side for it to go. */
+.logo-dim[data-axis="x"] > b{left:0;right:0;top:50%;height:1px;transform:translateY(-50%);}
+.logo-dim[data-axis="x"] > b::before{left:0;top:50%;transform:translateY(-50%);
+  border-top:3px solid transparent;border-bottom:3px solid transparent;
+  border-right:4px solid currentColor;}
+.logo-dim[data-axis="x"] > b::after{right:0;top:50%;transform:translateY(-50%);
+  border-top:3px solid transparent;border-bottom:3px solid transparent;
+  border-left:4px solid currentColor;}
+.logo-dim[data-axis="x"] > i{left:50%;top:50%;transform:translate(-50%,-50%) translateY(-11px);}
+
+/* 2x — the reference x is half of. Quieter than the x dimensions: it's the source
+   of the rule rather than the rule, so it reads as construction. Its label goes on
+   the far side of its line, where the horizontal x label isn't: the two sit a few
+   px apart otherwise and read as one string. */
+.logo-dim[data-ref="true"]{opacity:.65;}
+.logo-dim[data-ref="true"] > i{transform:translate(calc(-100% - 7px),-50%);}
+/* Extension lines from the cap height out to the 2x dimension. Dotted, so they
+   read as drafting marks and not as part of the mark or of the zone. */
+.logo-guide{position:absolute;height:0;border-top:1px dotted var(--blue);opacity:.55;
+  pointer-events:none;}
+.logo-plate[data-dark="true"] .logo-guide{border-top-color:#fff;}
+/* On the dark and blue surfaces the blue mark is too close to the ground to read,
+   so the marks go white — driven off the plate, not set per variant. */
+.logo-plate[data-dark="true"] .logo-clear-ink{outline-color:#fff;opacity:.4;}
+.logo-plate[data-dark="true"] .logo-clear-zone{outline-color:#fff;}
+
+/* The two downloads sit beside Copy in the canvas foot. Tighter to each other than
+   to Copy — they're one decision, which file do I want, and Copy is a different kind
+   of action entirely. A flat row of three read as a list of labels. */
+.logo-downloads{display:flex;align-items:center;gap:14px;}
+/* Sized and coloured to .pg-code-copy, the copy action it sits next to, so the row
+   reads as one family. Hover goes to --ink like every other foot action rather than
+   to the blue: this is an action, not a link off the page. */
+.app .logo-download{flex:none;display:flex;align-items:center;gap:5px;font-size:12.5px;
+  color:var(--ink-3);text-decoration:none;transition:color .12s;}
+.app .logo-download:hover{color:var(--ink);}
+.pg-canvas.dark .logo-download{color:rgba(255,255,255,.6);}
+.pg-canvas.dark .logo-download:hover{color:#fff;}
+
+/* Under the two controls: the selected colour's value and what it's for. Not a
+   control, so it sits below them on its own divider. */
+.logo-readout{padding:14px 0 0;margin-top:14px;border-top:1px solid var(--line-2);}
+.logo-hex{display:block;font-family:var(--mono);font-size:11.5px;color:var(--ink);}
+.logo-hex em{font-style:normal;color:var(--ink-4);}
+.logo-use{margin:6px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-4);}
+/* The contrast reading. Mono, because it's a measurement and sits under two of
+   them — and quiet, because it's the reason the Surface list is short rather than
+   something to act on. */
+/* The clear-space figure, only while the zone is drawn. Above the contrast line
+   because it describes what's on the canvas rather than the colour. */
+.logo-clear-readout{margin:8px 0 0;font-size:12.5px;line-height:1.55;color:var(--ink-4);}
+.logo-clear-readout strong{color:var(--ink);font-weight:600;}
+.logo-contrast{margin:8px 0 0;font-family:var(--mono);font-size:11px;color:var(--ink-4);}
+/* Where the surface isn't a choice. Weighted like the select's value it stands in
+   for, so the row reads the same whether or not there's anything to pick. */
+.logo-surface-fixed{font-family:var(--display);font-size:13px;font-weight:600;color:var(--ink);}
+
 /* Patterns & motifs — live playgrounds, built on the .pg component-playground grid */
 .pat-lab .pg-canvas-center{padding:0;}
 /* Range rows carry their own 16px of vertical padding instead, so the divider
@@ -508,6 +620,16 @@
    it applies to. */
 .img-subject{padding:0 16px 4px;text-align:center;font-size:11.5px;color:var(--ink-4);}
 
+/* Your-own-photo slot, last in the switcher. Sized to the thumbnails beside it and
+   written rather than drawn, because an icon here would read as one more photo. */
+.img-photo-add{flex:none;display:inline-flex;align-items:center;height:30px;padding:0 10px;
+  border:1px dashed var(--line-strong);border-radius:4px;cursor:pointer;
+  font-size:11px;font-weight:600;letter-spacing:.02em;color:var(--ink-4);
+  transition:color .14s,border-color .14s;}
+.img-photo-add:hover{color:var(--blue);border-color:var(--blue);}
+.img-photo-add input{position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
+
 /* Controls panel: a Reset beside the style name, and the rows gathered into the
    subsystem each belongs to. */
 .pg-ctrl-titlerow{display:flex;align-items:baseline;justify-content:space-between;gap:12px;}
@@ -537,6 +659,85 @@
 .imguse-spec dt{font-size:13px;color:var(--ink-3);}
 .imguse-spec dd{margin:0;font-family:var(--mono);font-size:11.5px;color:var(--ink);
   text-align:right;}
+
+/* Imagery / Project images — the client-work frame, on the same .pg stage again.
+   Invariant geometry lives here and is re-emitted by projectImageCss, so a copied
+   rule set is the thing on screen; the box's aspect and the lockup's width arrive
+   inline, because those are the only two things a layout changes. */
+.project-image{position:relative;overflow:hidden;container-type:size;}
+.project-image > img{display:block;width:100%;height:100%;object-fit:cover;}
+/* Carries the white lockup and nothing else, which is why it's fixed at 20%. The
+   ink is the treatments' #05142E, not Figma's slightly cooler #020F1F — see the
+   note in utils/imageryStyles.js. */
+.project-scrim{position:absolute;inset:0;background:rgba(5,20,46,.2);}
+/* The safe box. Its stroke is an outline pulled half its weight inward, so it
+   straddles the edge the way Figma draws it and takes no part in layout — a border
+   would move the box the corner markers are positioned against. */
+/* Selected as a child of the frame, not on its own, because the element also
+   carries .frame-markers and that rule sets `position:relative`. At equal
+   specificity the winner would be whichever came later in the file — and in the
+   rule set projectImageCss emits, .frame-markers does.
+
+   The stroke is two 1px shadows, one in and one out: a centred 2px line, the way
+   Figma draws it. Not a border, which would move the box the corner markers are
+   positioned against, and not an outline, which paints after every descendant and
+   would draw straight through them. A shadow paints with the background, under. */
+.project-image > .project-safe{position:absolute;left:50%;transform:translateX(-50%);
+  box-shadow:inset 0 0 0 1px #fff,0 0 0 1px #fff;}
+/* The same four lines at half the weight, continuing to the frame's edges. The
+   overhang is a frame's worth in each direction and the frame clips the rest —
+   one figure that can't come up short for the narrowest box the format has. */
+.project-safe > b{position:absolute;background:#fff;}
+/* The squares sit on top of every line they straddle. DOM order can't do it —
+   .frame-markers reaches them with :nth-child, so they have to stay the first four
+   children, ahead of the runs below — so they get a layer instead. */
+.project-safe > i{z-index:1;}
+.project-safe > b:nth-of-type(1){top:-100cqh;bottom:-100cqh;left:-.5px;width:1px;}
+.project-safe > b:nth-of-type(2){top:-100cqh;bottom:-100cqh;right:-.5px;width:1px;}
+.project-safe > b:nth-of-type(3){left:-100cqw;right:-100cqw;top:-.5px;height:1px;}
+.project-safe > b:nth-of-type(4){left:-100cqw;right:-100cqw;bottom:-.5px;height:1px;}
+/* Chrome — the only cue that the box holds a product, and the only optional part
+   of the format. Absolute px at any frame size, for the same reason the markers
+   are: it's a mark on the image, not a proportion of it. */
+.project-chrome{position:absolute;top:9px;left:9px;display:flex;gap:4px;}
+.project-chrome > span{width:8px;height:8px;border-radius:50%;background:#fff;}
+.project-notch{position:absolute;top:13px;left:50%;transform:translateX(-50%);
+  width:32px;height:8px;border-radius:999px;background:#fff;}
+/* Centred on the frame rather than fitted to the box: all three layouts put the
+   box's centre on the frame's, so one rule covers them. */
+.project-logo{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);}
+.project-logo > img{display:block;width:100%;height:100%;}
+
+/* The code drawer, in a lab whose stage sizes to its content rather than to the
+   viewport — so .pg-code-body's `flex:1` has nothing to push against and the
+   block would grow the page by however many lines it happens to be. Capped here
+   for the same reason #components caps it as a share of the stage. */
+#imagery .pg-code{max-height:400px;}
+
+/* Lab-only: the demo frame's proportion, the measurement overlay, and the note
+   under the specs. */
+/* Same width on the page as the other two labs, but the reference frame's own
+   proportion rather than their 3:2. The construction generalises correctly to any
+   frame — the box is 24px off the top and bottom and takes its width from its
+   aspect — but on a 3:2 frame that leaves Desktop's side insets wider than its
+   top and bottom, and Desktop's whole job is to read as an evenly inset window.
+   At 532:370 it reproduces Figma's 24 on all four sides. */
+.imgproj-demo{aspect-ratio:532/370;}
+/* Every chip lands in dead space — the two inset bands, and under the lockup — so
+   no label covers the thing it measures. Blue and dashed, the language the Styling
+   lab already marks its dot mask in. */
+.imgproj-band{position:absolute;left:0;right:0;display:grid;place-items:center;
+  pointer-events:none;z-index:2;}
+.imgproj-logobox{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  border:1px dashed var(--blue);display:grid;place-items:end center;
+  pointer-events:none;z-index:2;}
+/* Out from under the dashed box it belongs to, rather than sitting inside it on
+   top of the lockup. */
+.imgproj-logobox > .imgproj-chip{transform:translateY(calc(100% + 6px));}
+.imgproj-chip{padding:2px 6px;border-radius:3px;background:var(--blue);color:#fff;
+  font-size:10px;font-weight:600;letter-spacing:.02em;white-space:nowrap;}
+.imgproj-note{margin:0;padding:14px 0 0;border-top:1px solid var(--line-2);
+  font-size:12.5px;line-height:1.55;color:var(--ink-4);}
 /* Compound selector on purpose: `.pg-row` is defined later in this file, so a
    bare `.pg-row-range` would lose its `align-items` to that rule's `center` and
    the head would shrink-wrap its text instead of spanning the row. */
@@ -652,6 +853,20 @@
   mask:linear-gradient(#000 0 0) padding-box,linear-gradient(#000 0 0);
   mask-composite:exclude;transition:opacity .12s;}
 .pg-canvas-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;}
+/* The foot's right-hand side once there is more than one action in it: Open in
+   Figma, then Get the code. Same order in every lab. */
+.pg-foot-actions{display:flex;align-items:center;gap:22px;}
+/* Leaving the site, so it reads as a link rather than as a control: the arrow
+   carries that, and the muted ink matches the actions it sits beside instead of
+   competing with them. Sized to .pg-viewcode so the foot's two actions align. */
+.fig-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-3);
+  text-decoration:none;transition:color .12s;}
+/* Underline on hover only. The arrow is what marks it as a link at rest, which
+   is what lets it sit beside Get the code without the two reading as different
+   kinds of thing — same reason .fig-btn opts out of the default rule. */
+.fig-link:hover{color:var(--blue);text-decoration:underline;}
+.pg-canvas.dark .fig-link{color:rgba(255,255,255,.6);}
+.pg-canvas.dark .fig-link:hover{color:#fff;}
 .pg-viewcode{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-3);transition:color .12s;}
 .pg-viewcode:hover{color:var(--ink);}
 .pg-canvas.dark .pg-viewcode{color:rgba(255,255,255,.6);}
@@ -1695,6 +1910,12 @@
   .topbar-search-text,.topbar-search-kbd{display:none;}
   .intro-block{grid-template-columns:1fr;gap:16px;margin:0 -16px;padding:32px 16px;}
   .section-head,.sub-head,.group-head{grid-template-columns:1fr;gap:8px;}
+  /* The plate's 64px is there to make room for the clear-space zone, but at this
+     width it starts eating the plate: 64px a side leaves a narrow phone too little
+     for the wordmark at its 64px height, and .logo-figure's max-width would then
+     cap the width and drag the height down with it — making the px figure in the
+     panel overstate the x actually drawn. */
+  .logo-plate{padding:32px 32px 32px 56px;}
   .intro-block:first-of-type{padding-top:28px;}
   .intro-heading{font-size:28px;}
   .contents-grid{grid-template-columns:repeat(2,1fr);}

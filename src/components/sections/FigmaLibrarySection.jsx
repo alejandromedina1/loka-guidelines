@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { FIGMA_FILE_URL } from "../../data/figma.js";
 import { SectionHead } from "../common/SectionHead.jsx";
 import { makeButtonStyle, makeStrokeStyle } from "../playground/buttonStyles.js";
 
-// The published Figma library. Swap this for the real file URL once the library
-// is published — it's the only thing in this section that needs maintaining.
-const FIGMA_LIBRARY_URL = "https://www.figma.com/design/REPLACE_ME/Loka-Design-System";
+// The file root — no node id, because this is the one link in the hub that means
+// "the library" rather than "the thing this section documents". It resolves
+// against the same key every other Figma target here does, so publishing the
+// library to a separate file is one edit in data/figma.js rather than a hunt.
 
 // Getting started / Figma library — the hand-off from these docs to the live
 // component library designers actually build with.
@@ -43,7 +45,7 @@ function OpenButton() {
   return (
     <a
       className="fig-btn"
-      href={FIGMA_LIBRARY_URL}
+      href={FIGMA_FILE_URL}
       target="_blank"
       rel="noreferrer noopener"
       style={style}
