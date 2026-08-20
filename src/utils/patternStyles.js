@@ -20,13 +20,17 @@ function tile(cell, marks, background) {
   };
 }
 
-function dotGrid({ size, gap, color, background }) {
+// Exported as well as registered below: the Imagery styling layers the same
+// dot field over a photograph, with a transparent background instead of a surface.
+export function dotGrid({ size, gap, color, background }) {
   const marks = `<rect width='${size}' height='${size}' fill='${color}'/>`;
   return tile(size + gap, marks, background);
 }
 
 // Two edges of the cell — one vertical, one horizontal — so tiling closes the grid.
-function lineGrid({ thickness, gap, color, background }) {
+// Exported as well as registered below: Imagery's On-grid usage rules a container
+// with the same grid before placing a photo on it.
+export function lineGrid({ thickness, gap, color, background }) {
   const cell = thickness + gap;
   const marks =
     `<rect width='${thickness}' height='${cell}' fill='${color}'/>` +
