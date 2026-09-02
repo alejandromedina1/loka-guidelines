@@ -1,12 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  makeButtonStyle,
-  makeStrokeStyle,
-  buttonLabel,
-  buttonSpec,
-  GHOST_SURFACES,
-} from "../buttonStyles.js";
+import { buttonLabel, buttonSpec, GHOST_SURFACES } from "../buttonStyles.js";
 import { ArrowInline } from "../../common/Icon.jsx";
+import { Button } from "../../common/Button.jsx";
 
 // Live Button preview with hover/press interaction and a redlined
 // best-practices overlay. The spec sheet is rendered by the playground in the
@@ -20,14 +15,6 @@ import { ArrowInline } from "../../common/Icon.jsx";
 export function ButtonPreview({ variant, device, surface, disabled, bestPractices, btnState, setBtnState }) {
   const isGhost = variant === "Ghost";
   const spec = buttonSpec({ variant, device, surface });
-  const style = makeButtonStyle({
-    variant,
-    state: disabled ? "default" : btnState,
-    device,
-    disabled,
-    surface,
-  });
-  const strokeStyle = makeStrokeStyle({ variant, state: btnState, disabled });
 
   // Width is hug-content (or container-filling, for Ghost), so measure it rather
   // than guess. offset* ignores the pressed transform, unlike getBoundingClientRect.
@@ -44,18 +31,18 @@ export function ButtonPreview({ variant, device, surface, disabled, bestPractice
   }, [variant, device, surface]);
 
   const buttonEl = (
-    <button
+    <Button
       ref={btnRef}
-      style={style}
+      variant={variant}
+      state={disabled ? "default" : btnState}
+      device={device}
+      surface={surface}
       disabled={disabled}
       onMouseEnter={() => setBtnState("hover")}
       onMouseLeave={() => setBtnState("default")}
       onMouseDown={() => setBtnState("pressed")}
       onMouseUp={() => setBtnState("hover")}
     >
-      {/* The 1px gradient stroke, sitting exactly over the button's transparent
-          border. Ghost has no stroke, so it gets no ring. */}
-      {strokeStyle && <span className="btn-ring" style={strokeStyle} aria-hidden />}
       {buttonLabel(variant)}
       {/* Ghost is the only variant with an icon, and Figma puts it AFTER the
           label. No variant in the library uses a leading icon. When the overlay
@@ -74,7 +61,7 @@ export function ButtonPreview({ variant, device, surface, disabled, bestPractice
         ) : (
           <ArrowInline size={spec.iconSize} />
         ))}
-    </button>
+    </Button>
   );
 
   return (

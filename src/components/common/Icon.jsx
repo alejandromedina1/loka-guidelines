@@ -251,3 +251,22 @@ export function TokenDotIcon({ size = 13 }) {
     </svg>
   );
 }
+
+// Play and Stop for the AI Hub's state strip. Solid rather than outlined, so
+// they read at the 11px the canvas foot runs at — a stroked triangle
+// disappears at that size.
+export function PlayIcon({ size = 11 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 12 12" fill="currentColor" aria-hidden focusable="false">
+      <path d="M2.5 1.4a.6.6 0 0 1 .92-.5l6.2 4.1a.6.6 0 0 1 0 1l-6.2 4.1a.6.6 0 0 1-.92-.5V1.4Z" />
+    </svg>
+  );
+}
+
+export function StopIcon({ size = 11 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 12 12" fill="currentColor" aria-hidden focusable="false">
+      <rect x="2.2" y="2.2" width="7.6" height="7.6" rx="1.2" />
+    </svg>
+  );
+}

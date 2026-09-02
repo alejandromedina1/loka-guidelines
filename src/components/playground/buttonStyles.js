@@ -24,6 +24,12 @@ const GRAY_10 = "#E7ECF2"; // colors/neutral/gray-10
 const GRAY_30 = "#CCD4E0"; // colors/neutral/gray-30
 const GRAY_80 = "#041D3E"; // colors/neutral/gray-80
 const GRAY_90 = "#020F1F"; // colors/neutral/gray-90
+// The semantic ramp's own reds. The palette already reserves this family for
+// "errors, destructive actions, and system feedback that requires immediate
+// attention", so the destructive button is spending a colour the system had
+// already set aside rather than introducing one.
+const RED_10 = "#E30C1C"; // colors/semantic/red-10
+const RED_11 = "#BB070E"; // colors/semantic/red-11
 
 // Every bordered variant carries the same shape of stroke: 1px, inside-aligned,
 // painted as a left-to-right linear gradient at 10% and blended into whatever
@@ -34,7 +40,14 @@ const STROKE_ALPHA = 0.1;
 const SLATE_STROKE = { from: "#58697E", to: "#406899" };
 const LIGHT_STROKE = { from: "#F6F7F9", to: "#E8EEF5" };
 
-export const BUTTON_VARIANTS = ["Primary", "Secondary", "Outline light", "Outline dark", "Ghost"];
+export const BUTTON_VARIANTS = [
+  "Primary",
+  "Destructive",
+  "Secondary",
+  "Outline light",
+  "Outline dark",
+  "Ghost",
+];
 
 // Outline dark has a white label and white border, so the preview canvas has to
 // go dark for it to be legible. Ghost is NOT in this list — it takes its colour
@@ -82,6 +95,14 @@ const VARIANT_SPEC = {
     default: { background: BLUE_100, stroke: { ...SLATE_STROKE, blend: "multiply" }, color: "#FFFFFF" },
     // Primary is the only variant that drops its stroke on active.
     active: { background: BLUE_NEW, stroke: null, backdropFilter: "none" },
+  },
+  // Filled like Primary and behaving like it — same box, same stroke treatment,
+  // same drop of the stroke on active — so the only thing that differs is the
+  // one thing that should: the colour. White on red-10 measures 4.84:1 and on
+  // red-11 6.67:1, so the label clears AA at the button's 16px in both states.
+  Destructive: {
+    default: { background: RED_10, stroke: { ...SLATE_STROKE, blend: "multiply" }, color: "#FFFFFF" },
+    active: { background: RED_11, stroke: null, backdropFilter: "none" },
   },
   Secondary: {
     // Overlay rather than multiply: on a light grey fill it lifts the edge
@@ -239,7 +260,7 @@ const variantClass = (variant) => `${CLASS}--${variant.toLowerCase().replace(/\s
 // than a standalone control, and "Button" in a card footer reads as a mistake.
 // Exported so the live preview and the copyable snippet read the same string —
 // they used to hold one literal each, which is one literal too many.
-const LABEL = { Ghost: "Card action" };
+const LABEL = { Ghost: "Card action", Destructive: "Delete" };
 const DEFAULT_LABEL = "Button";
 
 export const buttonLabel = (variant) => LABEL[variant] ?? DEFAULT_LABEL;
@@ -307,6 +328,18 @@ export function buttonRules({ variant, surface = "Gray 10" }) {
             why: "Don't build them as two treatments; press only adds the 0.97 scale on top of the hover fill.",
           },
         ]),
+    ...(variant === "Destructive"
+      ? [
+          {
+            rule: "Reach for it only when the action is irreversible.",
+            why: "Red is rare by design — the semantic ramp reserves it for exactly this. A destructive button on anything undoable spends the signal, and it won't be there when something really can't be taken back.",
+          },
+          {
+            rule: "Never the only button in a pair — pair it with a way out.",
+            why: "It is the confirm, not the prompt. Put the safe choice beside it as Secondary, and don't make it the default focus.",
+          },
+        ]
+      : []),
     {
       rule: "No focus state is defined. Don't invent one.",
       why: "Keyboard focus falls back to the browser's default ring, or to whatever focus treatment this project already has.",

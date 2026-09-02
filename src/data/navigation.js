@@ -1,6 +1,7 @@
 // Navigation model — mirrors the documentation page architecture.
 
 import { FIELD_TYPES } from "./components.js";
+import { AI_PATTERNS_BY_CATEGORY, aiPatternId } from "./aiPatterns.js";
 
 // Turns a component name into its section id, e.g. "Input Field" -> "component-input-field".
 export const componentId = (name) =>
@@ -113,17 +114,31 @@ export const COMPONENT_CATEGORIES = [
   },
 ];
 
-// The system splits into two hubs, and the landing page is the choice between
+// The system splits into three hubs, and the landing page is the choice between
 // them: Brand Hub is the foundations — the raw material every surface is built
-// out of — and Product Hub is the component library built on top of it. The
-// split is navigational, not just visual: entering a hub swaps the sidebar for
-// that hub's list alone, so a designer working on brand never scrolls past
-// forty components to reach the color ramps, and an engineer building a form
-// never scrolls past the logo rules to reach the Input Field.
+// out of — Product Hub is the component library built on top of it, and AI Hub
+// is the design layer for products built on a probabilistic material: how those
+// components get sequenced and governed when the output is a guess. The split is navigational, not
+// just visual: entering a hub swaps the sidebar for that hub's list alone, so a
+// designer working on brand never scrolls past forty components to reach the
+// color ramps, and an engineer building a form never scrolls past the logo rules
+// to reach the Input Field.
+//
+// AI Patterns is named for its core. It's a *pattern* library rather than a
+// second component library — the reasoning is in data/aiPatterns.js: the unit of
+// reuse in AI UI is a behaviour over time, not a rendered element, and each
+// pattern encodes a product-owned policy a component would have to hardcode or
+// expose as configuration. Its `composedOf` chips are the seam back to Product
+// Hub.
+//
+// Everything else in the hub is in service of the shelf: Principles is the short
+// "why" in front of it, Anti-patterns the same argument stated as failures. The
+// pattern pages carry their own state previews, so somebody who doesn't design
+// for a living can look at what a pattern is instead of reading about it.
 
-// The three nav groups, each defined once. GETTING_STARTED belongs to the
-// landing rather than to either hub — the introduction is where the hubs are
-// chosen from, so it can't live inside one of them.
+// The nav groups, each defined once. GETTING_STARTED belongs to the landing
+// rather than to any hub — the introduction is where the hubs are chosen from,
+// so it can't live inside one of them.
 const GETTING_STARTED = {
   group: "Getting started",
   items: [
@@ -179,15 +194,67 @@ const COMPONENTS = {
   })),
 };
 
+// AI Patterns' three sections are exclusive views rather than a run you scroll
+// through, and the sidebar is how you move between them. That's the rule the
+// hubs already follow one level up — mount only what this view contains, so the
+// nav and the page can't disagree about what's on screen — and applying it here
+// fixes a real misreading: scrolling off the end of a pattern used to land you
+// in Anti-patterns, which then read as *that pattern's* anti-patterns rather
+// than the hub's.
+//
+// The shelf comes first and is the view you land on. The hub is named for its
+// core, and somebody opening it should meet a pattern before they're asked to
+// read six principles about why patterns matter.
+//
+// Each category is a pure dropdown, and every leaf resolves to the one pattern
+// canvas rather than to a scroll target of its own. Built from the taxonomy in
+// data/aiPatterns.js so a pattern added there appears here automatically —
+// including the `status: "planned"` ones, which open the canvas and show its
+// "not documented yet" state. Same precedent as the components without a built
+// preview: the shelf is browsable end to end before every page exists.
+const AI_PATTERNS_GROUP = {
+  group: "Patterns",
+  items: AI_PATTERNS_BY_CATEGORY.map((cat) => ({
+    id: `ai-cat-${cat.id}`,
+    label: cat.label,
+    toggleOnly: true,
+    sub: cat.patterns.map((pat) => ({
+      id: aiPatternId(pat.id),
+      label: pat.name,
+      aiPattern: pat.id,
+      planned: pat.status === "planned",
+    })),
+  })),
+};
+
+// The two hub-level pages, grouped apart from the shelf because that's exactly
+// what they are: Principles is the short "why" behind every pattern, and
+// Anti-patterns the same argument stated as failures. Neither belongs to any
+// one pattern, which is the whole reason they're separate views.
+const AI_REFERENCE = {
+  group: "Reference",
+  items: [
+    { id: "ai-principles", label: "Principles" },
+    { id: "ai-antipatterns", label: "Anti-patterns" },
+  ],
+};
+
 export const HUBS = [
   { id: "brand", label: "Brand Hub" },
   { id: "product", label: "Product Hub" },
+  { id: "ai", label: "AI Patterns" },
 ];
 
 // Every group, in document order. This is the search index's source — search
 // spans the whole system regardless of which hub is open, so it can't be built
 // from one hub's slice.
-export const NAV = [GETTING_STARTED, FOUNDATIONS, COMPONENTS];
+export const NAV = [
+  GETTING_STARTED,
+  FOUNDATIONS,
+  COMPONENTS,
+  AI_PATTERNS_GROUP,
+  AI_REFERENCE,
+];
 
 // What the sidebar renders inside a hub — that hub's list and nothing else. The
 // landing has no sidebar at all, so GETTING_STARTED above is only in NAV, for
@@ -196,6 +263,7 @@ export const NAV = [GETTING_STARTED, FOUNDATIONS, COMPONENTS];
 export const HUB_NAV = {
   brand: [FOUNDATIONS],
   product: [COMPONENTS],
+  ai: [AI_PATTERNS_GROUP, AI_REFERENCE],
 };
 
 // Scroll-spy targets per hub, in document order. The Components hub is one
@@ -221,6 +289,7 @@ export const HUB_SPY_IDS = {
     "imagery-project",
   ],
   product: ["components"],
+  ai: ["ai-patterns", "ai-principles", "ai-antipatterns"],
 };
 
 // The landing's own targets, and the union the scroll-spy hook walks — only one
@@ -228,7 +297,12 @@ export const HUB_SPY_IDS = {
 // element for, so one list covers every view.
 const LANDING_SPY_IDS = ["introduction", "figma-library"];
 
-export const SPY_IDS = [...LANDING_SPY_IDS, ...HUB_SPY_IDS.brand, ...HUB_SPY_IDS.product];
+export const SPY_IDS = [
+  ...LANDING_SPY_IDS,
+  ...HUB_SPY_IDS.brand,
+  ...HUB_SPY_IDS.product,
+  ...HUB_SPY_IDS.ai,
+];
 
 // Which hub owns a given scroll target, so a search result can enter the hub it
 // lives in before scrolling to it — searching "Neutral" from the Product Hub
@@ -244,9 +318,12 @@ for (const [hub, groups] of Object.entries(HUB_NAV)) {
     }
   }
 }
-// The playground's own target isn't a nav id — every component leaf resolves to
-// this one section — so it's mapped by hand.
+// These two aren't nav ids — every component leaf resolves to the one playground
+// section, and every pattern leaf to the one pattern canvas — so they're mapped
+// by hand. The loop above still catches "ai-principles", which is a real
+// scroll target inside AI Hub.
 HUB_BY_SECTION.set("components", "product");
+HUB_BY_SECTION.set("ai-patterns", "ai");
 
 // null for the landing's own sections, which sit outside both hubs.
 export function hubForSection(id) {

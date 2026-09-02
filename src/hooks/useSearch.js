@@ -6,6 +6,8 @@ import { SPACING } from "../data/spacing.js";
 import { ICON_CATEGORIES } from "../data/icons.js";
 import { GRAPHICS } from "../data/graphics.js";
 import { PATTERNS } from "../data/patterns.js";
+import { AI_PATTERNS, AI_CATEGORIES } from "../data/aiPatterns.js";
+import { AI_ANTIPATTERNS } from "../data/aiAntipatterns.js";
 import { IMAGERY_PROJECT, IMAGERY_STYLES, IMAGERY_USAGE } from "../data/imagery.js";
 import { LOGO_COLORS, LOGO_LOCKUPS } from "../data/logo.js";
 
@@ -27,7 +29,13 @@ function buildSearchIndex() {
       // Foundations sub-items are scroll targets; component sub-items are variants
       // of the one playground canvas, so they resolve to a component plus the
       // variant to open it on — their ids aren't anywhere to scroll to.
-      (it.sub || []).forEach((s) =>
+      //
+      // AI pattern leaves are skipped here and indexed on their own below. Their
+      // ids aren't scroll targets either, so falling through to the Section
+      // branch would produce a result that navigates nowhere — and they need the
+      // category as a subtitle, which this loop has no access to.
+      (it.sub || []).forEach((s) => {
+        if (s.aiPattern) return;
         idx.push(
           s.component
             ? {
@@ -41,8 +49,8 @@ function buildSearchIndex() {
                 setVariant: s.variant,
               }
             : { label: s.label, kind: "Section", target: s.id }
-        )
-      );
+        );
+      });
     })
   );
 
@@ -79,6 +87,30 @@ function buildSearchIndex() {
 
   PATTERNS.forEach((p) =>
     idx.push({ label: p.name, kind: "Pattern", target: "patterns", setPattern: p.id })
+  );
+
+  // AI patterns resolve to the one pattern canvas plus the pattern to open it
+  // on, the same way component leaves do — their nav ids aren't scroll targets.
+  // `sub` carries the category so "Refusal" and "Streaming" arrive with the
+  // aisle they belong to, and planned entries are indexed too: finding a
+  // pattern that exists on the shelf but isn't written up yet is a useful
+  // result, and a search that silently omits them implies it isn't there at all.
+  AI_PATTERNS.forEach((p) =>
+    idx.push({
+      label: p.name,
+      kind: "AI pattern",
+      sub: AI_CATEGORIES.find((c) => c.id === p.category)?.label,
+      target: "ai-patterns",
+      setAiPattern: p.id,
+    })
+  );
+
+  // Anti-patterns are all on one scrollable section, so they're indexed as
+  // sections rather than as a canvas selection — "sparkle" lands you on the
+  // page it's named on. `sub` disambiguates: on its own, a name like "The blank
+  // box" gives no clue it's a thing to avoid.
+  AI_ANTIPATTERNS.forEach((a) =>
+    idx.push({ label: a.name, kind: "Anti-pattern", sub: "AI", target: "ai-antipatterns" })
   );
 
   IMAGERY_STYLES.forEach((s) =>
@@ -126,6 +158,7 @@ export function useSearch(onRun) {
         find("Icon", "Calendar"),
         find("Graphic", "AI & Agentic"),
         find("Component", "Button"),
+        find("AI pattern", "Streaming Response"),
       ].filter(Boolean);
     }
     return index

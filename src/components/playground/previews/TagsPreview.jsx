@@ -1,4 +1,5 @@
 import { SpecOverlay } from "../SpecOverlay.jsx";
+import { Tag, TAG_PAD_X, toTagPx } from "../../common/Tag.jsx";
 import { blocks, htmlDocument, indent, rule, ruleHeadlines, ruleTexts, specPrompt, tokenRef } from "../snippets.js";
 
 // Resolved values for the chip — Loka Figma "20 / tag" (node 149:412): a
@@ -16,13 +17,13 @@ const T = {
 
 // Horizontal padding per height — grows with the box since the corner radius
 // doesn't; 8px at 24px is Figma's own sourced pairing.
-const SIZE_SPECS = {
-  20: { padX: 6 },
-  24: { padX: 8 },
-  28: { padX: 10 },
-};
+// Sizes and padding now live with the component in common/Tag.jsx, so the
+// redlines below and the rendered chip can't disagree about the box.
+const SIZE_SPECS = Object.fromEntries(
+  Object.entries(TAG_PAD_X).map(([px, padX]) => [px, { padX }]),
+);
 
-const toPx = (size) => parseInt(size, 10) || 24;
+const toPx = toTagPx;
 
 // The guidance behind the chip, stated once. The specs panel shows the
 // headlines; the AI prompt shows these with their reasoning attached.
@@ -82,9 +83,7 @@ export function TagsPreview({ size, bestPractices }) {
   return (
     <div className="bp-stage" data-bp={bestPractices || undefined}>
       <SpecOverlay on={bestPractices} widthMode="hug" heightMode="fixed" padX={spec.padX} padY={0}>
-        <span className="tag-chip" style={{ height: px, padding: `0 ${spec.padX}px` }}>
-          Blog
-        </span>
+        <Tag size={px}>Blog</Tag>
       </SpecOverlay>
     </div>
   );

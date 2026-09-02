@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { SpecOverlay } from "../SpecOverlay.jsx";
+import { Field } from "../../common/Field.jsx";
 import {
   FONT_STACK,
   blocks,
@@ -154,36 +155,22 @@ export function InputFieldPreview({ type, state = "Default", bestPractices }) {
 
   return (
     <div className="bp-stage" data-bp={bestPractices || undefined}>
-      <div className="field-demo">
-        <label className="field">
-          <span className="field-label">{copy.label}</span>
-          {/* `fill` because every control in the family is width:100% of the
-              field — redlining it as hug-content would misreport the box. */}
+      <Field
+        label={copy.label}
+        type={type}
+        state={state}
+        placeholder={copy.placeholder}
+        value={type === "Textarea" ? undefined : text}
+        onChange={type === "Textarea" ? undefined : (e) => setText(e.target.value)}
+        error="This field is required."
+        /* `fill` because every control in the family is width:100% of the
+           field — redlining it as hug-content would misreport the box. */
+        wrap={(control) => (
           <SpecOverlay on={bestPractices} fill widthMode="fill" {...FIELD_REDLINE[type]}>
-            {type === "Textarea" ? (
-              <textarea
-                className="field-textarea"
-                data-error={error}
-                data-focus={focus}
-                placeholder={copy.placeholder}
-                disabled={disabled}
-              />
-            ) : (
-              <input
-                className="field-input"
-                data-error={error}
-                data-focus={focus}
-                type={type === "Email" ? "email" : "text"}
-                placeholder={copy.placeholder}
-                disabled={disabled}
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-              />
-            )}
+            {control}
           </SpecOverlay>
-        </label>
-        {error && <span className="field-error-msg">This field is required.</span>}
-      </div>
+        )}
+      />
     </div>
   );
 }

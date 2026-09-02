@@ -117,11 +117,59 @@ function HubVector() {
   );
 }
 
-// The landing — Figma "start" (node 168:8). The viewport split in two, one half
-// per hub, each carrying a single white pill and nothing else. The halves are
-// deliberately unalike: Brand is the near-black ground the brand material sits
-// on, Product the lit blue surface the components sit on, so the two are
-// telling you what's inside before you read either label.
+// The stream motif on the AI half. Not traced from a frame — there isn't one
+// yet — so it's built from the hub's own subject matter rather than decorated:
+// five hairlines of unequal length, the last one short and closed by a solid
+// caret. That reads as text still being written, which is the one thing every
+// pattern on the shelf has in common.
+//
+// The lines fade left to right off blue-20 so the motif sits under the pill
+// without competing with it; the caret is the only saturated mark (blue-80),
+// because the caret is the part that means something.
+function AiStream() {
+  return (
+    <svg
+      className="hub-stream"
+      viewBox="0 0 400 164"
+      fill="none"
+      aria-hidden
+      focusable="false"
+    >
+      <defs>
+        <linearGradient id="hub-stream-grad" x1="0" y1="0" x2="400" y2="0" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#AABCDF" stopOpacity="0.25" />
+          <stop offset="0.35" stopColor="#8FA8D4" stopOpacity="0.9" />
+          <stop offset="1" stopColor="#5387D7" stopOpacity="0.55" />
+        </linearGradient>
+      </defs>
+      {/* Unequal lengths on purpose: five equal bars read as a table, and a
+          table is the one output shape this pattern tells you not to stream. */}
+      {[
+        { y: 6, w: 356 },
+        { y: 42, w: 392 },
+        { y: 78, w: 318 },
+        { y: 114, w: 372 },
+        { y: 150, w: 196 },
+      ].map((l) => (
+        <rect key={l.y} x="0" y={l.y} width={l.w} height="5" rx="2.5" fill="url(#hub-stream-grad)" />
+      ))}
+      <rect x="206" y="146" width="13" height="13" rx="2" fill="#1877F2" />
+    </svg>
+  );
+}
+
+// The landing — Figma "start" (node 168:8). The viewport split one panel per
+// hub, each carrying a single pill and nothing else. The panels are deliberately
+// unalike, so each is telling you what's inside before you read its label:
+// Brand is the near-black ground the brand material sits on, Product the lit
+// blue surface the components sit on, and AI the pale surface a response is
+// still being written onto.
+//
+// Three panels needed a third ground that reads apart from both at a glance, and
+// dark → mid → light is the widest separation available without leaving the
+// blue family. The cost is that AI's pill inverts — a white pill disappears on a
+// pale ground — which is the minimum change needed to keep the label legible
+// rather than a second style for its own sake.
 export function IntroSection({ registerRef, copied, onCopy, onEnterHub }) {
   return (
     <section id="introduction" className="section intro" ref={(el) => registerRef("introduction", el)}>
@@ -131,6 +179,7 @@ export function IntroSection({ registerRef, copied, onCopy, onEnterHub }) {
             <button key={h.id} className="hubcard" data-hub={h.id} onClick={() => onEnterHub(h.id)}>
               {h.id === "brand" && <span className="hub-dots" style={DOT_FIELD} aria-hidden />}
               {h.id === "product" && <HubVector />}
+              {h.id === "ai" && <AiStream />}
               <span className="hubcard-pill">{h.label}</span>
             </button>
           ))}

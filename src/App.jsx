@@ -16,6 +16,9 @@ import { GraphicsSection } from "./components/sections/GraphicsSection.jsx";
 import { PatternsSection } from "./components/sections/PatternsSection.jsx";
 import { ImagerySection } from "./components/sections/ImagerySection.jsx";
 import { ComponentsSection } from "./components/sections/ComponentsSection.jsx";
+import { AiPrinciplesSection } from "./components/sections/AiPrinciplesSection.jsx";
+import { AiPatternsSection } from "./components/sections/AiPatternsSection.jsx";
+import { AiAntipatternsSection } from "./components/sections/AiAntipatternsSection.jsx";
 import { hubForSection } from "./data/navigation.js";
 
 // Which top-level nav item owns each sub-section. Hoisted to a module-level Map:
@@ -43,7 +46,15 @@ function toActiveTop(active) {
 
 // Which section is current when a view is scrolled to the top. Each hub mounts
 // its own run of sections, so "the first one" differs per hub — see useScrollSpy.
-const TOP_SECTION = { brand: "logo", product: "components" };
+const TOP_SECTION = { brand: "logo", product: "components", ai: "ai-patterns" };
+
+// AI Patterns' three sections are exclusive views rather than a run you scroll
+// through, so one of these is mounted at a time and the sidebar switches
+// between them. Stacking them meant scrolling off the end of a pattern landed
+// you in Anti-patterns, which then read as that pattern's anti-patterns instead
+// of the hub's — the same misreading the hub split itself exists to prevent,
+// one level down.
+const AI_VIEWS = new Set(["ai-patterns", "ai-principles", "ai-antipatterns"]);
 
 // Sentinel for "the top of this view" as a scroll destination — see pendingScroll.
 const TOP = Symbol("top");
@@ -55,12 +66,22 @@ export default function App() {
 
   // Which hub is open, or null for the landing. This is the app's coarsest piece
   // of state: it decides which sections are mounted and which list the sidebar
-  // shows. The two hubs are deliberately exclusive — the whole reason the
-  // landing asks which one you want is so neither audience has to scroll through
-  // the other's half.
+  // shows. The hubs are deliberately exclusive — the whole reason the landing
+  // asks which one you want is so no audience has to scroll through another's
+  // half to reach its own.
   const [hub, setHub] = useState(null);
 
-  const { active, registerRef, scrollTo } = useScrollSpy(TOP_SECTION[hub] ?? "introduction");
+  // Which of AI Patterns' three views is mounted. Only meaningful inside that
+  // hub; it persists across visits, so leaving from Anti-patterns and coming
+  // back returns you there.
+  const [aiView, setAiView] = useState("ai-patterns");
+
+  // What counts as current when the page is at the top. Inside AI Patterns that
+  // has to be the mounted view rather than a fixed section, or the sidebar
+  // highlights Patterns while you're looking at Anti-patterns.
+  const topSection = hub === "ai" ? aiView : (TOP_SECTION[hub] ?? "introduction");
+
+  const { active, registerRef, scrollTo } = useScrollSpy(topSection);
 
   const [theme, setTheme] = useState("light");
   const [mobileNav, setMobileNav] = useState(false);
@@ -73,6 +94,12 @@ export default function App() {
   const [componentVariant, setComponentVariant] = useState("Text");
   const [selectedLogo, setSelectedLogo] = useState("wordmark");
   const [selectedPattern, setSelectedPattern] = useState("dot-grid");
+  // AI Hub's canvas. Named apart from `selectedPattern` above, which is the
+  // Brand Hub's background motif — two different things called "pattern" is the
+  // one collision this system already had, and conflating them in state would
+  // make it permanent. Opens on the first entry on the shelf, so the sidebar's
+  // top category is the one expanded and the reader starts where the list does.
+  const [selectedAiPattern, setSelectedAiPattern] = useState("prompt-composer");
   const [selectedImagery, setSelectedImagery] = useState("simple");
   const [selectedUsage, setSelectedUsage] = useState("gray-container");
   const [selectedProject, setSelectedProject] = useState("desktop");
@@ -101,9 +128,17 @@ export default function App() {
 
   // Navigate to a section, entering (or leaving) whichever hub owns it, and
   // always close the mobile nav drawer.
+  //
+  // An AI view is a swap rather than a scroll: it replaces what's mounted, so
+  // the new view starts at its own top the same way entering a hub does.
   const navigate = useCallback((id) => {
     setHub(hubForSection(id));
-    setPendingScroll(id);
+    if (AI_VIEWS.has(id)) {
+      setAiView(id);
+      setPendingScroll(TOP);
+    } else {
+      setPendingScroll(id);
+    }
     setMobileNav(false);
   }, []);
 
@@ -133,6 +168,17 @@ export default function App() {
     [navigate]
   );
 
+  // Mirrors selectComponent: routed through navigate, so picking a pattern from
+  // the search overlay or the index while another hub is open enters AI Hub on
+  // the way rather than selecting something nobody can see.
+  const selectAiPattern = useCallback(
+    (id) => {
+      setSelectedAiPattern(id);
+      navigate("ai-patterns");
+    },
+    [navigate]
+  );
+
   const runSearchResult = useCallback(
     (r) => {
       if (r.setComponent) setSelectedComponent(r.setComponent);
@@ -142,6 +188,7 @@ export default function App() {
       if (r.setImagery) setSelectedImagery(r.setImagery);
       if (r.setUsage) setSelectedUsage(r.setUsage);
       if (r.setProject) setSelectedProject(r.setProject);
+      if (r.setAiPattern) setSelectedAiPattern(r.setAiPattern);
       navigate(r.target);
     },
     [navigate]
@@ -185,6 +232,8 @@ export default function App() {
             selectedComponent={selectedComponent}
             componentVariant={componentVariant}
             onSelectComponent={selectComponent}
+            selectedAiPattern={selectedAiPattern}
+            onSelectAiPattern={selectAiPattern}
             onNavigate={navigate}
             open={mobileNav}
           />
@@ -262,6 +311,24 @@ export default function App() {
               setComponentVariant={setComponentVariant}
               theme={theme}
             />
+          )}
+
+          {/* One view at a time — see AI_VIEWS above. */}
+          {hub === "ai" && aiView === "ai-patterns" && (
+            <AiPatternsSection
+              registerRef={registerRef}
+              selectedAiPattern={selectedAiPattern}
+              onSelectAiPattern={selectAiPattern}
+              onSelectComponent={selectComponent}
+            />
+          )}
+
+          {hub === "ai" && aiView === "ai-principles" && (
+            <AiPrinciplesSection registerRef={registerRef} onSelectAiPattern={selectAiPattern} />
+          )}
+
+          {hub === "ai" && aiView === "ai-antipatterns" && (
+            <AiAntipatternsSection registerRef={registerRef} />
           )}
         </main>
       </div>
