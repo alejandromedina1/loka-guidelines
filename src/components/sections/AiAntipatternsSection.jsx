@@ -26,9 +26,9 @@ export function AiAntipatternsSection({ registerRef }) {
       ref={(el) => registerRef("ai-antipatterns", el)}
     >
       <SectionHead title="Anti-patterns">
-        Nine named failures that apply across the whole shelf, so a misgiving in a review becomes
-        something you can point at. Written for everyone — most of these get agreed to in rooms
-        without a designer in them.
+        Nine named failures that turn up across every pattern here, so a vague worry in a review becomes
+        something you can point at. Written for everyone — most of these get agreed to in rooms with
+        no designer in them.
       </SectionHead>
 
       <div className="ai-anti">

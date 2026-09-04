@@ -1,6 +1,6 @@
 import { Body, Btn, Btns, Chip, Frame, FrameBar, Label, Note, Row, Say } from "./kit.jsx";
 
-// No-Answer Fallback on a matching surface — candidates against a role. A
+// No Good Match on a matching surface — candidates against a role. A
 // ranked list is where this failure does the most damage, because somebody
 // will act on whatever sits at the top whether or not it deserves to be there.
 const STRONG = [
@@ -54,7 +54,7 @@ export function NoAnswerPreview({ state }) {
             </Note>
             <span className="mk-foot">
               <Say tone="mute" size="sm">
-                Nothing is shown rather than something ranked first by default.
+                412 searched · 0 above the bar
               </Say>
               <Btns align="end">
                 <Btn>Show near misses</Btn>
@@ -75,10 +75,6 @@ export function NoAnswerPreview({ state }) {
                 <Candidate key={c.name} c={c} weak />
               ))}
             </div>
-            <Say tone="mute" size="sm">
-              Set apart and scored, never merged into the list above. That merge is the failure this
-              pattern is named after.
-            </Say>
           </>
         )}
 

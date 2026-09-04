@@ -1,6 +1,6 @@
 import { Body, Frame, FrameBar, Ghost, GhostLines, Label, Note, Say, Spinner } from "./kit.jsx";
 
-// Staged Reveal on an analytics view — the clearest non-chat case, and the one
+// Results in Pieces on an analytics view — the clearest non-chat case, and the one
 // where the alternative (a single spinner over everything) is most obviously
 // worse: five fast queries end up waiting on the sixth.
 const CARDS = [
@@ -70,8 +70,7 @@ export function StagedRevealPreview({ state }) {
         )}
         {state === "slow" && (
           <Say tone="mute" size="sm">
-            Pipeline is taking longer than the rest. It says so in its own card rather than holding
-            the other three.
+            Pipeline is taking longer than the rest.
           </Say>
         )}
       </Body>

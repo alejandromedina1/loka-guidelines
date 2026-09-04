@@ -73,7 +73,7 @@ const BAR_SPECS = [
 
 // The guidance behind both views, stated once. The specs panel shows the
 // headlines; the AI prompt shows these with their reasoning attached.
-export function tabsRules({ view = "Item" }) {
+export function servicesTabsRules({ view = "Item" }) {
   const shared = [
     {
       rule: "Figma's three variants are three appearances of one control.",
@@ -114,10 +114,10 @@ export function tabsRules({ view = "Item" }) {
       ];
 }
 
-export function tabsSpecs({ view = "Item" }) {
+export function servicesTabsSpecs({ view = "Item" }) {
   const isBar = view === "Full bar";
   return {
-    rules: ruleHeadlines(tabsRules({ view })),
+    rules: ruleHeadlines(servicesTabsRules({ view })),
     rows: isBar ? BAR_SPECS : ITEM_SPECS,
   };
 }
@@ -152,7 +152,7 @@ function TabItem({ label, active, onClick, aria }) {
 //   Active    marker fills solid blue, label goes blue, item takes the blue fill
 //
 // The canvas pills switch between the item on its own and the full bar.
-export function TabsPreview({ view = "Item", bestPractices, onState }) {
+export function ServicesTabsPreview({ view = "Item", bestPractices, onState }) {
   const isBar = view === "Full bar";
   // Two independent selections: the bar's index, and whether the lone item is
   // picked. Sharing one value would mean the solo view could only ever show the
@@ -328,7 +328,7 @@ function itemCss() {
   );
 }
 
-export function tabsCss({ view = "Item" }) {
+export function servicesTabsCss({ view = "Item" }) {
   if (view !== "Full bar") return itemCss();
 
   return blocks(
@@ -362,7 +362,7 @@ function itemMarkup({ label, selected, inBar }) {
   ].join("\n");
 }
 
-export function tabsHtmlSnippet({ view = "Item" }) {
+export function servicesTabsHtmlSnippet({ view = "Item" }) {
   if (view !== "Full bar") {
     // The item has no width of its own, so shown alone it needs something to
     // size it — the wrapper is pinned to the share it takes in the real 4-up
@@ -378,7 +378,7 @@ export function tabsHtmlSnippet({ view = "Item" }) {
       "     Hover is pure CSS. Toggling aria-pressed is the only JavaScript. -->",
     ].join("\n");
 
-    return htmlDocument({ title: "Tabs — item", css: tabsCss({ view }), markup });
+    return htmlDocument({ title: "Tabs — item", css: servicesTabsCss({ view }), markup });
   }
 
   const markup = [
@@ -391,14 +391,14 @@ export function tabsHtmlSnippet({ view = "Item" }) {
     "     tabs, wrapping at the ends. That roving tabindex is the whole script. -->",
   ].join("\n");
 
-  return htmlDocument({ title: "Tabs — full bar", css: tabsCss({ view }), markup });
+  return htmlDocument({ title: "Tabs — full bar", css: servicesTabsCss({ view }), markup });
 }
 
-export function tabsPromptSnippet({ view = "Item" }) {
+export function servicesTabsPromptSnippet({ view = "Item" }) {
   const isBar = view === "Full bar";
 
   return specPrompt({
-    component: "Tabs",
+    component: "Services Tabs",
     config: isBar ? "Full bar" : "Item",
     sections: [
       ...(isBar
@@ -465,12 +465,12 @@ export function tabsPromptSnippet({ view = "Item" }) {
         : []),
     ],
     notes: [
-      ...ruleTexts(tabsRules({ view })),
+      ...ruleTexts(servicesTabsRules({ view })),
       isBar
         ? 'Use role="tablist" on the bar and role="tab" with aria-selected on each item.'
         : 'Out of a tablist a single item is a toggle, not a tab: use aria-pressed rather than role="tab".',
       "One 12px box carries all three markers. Draw the hover dot as a centred ::after inside it rather than as a separate element, so the 3px inset falls out of the 1px border.",
     ],
-    reference: tabsHtmlSnippet({ view }),
+    reference: servicesTabsHtmlSnippet({ view }),
   });
 }

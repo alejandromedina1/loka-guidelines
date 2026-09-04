@@ -23,11 +23,6 @@ export function ApprovalGatePreview({ state }) {
             </Note>
           )}
           <Steps items={STEPS} at={state === "executing" ? 2 : state === "failed" ? 2 : 4} />
-          {state === "executing" && (
-            <Say tone="mute" size="sm">
-              Step-level progress, because step-level failure is possible.
-            </Say>
-          )}
           {state === "failed" && (
             <Btns align="end">
               <Btn>Download the 828 unsent</Btn>
@@ -77,7 +72,7 @@ export function ApprovalGatePreview({ state }) {
 
         <span className="mk-foot">
           <Say tone="mute" size="sm">
-            Waiting won't send it.
+            Nothing is sent until you approve.
           </Say>
           <Btns align="end">
             <Btn>Reject</Btn>

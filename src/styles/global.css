@@ -9,6 +9,10 @@
   --bg:#FFFFFF; --bg-soft:#FAFBFC; --ink:#010812; --ink-2:#2E3F5A; --ink-3:#5C6A82; --ink-4:#828FA5;
   --line:#E7ECF2; --line-2:#EFF1F5; --line-strong:#D6DCE6; --blue:#1957F4; --blue-soft:#EEF2FE;
   --danger:#D64545; --danger-soft:#FBEAEA;
+  /* Green, from the Semantic ramp, as Red's sibling: green-11 on green-02.
+     Both are palette tokens rather than bespoke values, the way the
+     Destructive button took red-10/red-11. */
+  --success:#04703E; --success-soft:#EEF8F4;
   --topbar-bg:rgba(255,255,255,.82);
   --mono:'JetBrains Mono',ui-monospace,monospace;
   --sans:'Alliance No.2','Inter',-apple-system,system-ui,sans-serif;
@@ -23,6 +27,7 @@
   --bg:#0A0F17; --bg-soft:#121821; --ink:#F4F6F9; --ink-2:#C3CCDA; --ink-3:#8E9AAE; --ink-4:#6B7688;
   --line:#222B38; --line-2:#1A222E; --line-strong:#2E3947; --blue:#4A85F5; --blue-soft:#16233D;
   --danger:#F16565; --danger-soft:#3A1E22;
+  --success:#97D2B9; --success-soft:#0F2E21;  /* green-07 on green-12 */
   --topbar-bg:rgba(10,15,23,.82);
 }
 .app *,.app *::before,.app *::after{box-sizing:border-box;}
@@ -366,9 +371,6 @@
 .ico-groups{display:flex;flex-direction:column;gap:36px;}
 .ico-group-head{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
 .ico-group-name{font-family:var(--display);font-size:16px;font-weight:600;letter-spacing:-.01em;}
-.ico-group-count{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 7px;
-  font-size:12px;font-weight:600;color:var(--ink-3);background:var(--line-2);
-  border:1px solid var(--line);border-radius:999px;line-height:1;}
 .ico-empty{font-size:14px;color:var(--ink-3);padding:8px 0;}
 .ico-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;width:100%;}
 /* Same reasoning as .swatch, and it counts for more here: 41 cards, each holding
@@ -885,9 +887,11 @@
 /* `.app button{color:inherit}` outranks a bare `.pg-code-tab`, so the resting
    colour has to be raised or the inactive tab reads at full ink and the strip
    loses its selected state. */
-.app .pg-code-tab{padding:4px 11px;font-size:12px;font-weight:500;color:var(--ink-3);border-radius:999px;transition:all .14s;}
-.app .pg-code-tab:hover{color:var(--ink);}
-.pg-code-tab[data-active="true"]{background:var(--line-strong);color:var(--ink);}
+.app .pg-code-tab{padding:4px 11px;font-size:12px;font-weight:500;color:var(--ink-3);
+  border-radius:999px;transition:background .14s,color .14s;}
+.app .pg-code-tab:hover{background:var(--line-2);color:var(--ink);}
+/* Same near-black selected fill as the variant strip and .tab-pill. */
+.pg-code-tab[data-active="true"]{background:var(--ink);color:var(--bg);}
 /* What the selected format is for, with the filename parked on the right. */
 .pg-code-hint{display:flex;align-items:baseline;justify-content:space-between;gap:20px;
   padding:10px 16px;border-bottom:1px solid var(--line-2);font-size:12px;color:var(--ink-4);line-height:1.5;}
@@ -928,12 +932,16 @@
 #components .pg-code{max-height:52%;}
 /* in-canvas variant switcher (bottom-left, aligned with View code) */
 .canvas-variants{display:inline-flex;gap:2px;padding:3px;border-radius:999px;}
-.canvas-variant-btn{padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--ink-3);border-radius:999px;transition:all .14s;}
-.canvas-variant-btn:hover{color:var(--ink);}
+/* The Tabs pill's state language, at this strip's own size — see .tab-pill.
+   Selected was a mid-grey fill, which read as "hovered" beside a real hover;
+   the component settles it as a near-black fill and a light label. */
+.canvas-variant-btn{padding:5px 12px;font-size:12.5px;font-weight:500;color:var(--ink-3);
+  border-radius:999px;transition:background .14s,color .14s;}
+.canvas-variant-btn:hover{background:var(--line-2);color:var(--ink);}
 .pg-canvas.dark .canvas-variant-btn{color:rgba(255,255,255,.6);}
-.pg-canvas.dark .canvas-variant-btn:hover{color:#fff;}
-.canvas-variant-btn[data-active="true"]{background:var(--line-strong);color:var(--ink);}
-.pg-canvas.dark .canvas-variant-btn[data-active="true"]{background:rgba(255,255,255,.16);color:#fff;}
+.pg-canvas.dark .canvas-variant-btn:hover{background:rgba(255,255,255,.08);color:#fff;}
+.canvas-variant-btn[data-active="true"]{background:var(--ink);color:var(--bg);}
+.pg-canvas.dark .canvas-variant-btn[data-active="true"]{background:#fff;color:#0A0F17;}
 .pg-ctrl-head{margin-bottom:14px;}
 .pg-ctrl-title{display:block;font-family:var(--display);font-size:18px;font-weight:600;margin-bottom:6px;}
 .pg-ctrl-desc{font-size:12.5px;color:var(--ink-4);line-height:1.55;}
@@ -1582,1063 +1590,48 @@
    it. Height and horizontal padding come from TagsPreview.jsx as inline
    styles since they're picked from the canvas toggle; everything else here
    is fixed regardless of size. */
-.tag-chip{display:inline-flex;align-items:center;justify-content:center;
-  flex:none;border:1px solid #EFF1F5;border-radius:8px;font-size:14px;
-  font-weight:500;line-height:1;letter-spacing:1.12px;text-transform:uppercase;
-  color:#828FA5;white-space:nowrap;}
-
-/* Card — two Loka Figma component sets share one tile shape and one hover
-   interaction: "CardGraphic" (node 147:307, icon-led, .card-tile--graphic)
-   and "CardImage" (node 147:324, photo-led, .card-tile--image). No radius
-   anywhere in either, matching both sourced specs exactly. The base rules
-   below default to the Graphic variant's own fixed 405×280 box; the
-   --image modifier overrides what differs (width, height, border, hover
-   fill) rather than restating everything from scratch. */
-.card-tile{display:flex;flex-direction:column;gap:4px;width:405px;height:280px;
-  padding:4px;background:#fff;border:1px solid #ECECEE;text-decoration:none;
-  cursor:pointer;transition:background .16s,border-color .16s;}
-.card-tile:hover{background:#1877F2;border-color:#1877F2;}
-.card-tile-content{display:flex;flex-direction:column;gap:16px;flex:1 0 0;
-  min-height:0;padding:16px;background:#fff;}
-/* Same gray-to-blue currentColor swap the Graphics gallery's own .gfx-art
-   uses (see graphics.js) — reused here rather than a second accent color. */
-.card-tile-icon{display:grid;place-items:center;width:64px;height:64px;
-  flex:none;color:#A8B3CA;transition:color .18s;}
-.card-tile-icon svg{width:64px;height:64px;display:block;}
-.card-tile:hover .card-tile-icon{color:#2F85F3;}
-.card-tile-text{display:flex;flex-direction:column;gap:8px;flex:1 0 0;min-height:0;}
-.card-tile-title{margin:0;font-family:var(--display);font-size:24px;font-weight:400;
-  line-height:1.15;color:#020F1F;}
-/* The tile's own sourced copy says "maximum 2 lines if possible" — enforced
-   here as a real clamp rather than a comment nobody reads. */
-.card-tile-desc{margin:0;font-size:18px;font-weight:400;line-height:1.4;color:#5C6A82;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-/* Occupies its 44px + 4px gap at rest — opacity:0, not display:none — so
-   revealing it on hover doesn't grow the tile or shift the content above it. */
-.card-tile-cta{display:flex;align-items:center;justify-content:center;gap:12px;
-  height:44px;flex:none;padding:12px 16px;backdrop-filter:blur(10px);
-  opacity:0;transition:opacity .32s ease;}
-.card-tile:hover .card-tile-cta{opacity:1;}
-/* Label and icon start pulled apart and slide together on hover — not in
-   the sourced spec, added on top of it. Same ease-out curve, same duration
-   as the fade, so the "join" reads as one motion rather than two. */
-.card-tile-cta-label{font-family:var(--display);font-size:16px;font-weight:500;
-  color:#fff;white-space:nowrap;transform:translateX(8px);
-  transition:transform .32s cubic-bezier(.22,1,.36,1);}
-.card-tile-cta-icon{display:flex;align-items:center;justify-content:center;
-  width:18px;height:18px;flex:none;color:#fff;transform:translateX(-8px);
-  transition:transform .32s cubic-bezier(.22,1,.36,1);}
-.card-tile:hover .card-tile-cta-label,
-.card-tile:hover .card-tile-cta-icon{transform:translateX(0);}
-
-/* Card — Image variant (node 147:324): width and border differ from the
-   Graphic variant, and height is intrinsic rather than fixed, since a real
-   photo's aspect ratio — not a magic pixel number — is what should decide
-   how tall the tile is. The hover fill is blue-100 here, not the Graphic
-   variant's blue-80 — each sourced node uses its own shade. The action row,
-   its join-in-the-middle motion and the outer box's base rules above are
-   all shared with the Graphic variant. */
-.card-tile--image{width:545px;height:auto;border-color:#EFF1F5;}
-.card-tile.card-tile--image:hover{background:#186BF3;border-color:#186BF3;}
-.card-tile-media-content{display:flex;flex-direction:column;gap:20px;
-  width:100%;padding:20px;background:#fff;}
-.card-tile-meta{display:flex;align-items:center;justify-content:space-between;
-  width:100%;}
-.card-tile-meta-group{display:flex;align-items:center;gap:12px;}
-.card-tile-eyebrow{font-size:14px;font-weight:500;letter-spacing:1.12px;
-  text-transform:uppercase;color:#828FA5;white-space:nowrap;}
-/* 1px gray-20, approximated — Figma exports this divider as an asset, not
-   a literal hex. */
-.card-tile-divider{width:1px;height:8.5px;flex:none;background:#D6DCE6;}
-.card-tile-media{width:100%;aspect-ratio:505/300;overflow:hidden;flex:none;}
-.card-tile-media img{width:100%;height:100%;object-fit:cover;display:block;}
-.card-tile-media-text{display:flex;flex-direction:column;gap:4px;width:100%;}
-.card-tile-image-title{margin:0;font-family:var(--display);font-size:24px;
-  font-weight:400;line-height:1.15;color:#020F1F;white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis;}
-.card-tile-image-desc{margin:0;font-size:16px;font-weight:400;line-height:1.3;
-  color:#5C6A82;display:-webkit-box;-webkit-line-clamp:2;
-  -webkit-box-orient:vertical;overflow:hidden;}
-
-/* Tooltip — Loka Figma "Tooltip" component set (node 150:473): a mini
-   formatting toolbar with one shared tooltip that slides to whichever
-   button is hovered/focused, rather than a bubble nested in each button.
-   Figma's own hovered variant only shows this for Bold; the same
-   hover/focus treatment applies to every button here, not just the one
-   sourced example — see the rules in TooltipPreview.jsx. Padding is 4px,
-   not Figma's sourced 2px, so the shell reads at 32px tall instead of
-   28px — the button itself keeps its sourced 24×24 size. */
-.tooltip-bar{position:relative;display:inline-flex;align-items:center;
-  gap:2px;padding:4px;background:#F5F6FA;border-radius:2px;}
-.app button.tooltip-bar-btn{position:relative;display:flex;align-items:center;
-  justify-content:center;width:24px;height:24px;padding:3px 6px;
-  box-sizing:border-box;transition:background .12s ease;}
-.app button.tooltip-bar-btn:hover,
-.app button.tooltip-bar-btn:focus-visible{background:#FDFDFD;}
-.tooltip-bar-letter{font-size:14px;line-height:1;letter-spacing:1.12px;
-  text-transform:uppercase;color:#020F1F;}
-.tooltip-bar-icon{display:flex;align-items:center;justify-content:center;
-  width:16px;height:16px;color:#020F1F;}
-.tooltip-bar-icon svg{width:16px;height:16px;display:block;}
-/* Base bubble look, shared with the Icon variant below. left:50% is a
-   harmless default — the Toolbar always overrides it with an inline px
-   value measured off whichever button is active. */
-.tooltip-bubble{position:absolute;left:50%;bottom:calc(100% + 6px);
-  transform:translateX(-50%);background:#041D3E;color:#fff;font-size:14px;
-  font-weight:500;white-space:nowrap;padding:4px 6px;border-radius:4px;
-  opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s ease;}
-/* The Toolbar's one shared tooltip: its `left` is set in JS off the active
-   button's own offsetLeft/offsetWidth, and transitions there smoothly when
-   the active button changes — that's the "slide" a plain :hover reveal
-   can't do, since a bubble nested per button can only crossfade. */
-.tooltip-bubble--shared{transition:opacity .15s ease,left .22s cubic-bezier(.22,1,.36,1);}
-.tooltip-bubble--shared[data-visible="true"]{opacity:1;visibility:visible;}
-
-/* Tooltip — Icon variant: this system's own addition, not sourced from
-   Figma. A single circular trigger (no toolbar shell to group) whose
-   tooltip carries a full sentence instead of a one-word label — hence the
-   --long modifier's wrap/width/left-align, layered on the same
-   .tooltip-bubble base and reveal rule above. */
-.app button.tooltip-icon-btn{position:relative;display:flex;align-items:center;
-  justify-content:center;width:24px;height:24px;border-radius:999px;
-  color:#5C6A82;transition:background .12s ease,color .12s ease;}
-.app button.tooltip-icon-btn:hover,
-.app button.tooltip-icon-btn:focus-visible{background:#E7ECF2;color:#020F1F;}
-.tooltip-icon-btn:hover .tooltip-bubble,
-.tooltip-icon-btn:focus-visible .tooltip-bubble{opacity:1;visibility:visible;}
-/* width, not max-width: the bubble is absolutely positioned inside a 24px
-   trigger, so a wrapping box sized by shrink-to-fit measures itself against
-   that tiny containing block and never reaches a max-width ceiling — it
-   just wraps at whichever single word is longest instead. */
-.tooltip-bubble--long{white-space:normal;width:220px;line-height:1.4;
-  text-align:left;}
-
-/* Tabs — Loka Figma "service-icon-item" (node 4007:23097), in the bar that hosts
-   it (node 4253:19091). Tokens: blue-100 #186BF3, LineOpaque #DFDFE1, DarkBlue
-   #041D3E, white. Literals for the same reason the dropdown keeps them: the bar
-   is specified against the light surface it ships on, not the app's theme.
-   #DBE7F5, the active fill, is a raw hex in Figma rather than a palette token. */
-/* The bar fills its section in Figma, so the demo box gives it a width to fill.
-   720px is where four labels stay readable before the ellipsis takes over. */
-.tabs-demo{width:100%;max-width:720px;}
-/* Solo, the item is shown at the 345px share it takes in the real 4-up bar —
-   it has no width of its own in the spec, so hugging its label would invent one
-   and hide the ellipsis the label is built for. */
-.tab-solo-demo{width:345px;max-width:100%;}
-.tabs{display:flex;flex-direction:column;justify-content:flex-end;padding:4px;
-  border-radius:15px;background:rgba(255,255,255,.9);backdrop-filter:blur(10px);
-  box-shadow:0 0 6px rgba(0,0,0,.1);}
-.tabs-row{display:flex;align-items:center;gap:4px;width:100%;}
-/* Items share the row equally — min-width:0 is what lets a long label ellipsize
-   instead of forcing its item wider than its share.
-   That freedom is also why the item has to clip: min-width:0 lets flex shrink an
-   item below the 36px its 12px marker and 12px padding need, and the marker is
-   flex:none, so with nothing clipping it the spill escapes the item, then the
-   bar, then the playground itself. It shows up when the specs panel docks and
-   leaves the canvas under ~500px wide. Clipping keeps the row tidy instead. */
-.app button.tab-item{flex:1 1 0;min-width:0;height:70px;display:flex;flex-direction:column;
-  align-items:flex-start;justify-content:center;padding:12px;border-radius:12px;
-  overflow:hidden;cursor:pointer;text-align:left;transition:background .12s;}
-.app button.tab-item:hover:not([data-active]){background:#FFFFFF;}
-.app button.tab-item[data-active]{background:#DBE7F5;}
-/* Figma tightens the stack by 4px on the active item. Reproduced rather than
-   normalised: it's the spec, though it does nudge the label as you select. */
-.tab-stack{display:flex;flex-direction:column;gap:12px;width:100%;min-width:0;}
-.tab-item[data-active] .tab-stack{gap:8px;}
-/* One 12px box carries all three markers: a hairline square at rest, a blue ring
-   around a 6px dot on hover, and a solid blue square when active. The dot is a
-   centred ::after, so the 3px inset Figma draws falls out of the 1px border. */
-.tab-mark{flex:none;width:12px;height:12px;display:grid;place-items:center;
-  border:1px solid #DFDFE1;transition:border-color .12s, background .12s;}
-.tab-mark::after{content:"";width:6px;height:6px;background:#186BF3;opacity:0;transition:opacity .12s;}
-.tab-item:hover:not([data-active]) .tab-mark{border-color:#186BF3;}
-.tab-item:hover:not([data-active]) .tab-mark::after{opacity:1;}
-.tab-item[data-active] .tab-mark{background:#186BF3;border-color:transparent;}
-.tab-label{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
-  font-family:var(--sans);font-size:16px;font-weight:400;line-height:1.3;color:#041D3E;
-  transition:color .12s;}
-.tab-item:hover:not([data-active]) .tab-label,
-.tab-item[data-active] .tab-label{color:#186BF3;}
-
-/* Best practices — annotations around the button (button stays put) */
-.bp-anchor{position:relative;display:inline-flex;}
-/* The state readout in the canvas's top-left corner — what the component on
-   stage is doing right now. It was Button-only; every component reports one.
-   Colour keys off `tone`, not the text, so a component can name its states
-   whatever fits without needing a rule of its own here.
-   It shares the nav row with the prev/next arrows, and the Tabs bar's readout
-   names the selected tab, so it ellipsises rather than pushing them off. */
-.pg-state-label{margin-right:auto;min-width:0;height:26px;line-height:26px;z-index:2;
-  font-family:var(--mono);font-size:11px;letter-spacing:.04em;text-transform:uppercase;
-  color:var(--ink-4);transition:color .12s;
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.pg-state-label[data-tone="active"]{color:var(--blue);}
-.pg-state-label[data-tone="pressed"]{color:var(--ink);}
-.pg-state-label[data-tone="error"]{color:var(--danger);}
-.pg-state-label[data-tone="disabled"]{color:var(--ink-4);opacity:.6;}
-.pg-canvas.dark .pg-state-label{color:rgba(255,255,255,.5);}
-.pg-canvas.dark .pg-state-label[data-tone="active"],
-.pg-canvas.dark .pg-state-label[data-tone="pressed"]{color:#fff;}
-/* green padding highlight INSIDE the button edges */
-.bp-pad-inner{position:absolute;top:1px;bottom:1px;background:rgba(22,163,74,.35);pointer-events:none;z-index:2;}
-.bp-pad-inner-left{left:1px;}
-.bp-pad-inner-right{right:1px;}
-
-/* Ghost is transparent and full-bleed, so the preview stands it inside a stub of
-   the card footer that hosts it — the frame supplies the surface colour. */
-.btn-ghost-frame{display:flex;width:300px;}
-
-/* shared redline tag */
-.bp-tag{font-family:var(--mono);font-size:10px;line-height:1.4;color:#fff;background:#16A34A;padding:2px 5px;white-space:nowrap;}
-.bp-tag-quiet{background:rgba(22,163,74,.85);}
-
-/* width measure, below the button */
-.bp-w{position:absolute;top:calc(100% + 10px);left:0;right:0;display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none;}
-.bp-w-line{width:100%;height:0;border-top:1px solid #16A34A;position:relative;}
-.bp-w-line::before,.bp-w-line::after{content:"";position:absolute;top:-4px;width:1px;height:8px;background:#16A34A;}
-.bp-w-line::before{left:0;}
-.bp-w-line::after{right:0;}
-
-/* height measure, to the left of the button */
-.bp-h{position:absolute;right:calc(100% + 8px);top:0;bottom:0;display:flex;align-items:center;gap:4px;pointer-events:none;}
-.bp-h-line{align-self:stretch;width:0;border-left:1px solid #16A34A;position:relative;}
-.bp-h-line::before,.bp-h-line::after{content:"";position:absolute;left:-4px;width:8px;height:1px;background:#16A34A;}
-.bp-h-line::before{top:0;}
-.bp-h-line::after{bottom:0;}
-
-/* side-padding callout, above the button */
-.bp-pad-note{position:absolute;bottom:calc(100% + 8px);left:0;display:flex;pointer-events:none;}
-
-/* Ghost's trailing icon — wraps the glyph in-flow so the marker and its tag
-   track the icon's real position instead of guessing at it. */
-.bp-icon-hl{position:relative;display:inline-flex;background:rgba(22,163,74,.22);
-  outline:1px dashed #16A34A;}
-.bp-icon-note{position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%);
-  display:flex;pointer-events:none;}
-
-/* Fills the canvas centre so the component stays centred while the redline
-   callouts take their room from the stage padding rather than from it. */
-.bp-stage{position:relative;place-self:stretch;display:grid;place-items:center;}
-
-/* Redline overlay — padding bands and width/height dimension lines drawn over a
-   component while Best practices is on. Reuses .bp-tag so the whole redline
-   language stays one colour and one type treatment; the green is the annotation
-   colour, deliberately not a brand colour, so it never reads as part of the
-   component being measured. Off, .rl is an inert wrapper. */
-.rl{position:relative;display:inline-flex;}
-/* Block-level flex, not width:100% — the control fills the row without the
-   wrapper asserting a width the stage padding then has to fight. */
-.rl[data-fill]{display:flex;}
-.rl[data-fill] > *{flex:1;min-width:0;}
-/* Room for the annotations comes from the stage, never from a margin on the
-   redlined element: the filter bar hugs its chips, so margining one chip would
-   stretch the very component being measured.
-   Symmetric on each axis rather than sized to each side's own annotation —
-   this stage centers its child with place-items:center, so unequal left/right
-   or top/bottom padding recenters the component itself when the padding
-   turns on, which reads as the component jumping when Best practices is
-   toggled. Matched to the larger side of each axis (96px was the old left
-   gutter, sized for the height dimension line that reads up that edge with
-   its tag outside it; 42px was the old bottom) so nothing that fit before
-   loses room — it's just given evenly instead of only where one component
-   needed it. It used to be 272px to seat the spec panel's column; the panel
-   moved into the properties column, so the canvas gets that width back. */
-.bp-stage[data-bp]{padding:42px 96px;}
-.rl-band{position:absolute;background:rgba(22,163,74,.35);pointer-events:none;z-index:2;}
-.rl-band-l{top:0;bottom:0;left:0;}
-.rl-band-r{top:0;bottom:0;right:0;}
-.rl-band-t{left:0;right:0;top:0;}
-.rl-band-b{left:0;right:0;bottom:0;}
-.rl-note{position:absolute;display:flex;pointer-events:none;z-index:3;}
-.rl-note-x{bottom:calc(100% + 8px);left:0;}
-.rl-note-y{left:calc(100% + 8px);top:0;}
-/* Height reads up the left edge, width along the bottom — the same arrangement
-   the button's own redlines use, so the two aren't learned separately. */
-.rl-h{position:absolute;right:calc(100% + 8px);top:0;bottom:0;display:flex;align-items:center;
-  gap:4px;pointer-events:none;}
-.rl-h-line{align-self:stretch;width:0;border-left:1px solid #16A34A;position:relative;}
-.rl-h-line::before,.rl-h-line::after{content:"";position:absolute;left:-4px;width:8px;height:1px;
-  background:#16A34A;}
-.rl-h-line::before{top:0;}
-.rl-h-line::after{bottom:0;}
-.rl-w{position:absolute;top:calc(100% + 10px);left:0;right:0;display:flex;flex-direction:column;
-  align-items:center;gap:4px;pointer-events:none;}
-.rl-w-line{width:100%;height:0;border-top:1px solid #16A34A;position:relative;}
-.rl-w-line::before,.rl-w-line::after{content:"";position:absolute;top:-4px;width:1px;height:8px;
-  background:#16A34A;}
-.rl-w-line::before{left:0;}
-.rl-w-line::after{right:0;}
-
-/* Specs sheet — docked in the properties column, under the controls.
-   It used to float over the canvas with drag, resize and fold. All three were
-   machinery for a panel too big to place: it opened with 16 to 21 rows, and the
-   canvas reserved a 272px gutter for it, shrinking the very component being
-   measured. Cut to rules plus the values the redlines can't draw, it fits the
-   260px column it was already styled to look like a sibling of — same
-   label-left / mono-value-right row, same --line-2 hairline between rows.
-   Colours come from the column's own theme variables now, so the
-   .pg-canvas.dark overrides went with the float. */
-.bp-panel{margin-top:20px;padding-top:16px;border-top:1px solid var(--line);}
-.bp-panel-badge{display:block;margin-bottom:12px;font-family:var(--display);font-size:13px;
-  font-weight:600;color:var(--ink);}
-/* Rules first. They're the reason to open the panel, and they used to be a
-   single paragraph pushed below the table. */
-.bp-rules{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px;}
-.bp-rules li{position:relative;padding-left:13px;font-size:12.5px;line-height:1.5;color:var(--ink-3);}
-.bp-rules li::before{content:"";position:absolute;left:2px;top:.62em;width:3px;height:3px;
-  border-radius:50%;background:var(--ink-4);}
-/* No cap and no scroll of its own — .pg-controls is bounded by the playground's
-   fixed height and scrolls for it. */
-.bp-specs{margin:14px 0 0;}
-.bp-rules + .bp-specs{padding-top:2px;border-top:1px solid var(--line-2);}
-.bp-spec-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;
-  padding:8px 0;border-bottom:1px solid var(--line-2);}
-.bp-spec-row:last-child{border-bottom:none;}
-.bp-specs dt{font-size:12.5px;color:var(--ink-3);white-space:nowrap;}
-/* overflow-wrap over word-break: long hex/gradient values wrap at the edge
-   instead of being chopped mid-token. */
-.bp-specs dd{margin:0;font-family:var(--mono);font-size:11.5px;color:var(--ink);
-  text-align:right;overflow-wrap:anywhere;}
-.scrim{display:none;}
-
-/* Responsive */
-@media (max-width:920px){
-  .shell{grid-template-columns:1fr;}
-  .hamburger{display:grid;place-items:center;}
-  .sidebar{position:fixed;top:56px;left:0;z-index:35;width:280px;background:var(--bg);transform:translateX(-100%);transition:transform .22s ease;box-shadow:0 20px 60px rgba(1,8,18,.12);padding:8px;}
-  .sidebar.open{transform:none;}
-  .scrim{display:block;position:fixed;inset:56px 0 0 0;z-index:30;background:rgba(1,8,18,.3);}
-  .content{padding:16px;}
-  /* The hamburger joins the left cluster here, so the bar can't hold a 380px
-     field as well — search collapses to its icon, and the middle track goes
-     back to content-sized so it doesn't reserve width it no longer needs. */
-  .topbar{padding:0 16px;gap:10px;grid-template-columns:1fr auto 1fr;}
-  .app button.topbar-search{width:auto;padding:0 10px;}
-  .topbar-search-text,.topbar-search-kbd{display:none;}
-  .intro-block{grid-template-columns:1fr;gap:16px;margin:0 -16px;padding:32px 16px;}
-  .section-head,.sub-head,.group-head{grid-template-columns:1fr;gap:8px;}
-  /* The plate's 64px is there to make room for the clear-space zone, but at this
-     width it starts eating the plate: 64px a side leaves a narrow phone too little
-     for the wordmark at its 64px height, and .logo-figure's max-width would then
-     cap the width and drag the height down with it — making the px figure in the
-     panel overstate the x actually drawn. */
-  .logo-plate{padding:32px 32px 32px 56px;}
-  .intro-block:first-of-type{padding-top:28px;}
-  .intro-heading{font-size:28px;}
-  .contents-grid{grid-template-columns:repeat(2,1fr);}
-  .ccard{min-height:170px;padding:18px;}
-  .row-detail,.trow-detail{grid-template-columns:1fr !important;padding-left:6px;gap:14px;}
-  .type-hero{flex-direction:column;align-items:flex-start;text-align:left;}
-  /* Single column here, so the canvas and the controls stack. Holding the
-     section to one viewport would split that height between them and squash
-     both — the page scrolls instead, and the playground goes back to sizing to
-     its content. */
-  #components{height:auto;min-height:0;}
-  .pg{grid-template-columns:1fr;}
-  .pg-controls{border-left:none;border-top:1px solid var(--line);}
-  #components .pg-controls{overflow-y:visible;}
-  /* A share of the stage means nothing once the stage sizes to its content, so
-     the cap goes viewport-relative here — otherwise the Filter's snippet alone
-     adds 2000px of page to scroll past. */
-  #components .pg-code{max-height:60vh;}
-  .ico-grid{grid-template-columns:repeat(4,1fr);}
-}
-/* Small phones */
-@media (max-width:480px){
-  .intro-heading{font-size:26px;}
-  .contents-grid{grid-template-columns:1fr;}
-  .ico-grid{grid-template-columns:repeat(3,1fr);}
-}
-
-/* ══════════════════════════════════════════════════════════════════════════
-   AI HUB
-
-   Almost nothing here is new furniture. The pattern page is a `.pg` lab — same
-   canvas, same nav arrows, same `.canvas-variants` foot, same 260px properties
-   column, same `.bp-panel` — and its documented blocks sit on the shared
-   `group-head` tier. What follows is only the parts that had no house
-   equivalent: the lifecycle strip, the use/avoid pair, the decision callout,
-   and the streaming canvas' own states.
-   ══════════════════════════════════════════════════════════════════════════ */
-
-/* The third landing panel. Brand is near-black and Product mid-blue, so the
-   pale ground is what's left that reads apart from both at a glance — and it
-   suits the subject: a surface a response is still being written onto. */
-.hubcard[data-hub="ai"]{
-  background:linear-gradient(180deg,#FFFFFF 0%,#F6F9FC 38%,#EAF1FA 72%,#DCE7F6 100%);
-}
-/* The pill inverts here and only here. A white pill on a pale ground has no
-   edge; this is the least that keeps the label legible, not a second style. */
-.hubcard[data-hub="ai"] .hubcard-pill{background:#050517;color:#FFFFFF;}
-.app button.hubcard[data-hub="ai"]:hover .hubcard-pill,
-.app button.hubcard[data-hub="ai"]:focus-visible .hubcard-pill{background:#1B2340;}
-
-/* Placed like .hub-vector — percentages, so it holds its position as the panel
-   scales. Sits lower and wider than Product's motif because its lines run to
-   the panel edge rather than resolving into a centred figure. */
-.hub-stream{position:absolute;left:12%;top:63%;width:76%;height:auto;pointer-events:none;}
-
-/* A pattern the taxonomy lists but the hub hasn't written up. Muted rather than
-   hidden or disabled: it's a real destination with a real state behind it, and
-   a shelf that omits its own gaps implies a completeness it doesn't have. */
-.nav-subitem[data-planned]{color:var(--ink-4);opacity:.62;}
-.nav-subitem[data-planned]:hover{opacity:1;}
-.nav-subitem[data-planned][data-active="true"]{opacity:1;color:var(--blue);}
-
-/* ── Shared by both AI sections ─────────────────────────────────────────── */
-
-/* A documented block under a `group-head`. Spaced like .sub-anchor's siblings,
-   which is the tier above it — same rhythm, one step tighter. */
-.ai-group{margin-top:38px;}
-
-/* The ruled definition list both sections use: the control axes in Principles,
-   and the failure modes on every pattern page. One class, because they render
-   the same shape for the same reason — a short term against its consequence. */
-.ai-defs{margin:0;}
-.ai-defs-row{display:grid;grid-template-columns:190px 1fr;gap:24px;padding:13px 0;
-  border-bottom:1px solid var(--line-2);}
-.ai-defs-row:first-child{border-top:1px solid var(--line-2);}
-.ai-defs dt{font-size:13px;font-weight:600;color:var(--ink);line-height:1.45;}
-.ai-defs dd{margin:0;font-size:13.5px;line-height:1.66;color:var(--ink-3);}
-
-/* ── Principles ─────────────────────────────────────────────────────────── */
-
-/* Card treatment lifted from .gfx-card / .ico-card so the grid reads as a
-   sibling of the icon and graphic shelves — minus the hover and the pointer,
-   since a principle isn't a destination. */
-.ai-prin{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-.ai-prin-card{display:flex;flex-direction:column;gap:8px;padding:22px 20px;
-  border:1px solid var(--line);border-radius:var(--radius);background:transparent;}
-.ai-prin-num{font-family:var(--mono);font-size:11px;font-weight:500;color:var(--blue);letter-spacing:.04em;}
-.ai-prin-title{font-family:var(--display);font-size:17px;font-weight:600;letter-spacing:-.015em;
-  line-height:1.25;margin:0;}
-.ai-prin-body{font-size:13.5px;line-height:1.66;color:var(--ink-3);margin:0;}
-/* The route out of the card. Pushed to the foot so six cards of unequal body
-   length still line their chips up along one edge. */
-.ai-prin-applies{margin-top:auto;padding-top:14px;display:flex;flex-direction:column;gap:7px;}
-.ai-prin-applies-label{font-size:10px;font-weight:600;letter-spacing:.06em;
-  text-transform:uppercase;color:var(--ink-4);}
-.ai-prin-applies .ai-chip{font-size:12px;padding:5px 11px;}
-
-/* ── Pattern lab ────────────────────────────────────────────────────────── */
-
-/* The canvas holds prose being written rather than a control, so it needs more
-   height than a component preview and none of the centring. */
-.ai-lab{min-height:560px;}
-
-/* THE READOUT — the caption for whatever is on the canvas, and the panel's
-   focal element — the caption for whatever the track has landed on. */
-.ai-now{margin-top:0;padding:11px 13px;border-left:2px solid var(--blue);background:var(--blue-soft);}
-.ai-now-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:5px;}
-.ai-now-label{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);}
-.ai-now-text{margin:0;font-size:12.5px;line-height:1.6;color:var(--ink-2);}
-
-/* The five grades, in the panel. Same row rhythm as .bp-spec-row — this is the
-   pattern's equivalent of a component's redline values — but the values are
-   categorical rather than numeric, so they're toned chips instead of mono text.
-   Tone is what makes five rows scannable at a glance; five identical grey
-   values would need reading, which defeats the point of a table. */
-.ai-grades{margin:12px 0 0;}
-.ai-grade{display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:6px 0;border-bottom:1px solid var(--line-2);}
-.ai-grade:last-child{border-bottom:none;}
-.ai-grades dt{font-size:12.5px;color:var(--ink-2);}
-.ai-grades dd{margin:0;}
-
-.ai-grade-chip{display:inline-flex;align-items:center;white-space:nowrap;
-  padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;
-  letter-spacing:.05em;text-transform:uppercase;}
-/* Required is blue, not red. A required control is the pattern working as
-   designed; spending the danger colour here leaves nothing for real failure. */
-.ai-grade-chip[data-tone="req"]{background:var(--blue-soft);color:var(--blue);}
-.ai-grade-chip[data-tone="rec"]{color:var(--ink-3);box-shadow:inset 0 0 0 1px var(--line-strong);}
-.ai-grade-chip[data-tone="na"]{background:var(--line-2);color:var(--ink-4);}
-
-/* The reasoning behind each grade, as a block below the lab — on the same 190px
-   rail as Decisions above it. This is the 41% of the old panel that was five
-   long sentences in a 260px column: it reads here and it didn't there. */
-.ai-ctl{margin:0;}
-.ai-ctl-row{display:grid;grid-template-columns:190px 1fr;gap:24px;padding:13px 0;
-  border-bottom:1px solid var(--line-2);}
-.ai-ctl-row:first-child{border-top:1px solid var(--line-2);}
-.ai-ctl-row dt{display:flex;flex-direction:column;gap:2px;}
-.ai-ctl-name{font-size:13px;font-weight:600;color:var(--ink);}
-.ai-ctl-q{font-size:12px;line-height:1.45;color:var(--ink-4);}
-.ai-ctl-row dd{margin:0;display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
-.ai-ctl-note{font-size:13px;line-height:1.6;color:var(--ink-3);}
-
-.ai-planned{margin-top:34px;border:1px dashed var(--line-strong);background:var(--bg-soft);
-  padding:22px;display:flex;flex-direction:column;gap:12px;max-width:74ch;}
-.ai-planned p{margin:0;font-size:14px;line-height:1.7;color:var(--ink-3);}
-.ai-planned-ask{color:var(--ink-4)!important;}
-.ai-shipped{font-size:14px;line-height:1.7;color:var(--ink-2);margin:0;max-width:76ch;}
-
-/* USE / AVOID — two contained lists rather than two bare columns. Without an
-   edge, the only thing separating them was an 11px label and the eye read one
-   block of prose; the rule and the tinted header make the pair legible before
-   a word of it is read. */
-.ai-when{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;}
-.ai-when-col{border:1px solid var(--line);border-top-width:2px;}
-.ai-when-col[data-tone="yes"]{border-top-color:var(--blue);}
-.ai-when-col[data-tone="no"]{border-top-color:var(--danger);}
-.ai-when-label{display:flex;align-items:center;gap:8px;padding:11px 15px;
-  border-bottom:1px solid var(--line);background:var(--bg-soft);
-  font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
-.ai-when-col[data-tone="yes"] .ai-when-label{color:var(--blue);}
-.ai-when-col[data-tone="no"] .ai-when-label{color:var(--danger);}
-/* The count says how much there is to read before you start reading. */
-.ai-when-count{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;
-  padding:0 4px;border-radius:999px;background:var(--bg);box-shadow:inset 0 0 0 1px currentColor;
-  font-family:var(--mono);font-size:9.5px;letter-spacing:0;}
-
-.ai-when-list{list-style:none;margin:0;padding:4px 15px 13px;display:flex;flex-direction:column;}
-.ai-when-list li{display:flex;flex-direction:column;gap:2px;padding:10px 0;
-  border-bottom:1px solid var(--line-2);}
-.ai-when-list li:last-child{border-bottom:none;}
-/* The lead carries the condition and the detail carries the reason, so the two
-   lists can be scanned down the left margin and only the rows that apply get
-   read in full. */
-.ai-when-lead{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.35;}
-.ai-when-detail{font-size:13px;line-height:1.6;color:var(--ink-3);}
-
-/* DECISIONS — a table, on the same 190px rail as Control & trust below it, so
-   the three blocks share one rhythm. Reading straight down the left column
-   answers "what does this force me to decide" without reading a single answer;
-   stacked, every question was separated from the next by a paragraph of ours.
-   Saying "our default" once in the header retires five repeated tags, and the
-   left rule replaces five tinted callouts that had become wallpaper. */
-.ai-dec{margin:0;}
-.ai-dec-head{display:grid;grid-template-columns:190px 1fr;gap:24px;padding-bottom:8px;
-  border-bottom:1px solid var(--line-strong);
-  font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4);}
-.ai-dec-head span:last-child{color:var(--blue);}
-.ai-dec-row{display:grid;grid-template-columns:190px 1fr;gap:24px;padding:14px 0;
-  border-bottom:1px solid var(--line-2);}
-.ai-dec-row dt{display:flex;flex-direction:column;gap:5px;}
-.ai-dec-n{font-family:var(--mono);font-size:10px;color:var(--ink-4);letter-spacing:.04em;}
-.ai-dec-q{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.4;}
-/* One hairline rule instead of a filled block: the emphasis survives, the
-   wallpaper doesn't. */
-.ai-dec-row dd{margin:0;padding-left:15px;border-left:2px solid var(--blue);
-  font-size:13.5px;line-height:1.68;color:var(--ink-2);max-width:76ch;}
-
-/* Composed-from chips — the seam back to Product Hub. */
-.ai-chips{display:flex;flex-wrap:wrap;gap:7px;}
-.ai-chip{padding:5px 12px;border-radius:999px;font-size:12.5px;font-weight:500;color:var(--ink-2);
-  box-shadow:inset 0 0 0 1px var(--line-strong);transition:color .12s,box-shadow .12s,background .12s;}
-.ai-chip:hover{color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue);background:var(--blue-soft);}
-
-/* ── Preview canvas (shared by every pattern wireframe) ──────────────── */
-
-.ai-answer{font-size:14.5px;line-height:1.72;color:var(--ink);margin:0;max-width:74ch;}
-.ai-answer[data-partial]{color:var(--ink-3);border-left:2px solid var(--line-strong);padding-left:12px;}
-.ai-caret{display:inline-block;width:7px;height:15px;margin-left:2px;vertical-align:-2px;
-  background:var(--blue);animation:ai-blink .9s steps(1,end) infinite;}
-.ai-caret[data-stalled]{background:var(--ink-4);animation:none;}
-@keyframes ai-blink{0%,50%{opacity:1;}50.01%,100%{opacity:0;}}
-
-.ai-skel{display:flex;flex-direction:column;gap:10px;width:100%;max-width:74ch;}
-.ai-skel-line{height:11px;background:linear-gradient(90deg,var(--line-2) 0%,var(--line) 42%,var(--line-2) 84%);
-  background-size:280% 100%;animation:ai-shimmer 1.5s linear infinite;}
-@keyframes ai-shimmer{from{background-position:120% 0;}to{background-position:-120% 0;}}
-
-/* .pg-code-copy had no disabled state because nothing had ever disabled it.
-   Copy is gated here until the answer settles, so it needs one. */
-.pg-code-copy:disabled{opacity:.4;cursor:default;}
-.pg-code-copy:disabled:hover{color:var(--ink-3);}
-
-/* The lab is the one place on the page that moves. A designer with motion
-   turned off still needs to read the states, so the motion goes and the states
-   stay — the caret holds solid rather than vanishing with its animation. */
-@media (prefers-reduced-motion: reduce){
-  .ai-swap{animation:none;}
-  .ai-track-seg::before{transition:none;}
-  .ai-caret{animation:none;}
-  .ai-skel-line{animation:none;}
-}
-
-/* ── Responsive ────────────────────────────────────────────────────────── */
-
-/* One intermediate step for the card grid, then everything else reflows on the
-   system's own 920px breakpoint — the same one that collapses .section-head,
-   .sub-head, .group-head and .pg. The two-column blocks here share those
-   gutters, so they have to share the point at which they stop being two
-   columns; a hub with its own breakpoint reflows halfway through the page. */
-@media (max-width: 1100px){
-  .ai-prin{grid-template-columns:repeat(2,1fr);}
-}
-@media (max-width:920px){
-  .ai-prin{grid-template-columns:1fr;}
-  .ai-when{grid-template-columns:1fr;gap:12px;}
-  .ai-dec-head{display:none;}
-  .ai-dec-row{grid-template-columns:1fr;gap:8px;}
-  .ai-dec-row dd{padding-left:13px;}
-  /* Term/consequence rows stack rather than squeezing the term track to an
-     unreadable width — the same call .section-head makes here. */
-  .ai-defs-row{grid-template-columns:1fr;gap:5px;}
-  .ai-ctl-row{grid-template-columns:1fr;gap:7px;}
-  .ai-preview{padding:22px 16px;}
-}
-
-/* ── Pattern previews: one scale, declared once ────────────────────────── */
-
-/* The previews had no scale of their own. Scaffolding was authored against the
-   product type ramp, the real Button/Field/Tag rendered at their documented
-   sizes, and nothing reconciled the two — so a 40px pill with a 16px label sat
-   next to 10px placeholder bars, and a 14px content Tag outweighed the 10px
-   label above it. Both are hierarchy inversions, not size preferences.
-   
-   A preview is an illustration of a screen, not a rendering of one, so it gets
-   an explicit ramp. Everything below reads from these tokens and nothing sets a
-   literal size, which is what makes the whole frame move together if the ramp
-   is ever retuned.
-   
-   `--pv-sys` is the one number that reconciles the two worlds: system
-   components scale by it so their labels land on this ramp rather than above
-   it. At .7 a Button is a 28px box with an 11px label, a Field a 34px box, a
-   Tag a 14px chip — controls sitting at the meta level, where controls belong
-   in a dense illustration, under body copy rather than over it. */
-.mk-frame{
-  --pv-title:17px;   /* a dialog or panel headline */
-  --pv-body:13px;    /* primary running copy */
-  --pv-meta:11px;    /* secondary, and where control labels land */
-  --pv-micro:10px;   /* uppercase section labels */
-  --pv-gap:10px;
-  --pv-pad:15px;
-  --pv-sys:.7;       /* system components, scaled onto the ramp above */
-  width:100%;background:var(--bg);border:1px solid var(--line-strong);
-  display:flex;flex-direction:column;text-align:left;
-}
-
-/* Every real Button, Field and Tag inside a preview is wrapped in this. One
-   factor for all three, so their relationships to each other stay the system's
-   while their relationship to the copy around them becomes the preview's. */
-.mk-sys-inline{zoom:var(--pv-sys);display:inline-flex;}
-.mk-sys-block{zoom:var(--pv-sys);display:block;}
-/* The field's own 380px cap is a page measure; in a frame the frame is it. */
-.mk-sys-block .field-demo{max-width:none;}
-
-.ai-preview{padding:32px 28px;align-content:center;}
-
-/* ── Frame chrome ──────────────────────────────────────────────────────── */
-
-.mk-bar{display:flex;align-items:center;gap:9px;padding:calc(var(--pv-pad) * .7) var(--pv-pad);
-  border-bottom:1px solid var(--line);background:var(--bg-soft);}
-/* Three dots as one element — a window hint, not a control anybody should try
-   to click in a wireframe. */
-.mk-bar-dots{flex:none;width:28px;height:6px;border-radius:999px;
-  background:radial-gradient(circle 3px at 3px 50%,var(--line-strong) 99%,transparent 100%),
-             radial-gradient(circle 3px at 14px 50%,var(--line-strong) 99%,transparent 100%),
-             radial-gradient(circle 3px at 25px 50%,var(--line-strong) 99%,transparent 100%);}
-.mk-bar-title{font-size:var(--pv-meta);color:var(--ink-4);
-  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.mk-body{display:flex;flex-direction:column;padding:var(--pv-pad);}
-
-/* ── Copy ──────────────────────────────────────────────────────────────── */
-
-/* Grey bars wherever the wording is beside the point, sized to read as a line
-   of body copy so the eye lands on the part of the state that matters. */
-.mk-ghosts{display:flex;flex-direction:column;gap:7px;}
-.mk-ghost{display:block;height:7px;border-radius:2px;background:var(--line);}
-.mk-ghost[data-tone="mute"]{background:var(--line-2);}
-
-.mk-say{margin:0;font-size:var(--pv-body);line-height:1.5;color:var(--ink);}
-.mk-say[data-size="sm"]{font-size:var(--pv-meta);line-height:1.45;}
-.mk-say[data-size="lg"]{font-family:var(--display);font-size:var(--pv-title);font-weight:600;
-  letter-spacing:-.015em;line-height:1.25;}
-.mk-say[data-tone="mute"]{color:var(--ink-4);}
-.mk-say[data-tone="bad"]{color:var(--danger);}
-.mk-label{font-size:var(--pv-micro);font-weight:600;letter-spacing:.07em;
-  text-transform:uppercase;color:var(--ink-4);}
-
-/* ── Grouping ──────────────────────────────────────────────────────────── */
-
-.mk-btns{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap;}
-.mk-btns[data-align="end"]{margin-left:auto;justify-content:flex-end;}
-.mk-chips{display:flex;flex-wrap:wrap;gap:4px;}
-.mk-foot{display:flex;align-items:center;justify-content:space-between;gap:8px var(--pv-gap);
-  flex-wrap:wrap;}
-.mk-scope-head{display:flex;align-items:center;justify-content:space-between;gap:var(--pv-gap);}
-.mk-list{display:flex;flex-direction:column;}
-
-/* ── Callouts ──────────────────────────────────────────────────────────── */
-
-/* `plain` is the default on purpose: most states these previews show are the
-   system working as designed, and reaching for the danger colour on a policy
-   limit is the exact mistake Graceful Refusal warns about. */
-.mk-note{display:flex;flex-direction:column;gap:3px;padding:calc(var(--pv-pad) * .7) var(--pv-pad);
-  box-shadow:inset 0 0 0 1px var(--line-strong);background:var(--bg-soft);}
-.mk-note-title{font-size:var(--pv-body);font-weight:600;color:var(--ink);}
-.mk-note-body{font-size:var(--pv-meta);line-height:1.45;color:var(--ink-3);}
-.mk-note-body strong{color:var(--ink);font-weight:600;}
-.mk-note[data-tone="warn"]{background:var(--bg);
-  box-shadow:inset 2px 0 0 var(--ink-4),inset 0 0 0 1px var(--line-strong);}
-.mk-note[data-tone="bad"]{background:var(--danger-soft);box-shadow:inset 0 0 0 1px var(--danger);}
-.mk-note[data-tone="bad"] .mk-note-title{color:var(--danger);}
-.mk-note[data-tone="ok"]{background:var(--blue-soft);box-shadow:inset 0 0 0 1px var(--blue);}
-.mk-note[data-tone="ok"] .mk-note-title{color:var(--blue);}
-
-/* ── Rows, citations, steps ────────────────────────────────────────────── */
-
-.mk-row{display:flex;align-items:flex-start;gap:9px;padding:8px 0;
-  border-bottom:1px solid var(--line-2);}
-.mk-row:last-child{border-bottom:none;}
-.mk-row-lead{flex:none;width:2px;align-self:stretch;background:var(--blue);}
-.mk-row-lead[data-tone="mute"]{background:var(--line-strong);}
-.mk-row-body{flex:1;min-width:0;}
-
-.mk-cite{display:inline-flex;align-items:center;justify-content:center;min-width:14px;height:14px;
-  margin-left:3px;padding:0 3px;border-radius:2px;font-weight:600;line-height:1;
-  font-size:calc(var(--pv-micro) * .9);
-  vertical-align:super;background:var(--blue-soft);color:var(--blue);}
-.mk-cite[data-open]{background:var(--blue);color:#fff;}
-
-.mk-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;}
-.mk-step{display:flex;align-items:center;gap:9px;padding:6px 0;}
-.mk-step-dot{flex:none;width:8px;height:8px;border-radius:999px;
-  box-shadow:inset 0 0 0 1px var(--line-strong);}
-.mk-step-label{font-size:var(--pv-body);color:var(--ink-4);}
-.mk-step[data-state="done"] .mk-step-dot{background:var(--blue);box-shadow:none;}
-.mk-step[data-state="done"] .mk-step-label{color:var(--ink-3);}
-/* The step in flight gets a ring rather than a spinner: a wireframe that
-   animates invites the reader to wait for something to finish. */
-.mk-step[data-state="now"] .mk-step-dot{background:var(--bg);box-shadow:0 0 0 2px var(--blue);}
-.mk-step[data-state="now"] .mk-step-label{color:var(--ink);font-weight:600;}
-
-/* ── Per-preview compositions ──────────────────────────────────────────── */
-
-.mk-echo{display:flex;flex-direction:column;gap:3px;padding-left:11px;
-  border-left:2px solid var(--line-strong);}
-.mk-answer{margin:0;font-size:var(--pv-body);line-height:1.6;color:var(--ink);}
-/* Grounded Answer's whole argument: sourced and generated prose have to look
-   different, because uniform is what makes the second one dangerous. */
-.mk-grounded{color:var(--ink);}
-.mk-ungrounded{color:var(--ink-3);background:var(--line-2);
-  box-shadow:inset 0 -1px 0 var(--ink-4);padding:1px 3px;}
-.mk-source{display:flex;flex-direction:column;gap:7px;padding:calc(var(--pv-pad) * .7) var(--pv-pad);
-  background:var(--bg-soft);box-shadow:inset 0 0 0 1px var(--line);}
-.mk-source-head{display:flex;align-items:center;justify-content:space-between;gap:var(--pv-gap);}
-
-.mk-hunk{display:flex;flex-direction:column;gap:7px;
-  padding:calc(var(--pv-pad) * .7) var(--pv-pad);box-shadow:inset 0 0 0 1px var(--line);}
-.mk-hunk[data-decided]{background:var(--bg-soft);}
-.mk-hunk-head{display:flex;align-items:center;justify-content:space-between;gap:var(--pv-gap);}
-.mk-hunk-name{font-size:var(--pv-micro);font-weight:600;letter-spacing:.07em;
-  text-transform:uppercase;color:var(--ink-4);}
-.mk-diff{display:flex;flex-direction:column;gap:2px;}
-.mk-diff-line{font-family:var(--mono);font-size:var(--pv-meta);line-height:1.7;padding:2px 8px;
-  white-space:pre-wrap;word-break:break-word;}
-.mk-diff-line[data-kind="del"]{background:var(--danger-soft);color:var(--danger);}
-.mk-diff-line[data-kind="add"]{background:var(--blue-soft);color:var(--blue);}
-
-.mk-params{display:flex;flex-direction:column;}
-.mk-param{display:flex;flex-direction:column;gap:2px;}
-.mk-param-key{font-size:var(--pv-micro);font-weight:600;letter-spacing:.07em;
-  text-transform:uppercase;color:var(--ink-4);}
-.mk-param-val{font-size:var(--pv-body);color:var(--ink);}
-
-/* A wireframe spinner, present only to lose the comparison against a skeleton. */
-.mk-spin-wrap{display:flex;align-items:center;gap:8px;padding:12px 0;}
-.mk-spin{flex:none;width:14px;height:14px;border-radius:999px;
-  border:2px solid var(--line);border-top-color:var(--ink-4);animation:mk-spin .7s linear infinite;}
-.mk-spin-label{font-size:var(--pv-body);color:var(--ink-4);}
-@keyframes mk-spin{to{transform:rotate(360deg);}}
-
-/* A raw literal the interface leaked to the user — a function call, an id. */
-.mk-code{display:block;font-family:var(--mono);font-size:var(--pv-meta);line-height:1.6;
-  padding:calc(var(--pv-pad) * .7) var(--pv-pad);background:var(--bg-soft);color:var(--ink-2);
-  box-shadow:inset 0 0 0 1px var(--line);word-break:break-all;}
-
-/* Scoped Context and No-Answer: a name against its status, on one baseline. */
-.mk-src,.mk-cand{display:flex;align-items:baseline;justify-content:space-between;
-  gap:var(--pv-gap);width:100%;}
-.mk-src-name,.mk-cand-name{font-size:var(--pv-body);color:var(--ink);}
-.mk-src-name[data-off],.mk-cand-name[data-weak]{color:var(--ink-4);}
-.mk-src-meta{flex:none;font-size:var(--pv-meta);color:var(--ink-4);}
-.mk-score{flex:none;font-family:var(--mono);font-size:var(--pv-meta);color:var(--blue);
-  font-variant-numeric:tabular-nums;}
-.mk-score[data-weak]{color:var(--ink-4);}
-
-/* Staged Reveal's board. One grid, one set of dimensions, every state — if the
-   layout moved between pending and done, the skeletons were the wrong shape. */
-.mk-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:1px;background:var(--line);
-  border:1px solid var(--line);}
-.mk-metric{background:var(--bg);padding:calc(var(--pv-pad) * .7) var(--pv-pad);min-height:64px;
-  display:flex;flex-direction:column;gap:7px;justify-content:flex-start;}
-.mk-metric-value{font-family:var(--display);font-size:var(--pv-title);font-weight:600;
-  letter-spacing:-.02em;line-height:1.1;}
-.mk-metric-fail{display:flex;align-items:baseline;gap:7px;font-size:var(--pv-meta);color:var(--danger);}
-.mk-metric-retry{font-size:var(--pv-meta);font-weight:500;color:var(--blue);padding:0;}
-.mk-panel{display:flex;flex-direction:column;gap:9px;
-  padding:calc(var(--pv-pad) * .7) var(--pv-pad);box-shadow:inset 0 0 0 1px var(--line);}
-/* The shortcut's single spinner, holding the space the whole board would fill. */
-.mk-blocked{display:grid;place-items:center;min-height:160px;}
-
-/* Structured Output's extracted fields: key, value, and whatever flag the field
-   has earned. One row shape, so a checked field and a read one differ only in
-   what they carry rather than in how they're built. */
-.mk-xf{display:flex;align-items:baseline;gap:9px;width:100%;padding:7px 0;
-  border-bottom:1px solid var(--line-2);}
-.mk-xf:last-child{border-bottom:none;}
-.mk-xf-key{flex:none;width:88px;font-size:var(--pv-micro);font-weight:600;letter-spacing:.07em;
-  text-transform:uppercase;color:var(--ink-4);}
-.mk-xf-val{flex:1;min-width:0;font-size:var(--pv-body);color:var(--ink);}
-.mk-xf-val[data-empty]{color:var(--ink-4);font-style:italic;}
-.mk-xf[data-state="low"] .mk-xf-val{color:var(--ink-2);
-  box-shadow:inset 0 -1px 0 var(--ink-4);}
-.mk-xf[data-state="missing"] .mk-xf-val{color:var(--ink-4);}
-
-/* Confidence & Hedging's band. A label and a coarse scale, never a decimal —
-   the shortcut variant is the only thing here that prints a raw number. */
-.mk-band{display:flex;flex-direction:column;gap:6px;padding:var(--pv-pad);
-  box-shadow:inset 0 0 0 1px var(--line);}
-.mk-band-value{font-family:var(--display);font-size:var(--pv-title);font-weight:600;
-  letter-spacing:-.02em;line-height:1.1;}
-.mk-band[data-tone="high"] .mk-band-value{color:var(--ink);}
-.mk-band[data-tone="low"] .mk-band-value{color:var(--ink-3);}
-.mk-band-scale{display:block;height:4px;background:var(--line);}
-.mk-band-fill{display:block;height:100%;background:var(--blue);}
-.mk-band[data-tone="low"] .mk-band-fill{background:var(--ink-4);}
-.mk-band-note{font-size:var(--pv-meta);color:var(--ink-4);}
-
-/* Plan Preview's steps, and History's entries: a line of text with its status
-   sitting on the same baseline. */
-.mk-plan,.mk-hist{display:flex;align-items:baseline;gap:9px;width:100%;flex-wrap:wrap;}
-.mk-plan-step{flex:1;min-width:0;font-size:var(--pv-body);color:var(--ink);}
-.mk-plan-step[data-cut]{color:var(--ink-4);text-decoration:line-through;}
-.mk-hist-who{font-size:var(--pv-body);font-weight:600;color:var(--ink);}
-.mk-hist-what{flex:1;min-width:0;font-size:var(--pv-meta);color:var(--ink-3);}
-.mk-hist-when{flex:none;font-family:var(--mono);font-size:var(--pv-meta);color:var(--ink-4);}
-
-/* The sparkle an anti-pattern reaches for instead of an explanation. Drawn
-   rather than an icon, because the point is that it says nothing. */
-.mk-sparkle{flex:none;width:13px;height:13px;
-  background:conic-gradient(from 45deg,var(--blue),#7AA7F7,var(--blue));
-  clip-path:polygon(50% 0,61% 39%,100% 50%,61% 61%,50% 100%,39% 61%,0 50%,39% 39%);}
-
-/* Inline Suggestion's editor. The two spans are the pattern: .mk-typed is
-   theirs and .mk-ghost-text is the model's, and they must never be mistakable
-   for each other. */
-.mk-editor{padding:10px 12px;border:1px solid var(--line-strong);background:var(--bg);
-  border-radius:10px;min-height:72px;}
-.mk-editor[data-focus]{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
-.mk-typed{font-size:var(--pv-body);line-height:1.55;color:var(--ink);}
-.mk-ghost-text{color:var(--ink-4);background:var(--line-2);
-  box-shadow:inset 0 -1px 0 var(--line-strong);}
-
-/* ── Streaming states, shared with the kit ─────────────────────────────── */
-
-.ai-answer{margin:0;font-size:var(--pv-body);line-height:1.6;color:var(--ink);}
-.ai-answer[data-partial]{color:var(--ink-3);border-left:2px solid var(--line-strong);padding-left:11px;}
-.ai-caret{display:inline-block;width:6px;height:12px;margin-left:2px;vertical-align:-1px;
-  background:var(--blue);animation:ai-blink .9s steps(1,end) infinite;}
-/* A stalled stream shows the same caret gone still: from the user's side
-   nothing has changed, which is exactly why silence needs a deadline. */
-.ai-caret[data-stalled]{background:var(--ink-4);animation:none;}
-@keyframes ai-blink{0%,50%{opacity:1;}50.01%,100%{opacity:0;}}
-.ai-skel{display:flex;flex-direction:column;gap:8px;width:100%;}
-.ai-skel-line{height:9px;background:linear-gradient(90deg,var(--line-2) 0%,var(--line) 42%,var(--line-2) 84%);
-  background-size:280% 100%;animation:ai-shimmer 1.5s linear infinite;}
-@keyframes ai-shimmer{from{background-position:120% 0;}to{background-position:-120% 0;}}
-
-/* THE TRACK. A pattern is one thing unfolding, so the canvas is built to be
-   watched and the control reads as a timeline rather than a row of tabs.
-
-   This replaced a pill strip. Pills model alternatives — Primary or Secondary,
-   Focus or Error — which is right in the Product Hub and wrong here, and five
-   of them carrying labels like "Awaiting approval" ran out of foot before they
-   ran out of states. A track holds any number, because only the state you're
-   on is named. */
-.ai-track{display:flex;align-items:center;gap:11px;min-width:0;}
-.ai-track-bar{display:flex;align-items:center;gap:3px;flex:none;}
-/* The visible bar is 4px; the hit area is the whole 22px button, so a segment
-   is comfortably clickable without drawing a chunky control. */
-.ai-track-seg{width:26px;height:22px;padding:9px 0;background:none;position:relative;}
-.ai-track-seg::before{content:"";position:absolute;inset:9px 0;background:var(--line-strong);
-  border-radius:2px;transition:background .18s ease,transform .18s ease;}
-.ai-track-seg:hover::before{background:var(--ink-4);}
-/* Filled up to where you are — the track carries progress, not just position. */
-.ai-track-seg[data-on]::before{background:var(--blue);}
-.ai-track-seg[data-active]::before{transform:scaleY(1.75);}
-.ai-track-label{display:flex;align-items:baseline;gap:7px;min-width:0;font-size:12.5px;
-  font-weight:500;color:var(--ink);}
-.ai-track-pos{flex:none;font-family:var(--mono);font-size:10.5px;color:var(--ink-4);
-  font-variant-numeric:tabular-nums;}
-
-/* Play, bottom right, in the slot the Product Hub gives its canvas action —
-   and the primary gesture on this page rather than an afterthought beside the
-   states. */
-.ai-play{display:inline-flex;align-items:center;gap:7px;flex:none;
-  padding:5px 13px 5px 11px;border-radius:999px;font-size:12.5px;font-weight:500;
-  color:var(--ink-3);box-shadow:inset 0 0 0 1px var(--line-strong);
-  transition:color .12s,background .12s,box-shadow .12s;}
-.ai-play:hover{color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink-4);}
-.ai-play[data-on]{background:var(--blue);color:#fff;box-shadow:none;}
-.ai-play[data-on]:hover{background:var(--ink);color:#fff;}
-
-/* Each state arrives rather than snapping in. Watching a pattern move from
-   Waiting to Streaming to Complete is what this page is for, and a hard swap
-   reads as five unrelated screenshots. Fading the incoming frame only — the
-   outgoing one is already unmounted — which is enough to carry the change
-   without holding two wireframes on the canvas at once. */
-.ai-swap{width:100%;animation:ai-swap-in .3s cubic-bezier(.22,.61,.36,1);}
-@keyframes ai-swap-in{
-  from{opacity:0;transform:translateY(4px);}
-  to{opacity:1;transform:translateY(0);}
-}
-
-@media (prefers-reduced-motion: reduce){.spn{animation-duration:2.4s;}}
-
-/* Search Input — shares the Input Field family's own box (height, radius,
-   border, fill) rather than a second one; only the icon and the clear button
-   are this control's own. The wrapper carries the box since the icon and the
-   clear button are its siblings, not its children — the bare input inside
-   would clip them if it carried the border itself. */
-.sch{position:relative;display:inline-flex;align-items:center;width:100%;max-width:380px;
-  height:48px;border:1px solid #E7ECF2;border-radius:12px;background:#FAFBFC;
-  transition:border-color .14s,box-shadow .14s;}
-/* [data-focus] pins the state from the playground's canvas pills — same
-   trick the Checkbox and the Radio Button use. Real focus uses :focus-within
-   instead of :focus, since the icon and the clear button sit outside the
-   input itself. */
-.sch:focus-within,.sch[data-focus]{border-color:#1957F4;box-shadow:0 0 0 3px #EEF2FE;}
-.sch:has(.sch-input:disabled){opacity:.55;}
-.sch-icon{position:absolute;left:16px;display:flex;color:#5C6A82;pointer-events:none;}
-.sch-input{flex:1;width:100%;height:100%;padding:0 40px;border:none;background:none;outline:none;
-  font-family:var(--sans);font-size:14.5px;color:#010812;}
-.sch-input::placeholder{color:#A8B3CA;}
-.sch-input:disabled{cursor:not-allowed;}
-/* Its slot is always reserved — 40px either side, whether it's showing or
-   not — so it fades in rather than being inserted and the caret never jumps.
-   :not(:placeholder-shown) reads "has a query" straight off the input, the
-   same trick the exported snippet uses — no data attribute, no JavaScript. */
-.sch-clear{position:absolute;right:14px;display:inline-flex;align-items:center;justify-content:center;
-  width:20px;height:20px;padding:0;border:none;background:none;color:#5C6A82;cursor:pointer;
-  opacity:0;pointer-events:none;transition:opacity .12s,color .12s;}
-.sch:has(.sch-input:not(:placeholder-shown)) .sch-clear{opacity:1;pointer-events:auto;}
-.sch-clear:hover{color:#2E3F5A;}
-
-/* Link — Loka Figma "Link / Light" (node 30:2487).
-   Tokens: gray-80 #041D3E (default text), blue-100 #186BF3 (hover text + dot).
-   The dot sits in the layout at rest too, just invisible, so the row doesn't
-   shift width when it appears on hover. [data-hover] pins the state from the
-   playground's canvas pills — same trick the Checkbox pill uses. */
-.lnk{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:18px;
-  font-family:var(--sans);font-size:18px;font-weight:400;line-height:1;color:#041D3E;
-  text-decoration:none;cursor:pointer;transition:color .12s;}
-.lnk:hover,.lnk[data-hover]{color:#186BF3;}
-.lnk-dot{flex:none;width:6px;height:6px;border-radius:100px;background:#186BF3;
-  opacity:0;transition:opacity .12s;}
-.lnk:hover .lnk-dot,.lnk[data-hover] .lnk-dot{opacity:1;}
-
-/* Filter bar — Loka Figma "filter" (node 4866:24030).
-   Figma tokens: gray-5 #EFF1F5 (bar), gray-20 #D6DCE6 (open chip),
-   gray-40 #A8B3CA (counts, closed arrow), gray-50 #828FA5 (open arrow),
-   gray-80 #041D3E (labels), backgroundgrey #F5F6FA (panel). Literals for the
-   same reason as the multi-select above: specified against the light surface it
-   ships on, not the app's theme variables. Body text is Figma's 16px here — the
-   filter is standalone, so it has no Input Field family to track. */
-/* The panel is absolute, so it contributes no height — centering the bar like
-   every other preview doesn't grow the box when the panel opens, it just
-   overlays below. width:fit-content, not width:100% — the open panel is
-   width:100% of this box, so stretching it to fill the canvas (up to
-   max-width) made the panel wider than the bar it hangs from the moment the
-   bar itself started hugging its chips instead of stretching too. Hugging
-   here is what keeps the two in sync; max-width stays on as a ceiling for a
-   bar with many/longer chips. */
-/* Nudged up from the canvas's own centered position — transform rather than
-   a margin or align-self change, since it's a paint-time offset that can't
-   perturb the centering math itself (or drag the open panel's position out
-   of step with the bar, since a transform carries its descendants with it). */
-.filt{position:relative;width:fit-content;max-width:366px;transform:translateY(-80px);}
-/* inline-flex, not flex — a block-level flex container stretches to fill
-   .filt's own 366px width regardless of how few chips are in it, leaving
-   visible empty gray pill background to the right of the last one. The bar
-   is supposed to hug its chips on both axes, not just height. */
-.filt-bar{display:inline-flex;align-items:center;gap:6px;background:#EFF1F5;border-radius:500px;}
-.app button.filt-toggle{display:flex;align-items:center;justify-content:center;gap:6px;
-  height:36px;padding:12px;border-radius:80px;overflow:clip;cursor:pointer;
-  font-family:var(--sans);font-size:16px;font-weight:400;line-height:1.3;color:#041D3E;
-  transition:background .12s;}
-.app button.filt-toggle[data-open]{background:#D6DCE6;}
-/* Arrow tracks the same two state colours the Figma arrow component ships:
-   gray-40 wrapped (closed), gray-50 unwrapped (open). */
-.filt-toggle svg{flex:none;color:#A8B3CA;}
-.filt-toggle[data-open] svg{color:#828FA5;}
-
-/* 8px below the 36px bar, matching Figma's top:44px. width matches the bar
-   (see .filt above) so it doesn't overhang past the last chip — but
-   Single select's bar is one narrow chip, far too narrow for its own rows
-   to stay on one line. min-width holds the panel to a readable floor
-   without pushing past 338px, the three-chip bar's own width, so Multiple
-   select still gets an exact match rather than a wider one. */
-.filt-panel{position:absolute;left:0;top:calc(100% + 8px);z-index:2;width:100%;
-  min-width:300px;
-  display:flex;flex-direction:column;gap:2px;padding:4px;
-  background:#F5F6FA;border:1px solid #EFF1F5;border-radius:12px;
-  filter:drop-shadow(0 3px 3px rgba(43,64,92,.05)) drop-shadow(0 11px 5.5px rgba(43,64,92,.04))
-    drop-shadow(0 25px 7.5px rgba(43,64,92,.03)) drop-shadow(0 45px 9px rgba(43,64,92,.01));}
-.filt-search{height:44px;padding:12px;border:none;background:none;outline:none;
-  border-radius:10px;font-family:var(--sans);font-size:16px;font-weight:400;
-  line-height:1.3;color:#041D3E;}
-.filt-search::placeholder{color:#A8B3CA;}
-.app button.filt-option{display:flex;align-items:center;gap:6px;height:44px;padding:12px;
-  border-radius:10px;overflow:clip;cursor:pointer;text-align:left;
+/* Number Chip — Loka Figma node 391:384. A fixed 32x20 pill holding a count.
+   The width is fixed rather than hugging, so a column of them lines up; that
+   only works while the number fits, which is why the rule is to cap at three
+   characters rather than let the box grow.
+
+   Bound to the semantic rungs (color-bg-muted / color-text-secondary) rather
+   than the neutral primitives the older components reach for. */
+.number-chip{display:inline-flex;align-items:center;justify-content:center;flex:none;
+  width:32px;height:20px;border-radius:500px;
+  font-family:var(--sans);font-size:14px;font-weight:400;line-height:1.45;
+  letter-spacing:normal;text-transform:none;
+  color:#2E3F5A;background:#EFF1F5;}
+/* The second step, for the 11px uppercase label rows the sourced size shouted
+   over. Both of the sourced chip's ratios are held — width 1.6x the height,
+   type 0.7x it — so 16 gives 25.6 and 11.2, rounded. */
+.number-chip[data-size="16"]{width:26px;height:16px;font-size:11px;}
+
+/* Tabs — Loka Figma node 389:367. The base selector pill, three states.
+   Distinct from Services Tabs (the 70px marker bar) and from Tags (the 24px
+   uppercase bordered box, which has no states at all).
+
+   The outline is an inset shadow rather than a border, because Figma's default
+   state has a 1px line and its hover state has a fill and no line — as a real
+   border that swaps, the label would shift a pixel on hover. Every state now
+   paints inside the same 40px box.
+
+   `data-state` is for the playground, which has to hold a state open for
+   inspection. Left off, the pill is interactive and the browser drives hover. */
+.app button.tab-pill{display:inline-flex;align-items:center;justify-content:center;
+  flex:none;height:40px;padding:0 14px;border-radius:80px;
   font-family:var(--sans);font-size:16px;font-weight:400;line-height:1.3;
-  transition:background .12s;}
-.app button.filt-option:hover{background:#EFF1F5;}
-.app button.filt-option[data-picked]{background:#D6DCE6;}
-/* Fixed 22px column so the labels line up whether the count is one or two digits. */
-.filt-count{flex:none;width:22px;color:#A8B3CA;}
-.filt-option-label{color:#041D3E;}
-.filt-empty{margin:0;padding:12px;font-size:16px;line-height:1.3;color:#5C6A82;}
+  white-space:nowrap;color:#828FA5;
+  box-shadow:inset 0 0 0 1px #EFF1F5;backdrop-filter:blur(10px);
+  transition:background .12s,color .12s,box-shadow .12s;}
+.app button.tab-pill:hover,
+.app button.tab-pill[data-state="hover"]{background:#EFF1F5;box-shadow:none;}
+.app button.tab-pill[data-state="active"],
+.app button.tab-pill[aria-selected="true"]{background:#020F1F;color:#EFF1F5;box-shadow:none;}
+/* Default has to win back over :hover when the playground is holding it. */
+.app button.tab-pill[data-state="default"]{background:none;color:#828FA5;
+  box-shadow:inset 0 0 0 1px #EFF1F5;}
 
-/* Floating Action Button — Loka Figma "Frame 2121455575" (node 118:125): a
-   job-count chip and a "See roles" call to action sharing one blurred bar.
-   Figma tokens: colors/neutral-opacity/dark-60 rgba(5,5,23,.6) (pill fill),
-   white-100 (chip fill, label, icon), gray-70 #2E3F5A (chip text), white at
-   20% opacity (pill border). Literals for the same reason the filter bar
-   keeps them: specified as opacity overlays over whatever the pill floats
-   above, not the app's own theme variables. It's a real button — hover and
-   press share one fill-and-border step, same convention as the Button's own
-   variants, and press adds the same 0.97 scale. Text runs at 16px, the
-   Button's own size, rather than Figma's literal 20px — it's a button in
-   every other respect, so its label shouldn't stand out oversized. */
-.app button.fab{display:inline-flex;align-items:center;gap:10px;padding:4px 10px 4px 4px;
-  border:1px solid rgba(255,255,255,.2);border-radius:14px;
-  background:rgba(5,5,23,.6);backdrop-filter:blur(8px);cursor:pointer;
-  transition:background .12s,border-color .12s,transform .08s;}
-.app button.fab[data-state="hover"],.app button.fab[data-state="pressed"]{
-  background:rgba(5,5,23,.72);border-color:rgba(255,255,255,.32);}
-.app button.fab[data-state="pressed"]{transform:scale(0.97);}
-.fab-chip{display:flex;align-items:center;justify-content:center;padding:8px 10px;
-  background:#FFFFFF;border-radius:10px;overflow:clip;white-space:nowrap;
-  font-family:var(--sans);font-size:16px;font-weight:400;line-height:1.3;color:#2E3F5A;}
-.fab-cta{display:flex;align-items:center;gap:6px;}
-.fab-label{white-space:nowrap;font-family:var(--sans);font-size:16px;font-weight:400;
-  line-height:1.3;color:#FFFFFF;}
-.fab-icon{display:flex;flex:none;align-items:center;justify-content:center;
-  width:24px;height:24px;color:#FFFFFF;}
-
-/* Avatar — Loka Figma "Avatar/Initials" component set (node 147:36) for the
-   Initials variant; the Image variant and the size range beyond 32px extend
-   past what Figma defines, matching the same square/no-radius box instead of
-   inventing a second shape convention. Size, fill and text color all come
-   from AvatarPreview.jsx as inline styles rather than data-attribute
-   selectors here, since they're picked from a live control, and none of the
-   six pastel/ink pairs are published palette tokens to point a CSS rule at
-   anyway. */
-.avatar-initials{display:flex;align-items:center;justify-content:center;
-  flex:none;font-weight:500;line-height:1.4;text-align:center;overflow:hidden;}
-.avatar-initials--image{background:#E7ECF2;}
-.avatar-initials--image img{width:100%;height:100%;object-fit:cover;display:block;}
-
-/* Tags — Loka Figma "20 / tag" (node 149:412): a bordered, unfilled box
-   holding one uppercase label. The layer's named "20" but measures 24px —
-   that's the sourced size; 20 and 28px are this system's own range around
-   it. Height and horizontal padding come from TagsPreview.jsx as inline
-   styles since they're picked from the canvas toggle; everything else here
-   is fixed regardless of size. */
 .tag-chip{display:inline-flex;align-items:center;justify-content:center;
   flex:none;border:1px solid #EFF1F5;border-radius:8px;font-size:14px;
   font-weight:500;line-height:1;letter-spacing:1.12px;text-transform:uppercase;
@@ -3086,10 +2079,8 @@
 /* THE READOUT — the caption for whatever is on the canvas, and the panel's
    focal element — the caption for whatever the track has landed on. */
 .ai-now{margin-top:0;padding:11px 13px;border-left:2px solid var(--blue);background:var(--blue-soft);}
-.ai-now[data-shortcut]{border-left-color:var(--danger);background:var(--danger-soft);}
 .ai-now-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:5px;}
 .ai-now-label{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);}
-.ai-now[data-shortcut] .ai-now-label{color:var(--danger);}
 .ai-now-text{margin:0;font-size:12.5px;line-height:1.6;color:var(--ink-2);}
 
 /* The five grades, in the panel. Same row rhythm as .bp-spec-row — this is the
@@ -3098,33 +2089,52 @@
    Tone is what makes five rows scannable at a glance; five identical grey
    values would need reading, which defeats the point of a table. */
 .ai-grades{margin:12px 0 0;}
-.ai-grade{display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:6px 0;border-bottom:1px solid var(--line-2);}
+/* The chip sits against the top of the row rather than centred on it, because
+   the label beside it is now two lines: the axis and the question it asks. Five
+   bare nouns and three grades were the least legible thing on the page — the
+   answer arrived 421 words before the question. */
+.ai-grades{list-style:none;padding:0;}
+/* Two lines to a row: the check paired with its grade, then what that grade
+   means here. The chip stays on the name's line so the five grades read as one
+   vertical column at a glance — the reason this is a table in a 260px gutter
+   and not a paragraph. The note takes the full width beneath, because nine
+   words squeezed into what's left beside a chip is four lines of two words.
+
+   A third line used to sit between them carrying the axis question. It was cut:
+   identical on every page, and 34% of the panel's text. */
+.ai-grade{display:flex;flex-direction:column;gap:3px;
+  padding:9px 0;border-bottom:1px solid var(--line-2);}
 .ai-grade:last-child{border-bottom:none;}
-.ai-grades dt{font-size:12.5px;color:var(--ink-2);}
-.ai-grades dd{margin:0;}
+.ai-grade-top{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.ai-grade-name{font-size:12.5px;font-weight:600;color:var(--ink-2);}
+.ai-grade-note{font-size:12px;line-height:1.55;color:var(--ink-3);}
 
 .ai-grade-chip{display:inline-flex;align-items:center;white-space:nowrap;
   padding:2px 8px;border-radius:999px;font-size:10px;font-weight:600;
   letter-spacing:.05em;text-transform:uppercase;}
 /* Required is blue, not red. A required control is the pattern working as
    designed; spending the danger colour here leaves nothing for real failure. */
-.ai-grade-chip[data-tone="req"]{background:var(--blue-soft);color:var(--blue);}
-.ai-grade-chip[data-tone="rec"]{color:var(--ink-3);box-shadow:inset 0 0 0 1px var(--line-strong);}
-.ai-grade-chip[data-tone="na"]{background:var(--line-2);color:var(--ink-4);}
+/* Three obligation levels, three codes: blue must, green should, grey doesn't
+   apply. Required keeps blue because blue is what this system spends on "this
+   matters". Recommended takes Green — of the three semantic ramps it is the only
+   one that means "good practice": Amber is documented for caution and warnings,
+   which would say watch out where nothing is wrong, and it fails AA at every
+   weight that still reads as amber (amber-11 on amber-02 is 4.36:1).
 
-/* The reasoning behind each grade, as a block below the lab — on the same 190px
-   rail as Decisions above it. This is the 41% of the old panel that was five
-   long sentences in a 260px column: it reads here and it didn't there. */
-.ai-ctl{margin:0;}
-.ai-ctl-row{display:grid;grid-template-columns:190px 1fr;gap:24px;padding:13px 0;
-  border-bottom:1px solid var(--line-2);}
-.ai-ctl-row:first-child{border-top:1px solid var(--line-2);}
-.ai-ctl-row dt{display:flex;flex-direction:column;gap:2px;}
-.ai-ctl-name{font-size:13px;font-weight:600;color:var(--ink);}
-.ai-ctl-q{font-size:12px;line-height:1.45;color:var(--ink-4);}
-.ai-ctl-row dd{margin:0;display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
-.ai-ctl-note{font-size:13px;line-height:1.6;color:var(--ink-3);}
+   N/A stays grey on purpose. It is the absence of an obligation, and grey is the
+   honest code for nothing-here — a hue would make it look like a third state
+   rather than the empty one. It is a code in the ramp, not an omission from it.
+
+   Every pair is AA at 10px/600, which two of them were not before:
+     light  req 5.06 · rec 5.71 · na 4.84 (was 2.89, failed)
+     dark   req 5.20 (was 4.44, failed) · rec 8.54 · na 5.63
+   Colour is never the only signal — each chip states its grade in words. */
+.ai-grade-chip[data-tone="req"]{background:var(--blue-soft);color:var(--blue);}
+.ai-grade-chip[data-tone="rec"]{background:var(--success-soft);color:var(--success);}
+.ai-grade-chip[data-tone="na"]{background:var(--line-2);color:var(--ink-3);}
+/* Dark --blue on dark --blue-soft is 4.44:1, just under AA for 10px text.
+   blue-60 clears it at 5.20 without moving a global token. */
+.app[data-theme="dark"] .ai-grade-chip[data-tone="req"]{color:#5495F4;}
 
 .ai-planned{margin-top:34px;border:1px dashed var(--line-strong);background:var(--bg-soft);
   padding:22px;display:flex;flex-direction:column;gap:12px;max-width:74ch;}
@@ -3146,9 +2156,6 @@
 .ai-when-col[data-tone="yes"] .ai-when-label{color:var(--blue);}
 .ai-when-col[data-tone="no"] .ai-when-label{color:var(--danger);}
 /* The count says how much there is to read before you start reading. */
-.ai-when-count{display:inline-flex;align-items:center;justify-content:center;min-width:16px;height:16px;
-  padding:0 4px;border-radius:999px;background:var(--bg);box-shadow:inset 0 0 0 1px currentColor;
-  font-family:var(--mono);font-size:9.5px;letter-spacing:0;}
 
 .ai-when-list{list-style:none;margin:0;padding:4px 15px 13px;display:flex;flex-direction:column;}
 .ai-when-list li{display:flex;flex-direction:column;gap:2px;padding:10px 0;
@@ -3179,7 +2186,37 @@
 /* One hairline rule instead of a filled block: the emphasis survives, the
    wallpaper doesn't. */
 .ai-dec-row dd{margin:0;padding-left:15px;border-left:2px solid var(--blue);
-  font-size:13.5px;line-height:1.68;color:var(--ink-2);max-width:76ch;}
+  display:flex;flex-direction:column;gap:3px;max-width:76ch;}
+/* Same lead/detail rail as .ai-when-lead / .ai-when-detail above, on purpose:
+   two blocks doing the same job in two type treatments is a format more than
+   the page needs. The verdict carries the weight so the column can be read as
+   five short answers; the reasoning stays for whoever the answer stopped. */
+.ai-dec-loka{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.5;}
+.ai-dec-why{font-size:13px;line-height:1.65;color:var(--ink-3);}
+/* The way back to the canvas. Quiet until wanted — it's an offer to check the
+   answer above it, not a second call to action competing with the verdict — and
+   it borrows the Play mark from the canvas foot so the two read as the same
+   gesture. Only rendered where a state actually demonstrates the answer. */
+.ai-dec-shows{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;
+  margin-top:7px;padding:4px 10px 4px 8px;border-radius:999px;
+  font-size:11.5px;font-weight:500;color:var(--ink-3);
+  box-shadow:inset 0 0 0 1px var(--line-strong);
+  transition:color .12s,box-shadow .12s,background .12s;}
+.ai-dec-shows:hover{color:var(--blue);background:var(--blue-soft);
+  box-shadow:inset 0 0 0 1px var(--blue);}
+.ai-dec-shows svg{flex:none;}
+
+/* Composed from, in two groups: what the pattern can't exist without, and what
+   a product chooses to include. One rail, so the two read as one list split
+   rather than two lists. The optional chips are dashed — the same "this is a
+   slot, not a fixture" reading, without inventing a second chip shape. */
+.ai-parts{display:flex;flex-direction:column;gap:16px;}
+.ai-parts-group{display:flex;flex-direction:column;gap:8px;}
+.ai-parts-label{display:flex;align-items:center;gap:8px;
+  font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4);}
+.ai-parts-group[data-kind="always"] .ai-parts-label{color:var(--ink-2);}
+.ai-chip[data-optional]{box-shadow:none;border:1px dashed var(--line-strong);padding:4px 11px;}
+.ai-chip[data-optional]:hover{border-color:var(--blue);}
 
 /* Composed-from chips — the seam back to Product Hub. */
 .ai-chips{display:flex;flex-wrap:wrap;gap:7px;}
@@ -3187,34 +2224,13 @@
   box-shadow:inset 0 0 0 1px var(--line-strong);transition:color .12s,box-shadow .12s,background .12s;}
 .ai-chip:hover{color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue);background:var(--blue-soft);}
 
-/* ── Preview canvas (shared by every pattern wireframe) ──────────────── */
+/* ── Copy button, gated while the answer is still arriving ───────────── */
 
-.ai-answer{font-size:14.5px;line-height:1.72;color:var(--ink);margin:0;max-width:74ch;}
-.ai-answer[data-partial]{color:var(--ink-3);border-left:2px solid var(--line-strong);padding-left:12px;}
-.ai-caret{display:inline-block;width:7px;height:15px;margin-left:2px;vertical-align:-2px;
-  background:var(--blue);animation:ai-blink .9s steps(1,end) infinite;}
-.ai-caret[data-stalled]{background:var(--ink-4);animation:none;}
-@keyframes ai-blink{0%,50%{opacity:1;}50.01%,100%{opacity:0;}}
-
-.ai-skel{display:flex;flex-direction:column;gap:10px;width:100%;max-width:74ch;}
-.ai-skel-line{height:11px;background:linear-gradient(90deg,var(--line-2) 0%,var(--line) 42%,var(--line-2) 84%);
-  background-size:280% 100%;animation:ai-shimmer 1.5s linear infinite;}
-@keyframes ai-shimmer{from{background-position:120% 0;}to{background-position:-120% 0;}}
 
 /* .pg-code-copy had no disabled state because nothing had ever disabled it.
    Copy is gated here until the answer settles, so it needs one. */
 .pg-code-copy:disabled{opacity:.4;cursor:default;}
 .pg-code-copy:disabled:hover{color:var(--ink-3);}
-
-/* The lab is the one place on the page that moves. A designer with motion
-   turned off still needs to read the states, so the motion goes and the states
-   stay — the caret holds solid rather than vanishing with its animation. */
-@media (prefers-reduced-motion: reduce){
-  .ai-swap{animation:none;}
-  .ai-track-seg::before{transition:none;}
-  .ai-caret{animation:none;}
-  .ai-skel-line{animation:none;}
-}
 
 /* ── Responsive ────────────────────────────────────────────────────────── */
 
@@ -3235,7 +2251,6 @@
   /* Term/consequence rows stack rather than squeezing the term track to an
      unreadable width — the same call .section-head makes here. */
   .ai-defs-row{grid-template-columns:1fr;gap:5px;}
-  .ai-ctl-row{grid-template-columns:1fr;gap:7px;}
   .ai-preview{padding:22px 16px;}
 }
 
@@ -3546,7 +2561,12 @@
   to{opacity:1;transform:translateY(0);}
 }
 
+/* The lab is the one place on the page that moves. A designer with motion
+   turned off still needs to read the states, so the motion goes and the states
+   stay — the caret holds solid rather than vanishing with its animation. */
 @media (prefers-reduced-motion: reduce){
+  .ai-swap{animation:none;}
+  .ai-track-seg::before{transition:none;}
   .ai-caret{animation:none;}
   .ai-skel-line{animation:none;}
   .mk-spin{animation:none;}

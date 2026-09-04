@@ -31,9 +31,9 @@ export function AiPrinciplesSection({ registerRef, onSelectAiPattern }) {
   return (
     <section id="ai-principles" className="section" ref={(el) => registerRef("ai-principles", el)}>
       <SectionHead title="Principles">
-        Why the patterns look the way they do — six directives that hold across the whole shelf,
-        not for any one entry on it. Written for the AI most of us actually ship: a ranked queue, a
-        pre-filled field, a risk score. They work for a chat box too, but none of them assume one.
+        Why the patterns look the way they do — six rules that hold for every pattern here rather than
+        for any one of them. Written for the kind of AI most of us actually ship: a sorted list, a
+        field filled in for you, a score. They work for a chat box too, but none of them need one.
       </SectionHead>
 
       <div className="ai-prin">
@@ -63,12 +63,12 @@ export function AiPrinciplesSection({ registerRef, onSelectAiPattern }) {
 
       <div className="ai-group">
         <div className="group-head">
-          <h4 className="group-title">The five control axes</h4>
+          <h4 className="group-title">The five things a person has to be able to do</h4>
           <p className="group-desc">
-            Every documented pattern is graded against all five, and N/A is a valid answer — what
-            isn't allowed is leaving one unstated. A pattern that can't say what happens when the
-            user wants to stop, check, or reverse it isn't finished being designed, however good the
-            happy path looks.
+            Every written-up pattern is graded on all five, and “N/A” is a fair answer — what isn't allowed
+            is leaving one blank. A pattern that can't say what happens when somebody wants to stop
+            it, check it, or undo it isn't finished being designed, however good it looks when
+            everything goes right.
           </p>
         </div>
         <dl className="ai-defs">

@@ -1,6 +1,6 @@
 import { Body, Btn, Btns, Chip, Frame, FrameBar, GhostLines, Label, Note, Row, Say } from "./kit.jsx";
 
-// Scoped Context, drawn as a report builder rather than a chat: the thing being
+// Visible Sources, drawn as a report builder rather than a chat: the thing being
 // scoped is a set of data sources, and the question the pattern answers —
 // "what will it actually read?" — is a number on screen before anything runs.
 const SOURCES = [

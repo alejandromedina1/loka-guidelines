@@ -156,7 +156,7 @@ export function Chip({ children }) {
 // A callout. Tones are semantic on purpose: `plain` for states that are the
 // system working as designed (a refusal, a stop), `warn` for something that
 // needs attention, `bad` only for a genuine failure. Spending the danger colour
-// on a policy limit is the mistake the Graceful Refusal pattern warns about, so
+// on a policy limit is the mistake the Clear Refusal pattern warns about, so
 // the kit shouldn't make it the easy option.
 export function Note({ children, tone = "plain", title }) {
   return (

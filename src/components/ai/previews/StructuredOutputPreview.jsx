@@ -68,8 +68,7 @@ export function StructuredOutputPreview({ state }) {
         )}
         {state === "missing" && (
           <Note tone="plain" title="No date on this document">
-            Left empty rather than guessed. A plausible value in a field that looks read is the one
-            mistake nobody catches.
+            Left empty. Add it by hand if you have it.
           </Note>
         )}
         {state === "edited" && (

@@ -1,6 +1,6 @@
 import { Body, Btn, Btns, Chip, Frame, FrameBar, GhostLines, Label, Note, Say } from "./kit.jsx";
 
-// Confidence & Hedging on an account risk score — a number somebody acts on,
+// Confidence Levels on an account risk score — a number somebody acts on,
 // where the temptation is to print it to two decimal places and call that rigour.
 export function ConfidencePreview({ state }) {
   const banded = state === "banded";
@@ -33,7 +33,7 @@ export function ConfidencePreview({ state }) {
               <span className="mk-band-fill" style={{ width: low ? "48%" : "74%" }} />
             </span>
             <span className="mk-band-note">
-              {low ? "Between low and high — not enough to separate them" : "Top band of four"}
+              {low ? "Between low and high — not enough to separate them" : "Top of four ranges"}
             </span>
           </div>
         )}
@@ -42,14 +42,13 @@ export function ConfidencePreview({ state }) {
 
         {low && (
           <Note tone="warn" title="Review before acting">
-            The action is gated rather than annotated. A score that leaves the screen identical is a
-            score nobody uses.
+            Open the evidence before acting on this score.
           </Note>
         )}
 
         <span className="mk-foot">
           <Say tone="mute" size="sm">
-            {state === "unavailable" ? "Score returns at 20 signals" : "Four bands, not a decimal"}
+            {state === "unavailable" ? "Score returns at 20 signals" : "High · Medium · Low · Unscored"}
           </Say>
           <Btns align="end">
             <Btn>Why this score</Btn>

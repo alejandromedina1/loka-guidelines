@@ -17,7 +17,7 @@ export const AI_ANTIPATTERNS = [
       "A percentage printed next to output that's styled exactly like verified data.",
     why: "It's the cheapest thing to ship that looks like responsibility, and it passes review because a number is there.",
     instead:
-      "Let the number change something. If 62% and 99% render identically, the number isn't calibration — it's a disclaimer.",
+      "Let the number change something. If 62% and 99% look identical on screen, the number isn't a measure of anything — it's a disclaimer.",
   },
   {
     id: "blank-box",
@@ -50,7 +50,7 @@ export const AI_ANTIPATTERNS = [
     id: "silent-fallback",
     name: "The silent fallback",
     looks:
-      "Nothing found in your data, so it answers from general knowledge instead, in the identical style.",
+      "It found nothing in your data, so it answers from general knowledge instead — in exactly the same styling.",
     why: "An empty state reads as a broken feature, and answering always feels more helpful.",
     instead:
       "Say what was searched and that it found nothing. \"Nothing in these 12 documents covers this\" is a trustworthy answer.",
@@ -69,7 +69,7 @@ export const AI_ANTIPATTERNS = [
     looks: "A glow, a gradient, or a sparkle icon standing in for an explanation.",
     why: "It's the visual shorthand everyone now recognises, and it ships in an afternoon.",
     instead:
-      "Say what the system did and on what basis. A badge teaches people to look for a badge, which is the opposite of understanding when it's guessing.",
+      "Say what the system did and on what basis. A badge teaches people to look for a badge, which is the opposite of knowing when the AI is guessing.",
   },
   {
     id: "happy-path-demo",
@@ -83,7 +83,7 @@ export const AI_ANTIPATTERNS = [
     id: "one-number",
     name: "The one-number promise",
     looks: "“94% accurate”, quoted with no mention of which 6%.",
-    why: "One number is far easier to sell internally than a distribution, and it's usually true.",
+    why: "One number is far easier to sell internally than a spread of outcomes, and it's usually true.",
     instead:
       "Say which mistake the remainder is and who absorbs it. Six percent of routing errors and six percent of payment errors are not the same commitment.",
   },

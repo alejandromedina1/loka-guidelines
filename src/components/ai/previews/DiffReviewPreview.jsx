@@ -1,6 +1,6 @@
 import { Body, Btn, Btns, Chip, Frame, FrameBar, Note, Say } from "./kit.jsx";
 
-// Diff Review. Two hunks is enough to make the point the pattern turns on:
+// Change Review. Two hunks is enough to make the point the pattern turns on:
 // accept is per unit, and nothing is pre-selected.
 function Hunk({ n, decided, from, to }) {
   return (

@@ -19,6 +19,9 @@ import {
   SEARCH_INPUT_STATES,
   SPINNER_SIZES,
   TAG_SIZES,
+  NUMBER_CHIP_SAMPLES,
+  NUMBER_CHIP_SIZE_OPTIONS,
+  TAB_STATES,
   TOGGLE_SWITCH_STATES,
   TOOLTIP_VARIANTS,
 } from "../../data/components.js";
@@ -98,11 +101,19 @@ import {
   datePickerSpecs,
 } from "./previews/DatePickerPreview.jsx";
 import {
-  TabsPreview,
-  tabsHtmlSnippet,
-  tabsPromptSnippet,
-  tabsSpecs,
-} from "./previews/TabsPreview.jsx";
+  ServicesTabsPreview,
+  servicesTabsHtmlSnippet,
+  servicesTabsPromptSnippet,
+  servicesTabsSpecs,
+} from "./previews/ServicesTabsPreview.jsx";
+import { TabsPreview, tabsHtmlSnippet, tabsPromptSnippet, tabsSpecs } from "./previews/TabsPreview.jsx";
+import {
+  NumberChipPreview,
+  numberChipHtmlSnippet,
+  numberChipPromptSnippet,
+  numberChipSpecs,
+} from "./previews/NumberChipPreview.jsx";
+import { toChipSize } from "../common/NumberChip.jsx";
 import {
   FloatingActionButtonPreview,
   floatingActionButtonHtmlSnippet,
@@ -187,7 +198,9 @@ export function ComponentPlayground({
   const isRadio = selected === "Radio Button";
   const isToggleSwitch = selected === "Toggle Switch";
   const isFilter = selected === "Filter";
+  const isServicesTabs = selected === "Services Tabs";
   const isTabs = selected === "Tabs";
+  const isNumberChip = selected === "Number Chip";
   const isLink = selected === "Link";
   const isFAB = selected === "Floating Action Button";
   const isAvatar = selected === "Avatar";
@@ -198,6 +211,8 @@ export function ComponentPlayground({
   const isSearchInput = selected === "Search Input";
 
   const [variant, setVariant] = useState("Primary");
+  const [tabState, setTabState] = useState("Default");
+  const [chipSample, setChipSample] = useState("1");
   const [device, setDevice] = useState("Desktop");
   const [surface, setSurface] = useState("Gray 10");
   const [disabled, setDisabled] = useState(false);
@@ -247,6 +262,11 @@ export function ComponentPlayground({
     ? componentVariant
     : AVATAR_VARIANTS[0];
   const resolvedTagSize = TAG_SIZES.includes(componentVariant) ? componentVariant : TAG_SIZES[1];
+  // Same shape as the Tag's size: the nav has no variant for it, so it falls
+  // back to the sourced 20 rather than the first entry in the list.
+  const resolvedChipSize = NUMBER_CHIP_SIZE_OPTIONS.includes(componentVariant)
+    ? toChipSize(componentVariant)
+    : 20;
   const resolvedCardVariant = CARD_VARIANTS.includes(componentVariant) ? componentVariant : CARD_VARIANTS[0];
   const resolvedSpinnerSize = SPINNER_SIZES.includes(componentVariant) ? componentVariant : SPINNER_SIZES[1];
   const resolvedTooltipVariant = TOOLTIP_VARIANTS.includes(componentVariant)
@@ -270,7 +290,7 @@ export function ComponentPlayground({
   // Tabs' rest/hover fills are white/near-white, so a plain white canvas hides
   // the bar entirely — a light grey gives it just enough contrast to read.
   // Skipped when the canvas is already dark, which does that on its own.
-  const greyCanvas = isTabs && !darkCanvas;
+  const greyCanvas = isServicesTabs && !darkCanvas;
 
   // Every component with a preview built for it: its two snippet generators,
   // its specs sheet, and the slice of playground state all three vary along.
@@ -343,10 +363,22 @@ export function ComponentPlayground({
       specs: datePickerSpecs,
       args: { variant: resolvedDatePickerVariant },
     },
+    "Number Chip": {
+      html: numberChipHtmlSnippet,
+      prompt: numberChipPromptSnippet,
+      specs: numberChipSpecs,
+      args: { sample: chipSample, size: resolvedChipSize },
+    },
     Tabs: {
       html: tabsHtmlSnippet,
       prompt: tabsPromptSnippet,
       specs: tabsSpecs,
+      args: { state: tabState },
+    },
+    "Services Tabs": {
+      html: servicesTabsHtmlSnippet,
+      prompt: servicesTabsPromptSnippet,
+      specs: servicesTabsSpecs,
       args: { view: tabsView },
     },
     "Floating Action Button": {
@@ -399,6 +431,10 @@ export function ComponentPlayground({
   // down in the properties panel.
   const canvasTabs = isButton
     ? { options: BUTTON_VARIANTS, value: variant, onSelect: setVariant }
+    : isTabs
+      ? { options: TAB_STATES, value: tabState, onSelect: setTabState }
+    : isNumberChip
+      ? { options: NUMBER_CHIP_SAMPLES, value: chipSample, onSelect: setChipSample }
     : isInputField
       ? { options: FIELD_STATES, value: fieldState, onSelect: setFieldState }
       : isInputDropdown
@@ -415,7 +451,7 @@ export function ComponentPlayground({
                 ? { options: TOGGLE_SWITCH_STATES, value: toggleState, onSelect: setToggleState }
                 : isSearchInput
                   ? { options: SEARCH_INPUT_STATES, value: searchState, onSelect: setSearchState }
-                  : isTabs
+                  : isServicesTabs
                     ? { options: TABS_VIEWS, value: tabsView, onSelect: setTabsView }
                     : isLink
                       ? { options: LINK_STATES, value: linkState, onSelect: setLinkState }
@@ -468,6 +504,12 @@ export function ComponentPlayground({
                 : reportedFor;
 
   const renderPreview = () => {
+    if (isNumberChip) {
+      return <NumberChipPreview sample={chipSample} size={resolvedChipSize} bestPractices={bestPractices} />;
+    }
+    if (isTabs) {
+      return <TabsPreview state={tabState} bestPractices={bestPractices} />;
+    }
     if (isButton) {
       return (
         <ButtonPreview
@@ -487,8 +529,8 @@ export function ComponentPlayground({
         <FilterPreview variant={resolvedFilterVariant} bestPractices={bestPractices} onState={reportState} />
       );
     }
-    if (isTabs) {
-      return <TabsPreview view={tabsView} bestPractices={bestPractices} onState={reportState} />;
+    if (isServicesTabs) {
+      return <ServicesTabsPreview view={tabsView} bestPractices={bestPractices} onState={reportState} />;
     }
     if (isCheckbox) {
       return (
@@ -633,6 +675,14 @@ export function ComponentPlayground({
           // already a canvas pill, so a second, dead one here would just be
           // clutter.
           <PgToggle label="Best practices" value={bestPractices} onChange={setBestPractices} />
+        ) : isNumberChip ? (
+          // Size is a dropdown for the same reason the Tag's is: it changes how
+          // big the chip is, not what's being demonstrated. The value strip on
+          // the canvas is the axis that can actually fail.
+          <>
+            <PgSelect label="Size" value={`${resolvedChipSize}px`} options={NUMBER_CHIP_SIZE_OPTIONS} onChange={setComponentVariant} />
+            <PgToggle label="Best practices" value={bestPractices} onChange={setBestPractices} />
+          </>
         ) : isTags ? (
           // Size is Tags' only axis, and it lives here rather than on the
           // canvas — a dropdown reads better than a three-way pill strip for

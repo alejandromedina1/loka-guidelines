@@ -1,4 +1,5 @@
 import { ICON_CATEGORIES } from "../../data/icons.js";
+import { NumberChip } from "../common/NumberChip.jsx";
 
 // The icon library, grouped by category and filterable by name or keywords.
 // Clicking a glyph copies its JSX tag (e.g. `<Check />`).
@@ -30,7 +31,7 @@ export function IconGallery({ filter = "", copied, onCopy }) {
         <div key={cat.name} className="ico-group">
           <div className="ico-group-head">
             <span className="ico-group-name">{cat.name}</span>
-            <span className="ico-group-count">{cat.icons.length}</span>
+            <NumberChip>{cat.icons.length}</NumberChip>
           </div>
           <div className="ico-grid">
             {cat.icons.map((ic) => (

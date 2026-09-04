@@ -43,9 +43,6 @@ export function VersionHistoryPreview({ state }) {
               <span className="mk-diff-line" data-kind="del">Industry — Logistics</span>
               <span className="mk-diff-line" data-kind="add">Industry — Freight &amp; Logistics</span>
             </span>
-            <Say tone="mute" size="sm">
-              In the record's own terms, not as a payload.
-            </Say>
           </>
         )}
 
@@ -81,7 +78,7 @@ export function VersionHistoryPreview({ state }) {
 
         <span className="mk-foot">
           <Say tone="mute" size="sm">
-            {state === "restore" ? "Restore is itself a change" : "30 days, and it means 30 days"}
+            {state === "restore" ? "Logged as a new entry" : "30 days, and it means 30 days"}
           </Say>
           <Btns align="end">
             <Btn>Compare</Btn>

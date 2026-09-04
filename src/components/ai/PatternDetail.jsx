@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AI_PATTERNS, CONTROL_AXES, CONTROL_GRADES } from "../../data/aiPatterns.js";
 import { PATTERN_PREVIEWS } from "./previews/index.js";
 import { ArrowLeft, ArrowRight, PlayIcon, StopIcon } from "../common/Icon.jsx";
+import { NumberChip } from "../common/NumberChip.jsx";
 
 // One pattern, on the same lab shell every other hub uses: canvas on the left
 // with prev/next in its nav and state pills in its foot, the 260px properties
@@ -38,6 +39,11 @@ import { ArrowLeft, ArrowRight, PlayIcon, StopIcon } from "../common/Icon.jsx";
 // and a Failure modes table used to sit there too — both were duplicating the
 // state pills by the time the previews existed.
 export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern }) {
+  // A decision names the state that demonstrates it, and clicking that puts the
+  // state on the canvas — which is above and usually off-screen by the time
+  // anyone is reading the decisions, so the lab has to come back into view or
+  // the click appears to do nothing.
+  const labRef = useRef(null);
   const Preview = PATTERN_PREVIEWS[pattern.id];
   const planned = pattern.status === "planned";
   const states = pattern.states ?? [];
@@ -80,6 +86,13 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
     setStateId(id);
   }, []);
 
+  // Same, plus scroll — used by the decisions, which sit well below the canvas.
+  const showState = useCallback((id) => {
+    setPlaying(false);
+    setStateId(id);
+    labRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, []);
+
   // Prev/next walks the whole shelf in declaration order rather than staying
   // inside the category: browsing a library end to end is a real way people use
   // one. Same cycling the component playground puts in this exact position.
@@ -101,7 +114,7 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
 
   return (
     <>
-      <div className="pg ai-lab">
+      <div className="pg ai-lab" ref={labRef}>
         <div className="pg-stage">
           <div className="pg-canvas grey">
             <div className="pg-canvas-nav">
@@ -212,26 +225,49 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
 
           {!planned && (
             <div className="bp-panel">
-              <span className="bp-panel-badge">Grades</span>
-              {/* Graded, not described. Tone carries the obligation so the five
-                  scan in one glance — which is the only reason to put a table
-                  in a 260px column rather than a paragraph. The reasoning for
-                  each grade is a block below. */}
-              <dl className="ai-grades">
+              <span className="bp-panel-badge">Control &amp; trust</span>
+              {/* The whole of Control & trust, in the panel. It used to be a
+                  section below the lab as well; once these rows carried the
+                  same content that section was 55% duplication. The notes are a
+                  median of nine words — a spec value rather than prose, so they
+                  belong beside the canvas next to the grade they qualify, the
+                  same job `bp-rules` does in this column in the Product Hub.
+
+                  Each row is the check, its grade, and what that grade means
+                  for *this* pattern. The generic axis question used to sit here
+                  too, and it was cut: it was 34% of the panel's text and the
+                  only thing in the column that varied with nothing — the same
+                  five sentences on all fourteen pages, when the panel's whole
+                  test is "does it change the canvas, or is it a value the
+                  canvas can't draw". The five are defined once on the
+                  Principles page, which is their canonical home.
+
+                  Dropping it was only safe once every axis had a note. Seventeen
+                  were graded n/a with no reason, and "Undo — N/A" on its own
+                  reads as "not done yet" rather than "doesn't apply" — the
+                  question was carrying those rows. Now the note does, in the
+                  pattern's own terms, which is more use than a sentence
+                  identical on every other page.
+
+                  A list rather than a `dl`: a row is three parts, which is no
+                  longer a term and its definition. */}
+              <ul className="ai-grades">
                 {CONTROL_AXES.map((a) => {
-                  const grade = CONTROL_GRADES[pattern.controls?.[a.id]?.grade ?? "na"];
+                  const entry = pattern.controls?.[a.id] ?? { grade: "na" };
+                  const grade = CONTROL_GRADES[entry.grade];
                   return (
-                    <div key={a.id} className="ai-grade">
-                      <dt>{a.label}</dt>
-                      <dd>
+                    <li key={a.id} className="ai-grade">
+                      <span className="ai-grade-top">
+                        <span className="ai-grade-name">{a.label}</span>
                         <span className="ai-grade-chip" data-tone={grade.tone}>
                           {grade.label}
                         </span>
-                      </dd>
-                    </div>
+                      </span>
+                      {entry.note && <span className="ai-grade-note">{entry.note}</span>}
+                    </li>
                   );
                 })}
-              </dl>
+              </ul>
             </div>
           )}
         </div>
@@ -240,20 +276,21 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
       {planned ? (
         <div className="ai-planned">
           <p>
-            This pattern is in the taxonomy but hasn't been written up yet. It's listed so the shelf
-            is honest about its own scope — the gap is visible rather than implied.
+            This pattern is on our list but hasn't been written up yet. It's here so the library is honest
+            about its own scope — the gap is visible rather than hidden.
           </p>
           <p className="ai-planned-ask">
-            Picking it up means the same three things the documented patterns carry: its states as
-            previews on the canvas, when to use and avoid it, and the decisions it forces with our
-            default for each.
+            Finishing it means the same three things every written-up pattern carries: each of its states
+            drawn on the canvas above, when to use it and when not to, and the decisions it forces
+            with our answer to each.
           </p>
         </div>
       ) : (
         <>
+
           <Group
-            title="When to use it"
-            desc="The second column does the work — a pattern with no stated limits gets applied everywhere."
+            title="When to use it, and when not"
+            desc="Both halves matter. A pattern with no stated limits is a pattern that ends up used everywhere, including the places it makes things worse."
           >
             {/* Two contained lists rather than two bare columns: without an
                 edge, the only thing telling Use from Avoid was an 11px label,
@@ -268,7 +305,7 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
                 <div key={col.tone} className="ai-when-col" data-tone={col.tone}>
                   <span className="ai-when-label">
                     {col.label}
-                    <span className="ai-when-count">{col.items.length}</span>
+                    <NumberChip size={16}>{col.items.length}</NumberChip>
                   </span>
                   <ul className="ai-when-list">
                     {col.items.map((t) => (
@@ -285,17 +322,44 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
 
           <Group
             title="Decisions it forces"
-            desc="Every one is a real fork with no neutral answer. The right column is ours — argue with it in review, don't skip it."
+            desc="None of these has a neutral answer — either somebody decides, or a default decides for them. Ours is in bold, with the reasoning under it. Argue with it in a review; don't skip it."
           >
             {/* A two-column table, so the forks read straight down the left
                 rail and you can see how many there are before reading any
                 answer. Stacked, each question was separated from the next by a
                 paragraph of ours, and five tinted callouts down a page turned
                 the emphasis into wallpaper. Saying "our default" once in the
-                header also retires five repeated tags. */}
+                header also retires five repeated tags.
+
+                Where the canvas can demonstrate our answer, the row names the
+                state that does it and clicking it puts that state on the
+                canvas. This is the block's other half of the show-more
+                argument: a default asserted in prose is a claim, and the same
+                default with "see it on Streaming" beside it is an invitation to
+                check. It also uses a mapping that already existed — the
+                decisions and the states were found restating each other in
+                thirty-six places, which was the evidence they describe the same
+                thing from two directions.
+
+                Eleven of the sixty-two have no such state, and they say
+                nothing: a keybinding, a retention window, who may see a score
+                and what a timeout does are all real decisions that no wireframe
+                can settle. A chip pointing at a state that doesn't make the
+                case would be worse than the gap.
+
+                The answer is split into the verdict and the reasoning behind
+                it. This block was 44% of the page and the only part of it with
+                nothing to scan — five stacked paragraphs at a median of 27
+                words. The split was already there in the prose: 94% of the
+                answers led with a verdict, median eight words, then defended
+                it. Structuring that means the column can be read as five short
+                answers, with the argument still there for whoever the answer
+                stopped. It also puts this block on the same lead/detail
+                grammar as "When to use it" above, which removes a format from
+                the page rather than adding one. */}
             <dl className="ai-dec">
               <div className="ai-dec-head" aria-hidden>
-                <span>The fork</span>
+                <span>The decision</span>
                 <span>Our default</span>
               </div>
               {pattern.decisions.map((d, n) => (
@@ -304,53 +368,78 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
                     <span className="ai-dec-n">{String(n + 1).padStart(2, "0")}</span>
                     <span className="ai-dec-q">{d.q}</span>
                   </dt>
-                  <dd>{d.loka}</dd>
+                  <dd>
+                    <span className="ai-dec-loka">{d.loka}</span>
+                    {d.why && <span className="ai-dec-why">{d.why}</span>}
+                    {(() => {
+                      const st = states.find((x) => x.id === d.shows);
+                      if (!st) return null;
+                      return (
+                        <button
+                          className="ai-dec-shows"
+                          onClick={() => showState(st.id)}
+                          title={`Put "${st.label}" on the canvas`}
+                        >
+                          <PlayIcon size={9} />
+                          {/* one text node: adjacent text and expression
+                              make React emit a comment marker between them */}
+                          <span>{`See it on ${st.label}`}</span>
+                        </button>
+                      );
+                    })()}
+                  </dd>
                 </div>
               ))}
             </dl>
           </Group>
 
           <Group
-            title="Control & trust"
-            desc="Five verbs, graded every time. N/A is a valid grade — an unstated one is an unfinished pattern."
-          >
-            <dl className="ai-ctl">
-              {CONTROL_AXES.map((a) => {
-                const entry = pattern.controls?.[a.id] ?? { grade: "na" };
-                const grade = CONTROL_GRADES[entry.grade];
-                return (
-                  <div key={a.id} className="ai-ctl-row">
-                    <dt>
-                      <span className="ai-ctl-name">{a.label}</span>
-                      <span className="ai-ctl-q">{a.desc}</span>
-                    </dt>
-                    <dd>
-                      <span className="ai-grade-chip" data-tone={grade.tone}>
-                        {grade.label}
-                      </span>
-                      {entry.note && <span className="ai-ctl-note">{entry.note}</span>}
-                    </dd>
-                  </div>
-                );
-              })}
-            </dl>
-          </Group>
-
-          <Group
             title="Composed from"
-            desc="The seam back to Product Hub — these open on the playground canvas."
+            desc="The Product Hub components this pattern is built from — each one opens on its playground. Split by what the pattern can't exist without and what a product chooses to include."
           >
-            <div className="ai-chips">
-              {pattern.composedOf.map((name) => (
-                <button key={name} className="ai-chip" onClick={() => onSelectComponent(name)}>
-                  {name}
-                </button>
-              ))}
+            {/* This list was already the answer to "what could sit here" — the
+                upload, the context chips, the dates — but it rendered flat, so
+                nothing said which parts were a choice. Splitting it shows the
+                pattern as a kit rather than a fixed picture, which is the whole
+                argument for it being a pattern and not a component.
+
+                It lives here rather than on the canvas because optional parts
+                are not a point in time. The states are a lifecycle — Empty,
+                Composing, Submitted — and the track walks them in order;
+                dropping a menu of capabilities into one of them would make that
+                state mean something different from its neighbours, which is the
+                mistake the pills made before the track replaced them. */}
+            <div className="ai-parts">
+              {[
+                { key: "always", label: "Always", items: pattern.composedOf.filter((n) => !(pattern.optionalParts ?? []).includes(n)) },
+                { key: "optional", label: "Optional", items: pattern.optionalParts ?? [] },
+              ]
+                .filter((g) => g.items.length > 0)
+                .map((g) => (
+                  <div key={g.key} className="ai-parts-group" data-kind={g.key}>
+                    <span className="ai-parts-label">
+                      {g.label}
+                      <NumberChip size={16}>{g.items.length}</NumberChip>
+                    </span>
+                    <div className="ai-chips">
+                      {g.items.map((name) => (
+                        <button
+                          key={name}
+                          className="ai-chip"
+                          data-optional={g.key === "optional" || undefined}
+                          onClick={() => onSelectComponent(name)}
+                        >
+                          {name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
             </div>
           </Group>
 
           {pattern.shippedIn && (
-            <Group title="Shipped in" desc="Evidence we've run it, not just recommended it.">
+            <Group title="Shipped in" desc="Where we have actually run this, not just recommended it.">
               <p className="ai-shipped">{pattern.shippedIn}</p>
             </Group>
           )}

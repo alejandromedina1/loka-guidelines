@@ -32,6 +32,7 @@ export const COMPONENT_LIST = [
   "Navbar",
   "Sidebar",
   "Breadcrumb",
+  "Services Tabs",
   "Tabs",
   "Pagination",
   "Menu",
@@ -47,6 +48,7 @@ export const COMPONENT_LIST = [
   "Accordion",
   "Card",
   "Tags",
+  "Number Chip",
   "List Item",
 ];
 
@@ -256,6 +258,20 @@ export const FILTER_GROUPS = [
 // in the "Item" view, which is correct rather than a gap: that view pins the
 // item to the 345px share it gets in the real bar, so a label that truncated
 // even there would misrepresent what fits.
+// The Tabs pill's three states — Loka Figma node 389:367. A set rather than a
+// ramp: an outline, a light fill, a near-black fill, with nothing between them.
+// What the Number Chip playground steps through — Loka Figma node 391:384.
+// Values, not sizes: the component has one size, and the fixed 32px width is
+// the only thing about it that can fail. Comfortable, full, capped.
+export const NUMBER_CHIP_SAMPLES = ["1", "12", "99+"];
+
+// The size dropdown's labels. Deliberately not called NUMBER_CHIP_SIZES: that
+// name belongs to the real numbers on common/NumberChip.jsx, and TAG_SIZES
+// already means two different shapes in these two files.
+export const NUMBER_CHIP_SIZE_OPTIONS = ["16px", "20px"];
+
+export const TAB_STATES = ["Default", "Hover", "Active"];
+
 export const TABS = ["A tab label that ellipsizes", "Second tab", "Third tab", "Fourth tab"];
 
 // Grouped options for the search-and-select dropdown — Loka Figma "Dropdown"

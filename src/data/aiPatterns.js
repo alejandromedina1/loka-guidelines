@@ -56,32 +56,32 @@ export const AI_CATEGORIES = [
   {
     id: "intent",
     label: "Intent & Input",
-    blurb: "How a user states what they want, and how a vague first attempt stays recoverable.",
+    blurb: "How people tell the AI what they want, and how a vague first try stays fixable.",
   },
   {
     id: "latency",
-    label: "Latency & Progress",
-    blurb: "The wait — which is most of the interaction, and where most AI products are lost.",
+    label: "Waiting & Progress",
+    blurb: "The wait. It is most of the experience, and it is where most AI products are lost.",
   },
   {
     id: "output",
-    label: "Output & Legibility",
+    label: "Output & Clarity",
     blurb: "Making an answer readable, checkable, and honest about how sure it is.",
   },
   {
     id: "control",
     label: "Control & Correction",
-    blurb: "How the user steers, edits, and reverses without starting from scratch.",
+    blurb: "How people steer, edit and undo without starting from scratch.",
   },
   {
     id: "agentic",
     label: "Agentic & Multi-step",
-    blurb: "When the system plans and acts, and where the human gate belongs.",
+    blurb: "When the AI plans and acts on its own, and where a person has to say yes.",
   },
   {
     id: "boundaries",
     label: "Boundaries & Failure",
-    blurb: "Refusal, no-answer, and error as designed states rather than accidents.",
+    blurb: "Saying no, finding nothing, and breaking — designed on purpose rather than left to chance.",
   },
 ];
 
@@ -118,64 +118,68 @@ export const AI_PATTERNS = [
   // ── Intent & Input ─────────────────────────────────────────────────────────
   {
     id: "prompt-composer",
-    name: "Prompt Composer",
+    name: "Prompt Box",
     category: "intent",
     status: "documented",
     definition:
-      "The primary input surface where a user states intent in their own words, plus the affordances that keep a vague first attempt recoverable.",
+      "The box where someone types what they want in their own words — plus the small things around it that make a vague first try easy to fix.",
     states: [
       { id: "empty", label: "Empty", note: "Placeholder teaches scope, not etiquette. Send is off — there's nothing to send yet." },
       { id: "composing", label: "Composing", note: "Send turns on the moment there's something to send. No validation message for an empty field." },
-      { id: "context", label: "With context", note: "What the AI can see, shown before it's sent. Context the user can't see beforehand is context they'll be surprised by." },
+      { id: "context", label: "With context", note: "The file, the dates, the output format — on chips, before anything is sent. Context nobody can see beforehand is context they'll be surprised by." },
       { id: "submitted", label: "Submitted", note: "Locked and echoed above the answer. An editable prompt that no longer matches the answer lies about what produced it." },
-      { id: "over", label: "Over limit", note: "The ceiling shows as it's approached, not on rejection. Silent truncation produces a confidently wrong answer." },
+      { id: "over", label: "Over limit", note: "The limit shows as you approach it, not once you're refused. Quietly cutting the text off produces a confident answer to half a question." },
     ],
     useWhen: [
-      { lead: "Open-ended intent", detail: "The request can't be enumerated in a form." },
-      { lead: "Their words beat your controls", detail: "The user's vocabulary for the task is richer than anything you could build." },
-      { lead: "The shape varies", detail: "What's being asked changes materially between uses." },
+      { lead: "The request is open-ended", detail: "The request can't be enumerated in a form." },
+      { lead: "Their words beat your menus", detail: "The user's vocabulary for the task is richer than anything you could build." },
+      { lead: "Every request is different", detail: "What's being asked changes materially between uses." },
     ],
     avoidWhen: [
       { lead: "The options are known", detail: "A prompt field for four choices is a regression from a dropdown." },
       { lead: "They don't know what to ask", detail: "Lead with suggested prompts and let the composer be the second move." },
-      { lead: "A misread is unrecoverable", detail: "Structure the input instead of parsing it." },
+      { lead: "Misreading it can't be undone", detail: "Structure the input instead of parsing it." },
     ],
     decisions: [
       {
         q: "Free text, structured fields, or both?",
-        loka:
-          "Free text with optional structured chips. The chips carry the parameters models read badly — date ranges, target file, output format — and the prose carries the intent.",
+        loka: "Free text with optional structured chips.",
+        why: "The chips carry the parameters models read badly — date ranges, target file, output format — and the prose carries the intent.",
+        shows: "context",
       },
       {
         q: "Where does context attachment live?",
-        loka:
-          "Inside the composer, above the send affordance, visible before submit. Context the user can't see before sending is context they'll be surprised by afterwards.",
+        loka: "Inside the input box, above the send button, visible before anything is sent.",
+        why: "Context the user can't see before sending is context they'll be surprised by afterwards.",
+        shows: "context",
       },
       {
         q: "Enter to submit, or explicit click?",
-        loka:
-          "Enter submits and Shift+Enter newlines when the composer is single-purpose. In a multi-line authoring surface, require the click — an accidental send of a half-written thought costs more than a saved keystroke.",
+        loka: "Enter submits and Shift+Enter newlines when the composer is single-purpose.",
+        why: "In a multi-line authoring surface, require the click — an accidental send of a half-written thought costs more than a saved keystroke.",
       },
       {
         q: "Does the composer stay editable after submit?",
-        loka:
-          "No. Lock it and echo the submitted text. An editable prompt that no longer matches the answer on screen is a lie about what produced that answer.",
+        loka: "No.",
+        why: "Lock it and echo the submitted text. An editable prompt that no longer matches the answer on screen is a lie about what produced that answer.",
+        shows: "submitted",
       },
       {
         q:
           "What do you do with a request too vague to act on?",
-        loka:
-          "Answer with the best interpretation and name it — “Assuming you meant last quarter.” A clarifying question alone is only right when the ambiguity is genuinely blocking; otherwise it reads as stalling.",
+        loka: "Answer with the best interpretation and name it — “Assuming you meant last quarter.”",
+        why: "A clarifying question alone is only right when the ambiguity is genuinely blocking; otherwise it reads as stalling.",
       },
     ],
     controls: {
       interrupt: { grade: "na", note: "Nothing is running yet." },
       inspect: { grade: "recommended", note: "Echo the resolved prompt, including injected context." },
-      verify: { grade: "na" },
+      verify: { grade: "na", note: "Nothing has been produced yet to check." },
       correct: { grade: "required", note: "Edit-and-resend the previous turn, not only a fresh turn." },
       undo: { grade: "recommended", note: "Restore a cleared draft; drafts are expensive to retype." },
     },
     composedOf: ["Input Field", "File Upload", "Tags", "Button", "Tooltip"],
+    optionalParts: ["File Upload", "Tags", "Tooltip"],
   },
   {
     id: "suggested-prompts",
@@ -183,18 +187,18 @@ export const AI_PATTERNS = [
     category: "intent",
     status: "planned",
     definition:
-      "Seeded example requests that teach capability and scope at the empty state, where a blank field teaches nothing.",
+      "Ready-made examples sitting in an empty input, because a blank box tells nobody what the thing can do.",
   },
   {
     id: "scoped-context",
-    name: "Scoped Context",
+    name: "Visible Sources",
     category: "intent",
     status: "documented",
     definition:
-      "Explicit, visible control over what the system can see — which sources, which records, which window — settled before the request runs.",
+      "Showing what the AI is allowed to look at — which sources, which records, which dates — and letting people change it before it runs.",
     states: [
       { id: "default", label: "Default scope", note: "The scope the system picked, stated plainly and before anything runs. A default nobody can see is a default nobody can correct." },
-      { id: "editing", label: "Editing scope", note: "Sources toggle at the point of use, not three screens away in preferences." },
+      { id: "editing", label: "Editing scope", note: "Sources switch on and off right where they're used, not three screens away in settings." },
       { id: "narrow", label: "Narrowed", note: "The count moves as you go, so “what will it read” is a number rather than a promise." },
       { id: "empty", label: "Nothing in scope", note: "Blocked, and said out loud. This is the state that stops a silent fall back to general knowledge." },
       { id: "stale", label: "Scope changed", note: "A result carries the scope it was produced under. Change the scope and the result is marked out of date rather than quietly kept." },
@@ -212,44 +216,49 @@ export const AI_PATTERNS = [
       {
         q:
           "Where does scope live?",
-        loka:
-          "At the point of use, above the action, visible before it runs. Scope in a settings page is scope nobody knows they have.",
+        loka: "At the point of use, above the action, visible before it runs.",
+        why: "Scope in a settings page is scope nobody knows they have.",
+        shows: "default",
       },
       {
         q:
           "Do you show what's excluded, or only what's included?",
-        loka:
-          "Show the ratio. “Reading 3 of 12 sources” is the sentence that stops somebody trusting an answer built on a quarter of the data — “Reading 3 sources” isn't.",
+        loka: "Show both numbers.",
+        why: "“Reading 3 of 12 sources” is what stops somebody trusting an answer built on a quarter of the data — “Reading 3 sources” doesn't.",
+        shows: "narrow",
       },
       {
         q:
           "What happens when the scope is empty?",
-        loka:
-          "Block, and say why. Answering from general knowledge with nothing in scope, in the same styling as a sourced answer, is the single failure this pattern exists to prevent.",
+        loka: "Block, and say why.",
+        why: "Answering from general knowledge with nothing in scope, in the same styling as a sourced answer, is the single failure this pattern exists to prevent.",
+        shows: "empty",
       },
       {
         q:
           "Does a result remember the scope it came from?",
-        loka:
-          "Yes, and it goes stale when that scope changes. A result that silently outlives its inputs is worse than no result, because it looks current.",
+        loka: "Yes, and it goes stale when that scope changes.",
+        why: "A result that silently outlives its inputs is worse than no result, because it looks current.",
+        shows: "stale",
       },
     ],
     controls: {
-      interrupt: { grade: "na" },
-      inspect: { grade: "required", note: "Which sources are in, which are out, and why one is unavailable." },
-      verify: { grade: "required", note: "Open any source in scope from the scope control itself." },
-      correct: { grade: "required", note: "Change the scope and re-run without rebuilding the request." },
-      undo: { grade: "recommended", note: "Return to the default scope in one action." },
+      interrupt: { grade: "na", note: "Choosing what it can see doesn't start anything running." },
+      inspect: { grade: "required", note: "Which sources are in, which are out, and why any one of them isn't available." },
+      verify: { grade: "required", note: "Open any of the sources straight from the control that lists them." },
+      correct: { grade: "required", note: "Change what it can see and run it again without rebuilding the request." },
+      undo: { grade: "recommended", note: "Get back to the starting selection in one action." },
     },
     composedOf: ["Checkbox", "Filter", "Tags", "Input Dropdown", "Button"],
+    optionalParts: ["Checkbox", "Filter", "Input Dropdown"],
   },
   {
     id: "structured-intent",
-    name: "Structured Intent",
+    name: "Guided Input",
     category: "intent",
     status: "planned",
     definition:
-      "Form-shaped input for the parameters prose carries badly, used instead of a prompt rather than alongside it.",
+      "Asking with fields instead of a sentence, for the details people describe badly in words — dates, amounts, formats.",
   },
 
   // ── Latency & Progress ─────────────────────────────────────────────────────
@@ -259,150 +268,160 @@ export const AI_PATTERNS = [
     category: "latency",
     status: "documented",
     definition:
-      "Output rendered progressively as it's produced, so the user is reading while the system is still working.",
+      "The answer appears as it's being written, so people can start reading before it's finished.",
     states: [
-      { id: "waiting", label: "Waiting", note: "Nothing at all for 300ms, then a shape-matched skeleton. A spinner says “working”; this says what you're getting." },
-      { id: "streaming", label: "Streaming", note: "Steady cadence rather than raw token jitter, and Stop is present from the first token — never on hover." },
+      { id: "waiting", label: "Waiting", note: "Nothing at all for a third of a second, then a grey outline in the shape of the answer. A spinner says “working”; an outline says what you're going to get." },
+      { id: "streaming", label: "Streaming", note: "A steady pace rather than the model's own stutter, and Stop is there from the first word — never only on hover." },
       { id: "complete", label: "Complete", note: "Actions unlock here and not before. Offering to act on a partial answer is offering to act on a wrong one." },
       { id: "stopped", label: "Stopped", note: "The user's own choice, so it stays neutral. The partial is kept, marked, and still copyable." },
       { id: "dropped", label: "Connection lost", note: "A genuine failure, so it reads as one. The partial survives and both Continue and Retry are offered." },
     ],
     useWhen: [
-      { lead: "Slow and linear", detail: "Generation takes over a second and the output is prose, code, or a list." },
-      { lead: "Partial output is useful", detail: "The first sentences stand on their own before the rest arrives." },
-      { lead: "Perceived speed matters", detail: "You need felt latency far below actual latency." },
+      { lead: "Slow and linear", detail: "It takes more than a second and the answer is text, code or a list." },
+      { lead: "Half an answer still helps", detail: "The first sentences stand on their own before the rest arrives." },
+      { lead: "It has to feel fast", detail: "The wait has to feel far shorter than it actually is." },
     ],
     avoidWhen: [
-      { lead: "The output is a structure", detail: "A table or a payload is read whole — streaming renders it wrong for most of its life." },
+      { lead: "The answer is a table or a form", detail: "A table or a form is read all at once — while it streams in, it's simply wrong." },
       { lead: "It may rewrite itself", detail: "Watching output reorder mid-flight destroys confidence faster than waiting would." },
       { lead: "A half-answer misleads", detail: "A dosage, a legal clause, a financial total." },
     ],
     decisions: [
       {
-        q: "What fills the gap before the first token?",
-        loka:
-          "A shape-matched skeleton, not a spinner. A spinner says “working”; a skeleton says “working, and here's what you're getting.” Wait 300ms before showing anything — faster than that and the placeholder is a flash of noise.",
+        q: "What fills the gap before the first word arrives?",
+        loka: "A grey outline in the shape of what's coming, not a spinner.",
+        why: "A spinner says “working”; an outline says “working, and here's what you're going to get.” Wait a third of a second before showing anything — sooner than that and the placeholder is just a flash.",
+        shows: "waiting",
       },
       {
-        q: "Token-by-token or chunked?",
-        loka:
-          "Chunk to word or clause boundaries at a deliberately steady rate. Raw token cadence is jittery, and jitter reads as instability even when it's genuinely faster.",
+        q: "Word by word, or in small groups?",
+        loka: "In small groups, landing on whole words and phrases, at a deliberately even pace.",
+        why: "The model's own rhythm stutters, and stutter reads as something going wrong even when it's genuinely faster.",
+        shows: "streaming",
       },
       {
         q: "Can the user scroll away mid-stream?",
-        loka:
-          "Yes — and autoscroll must yield on the first upward scroll, with a “jump to latest” affordance back. Autoscroll that fights the reader is the single most common streaming defect in shipped products.",
+        loka: "Yes, and the auto-scroll must yield the moment they scroll up.",
+        why: "Give them a “jump to latest” button back. Auto-scrolling that fights the reader is the most common streaming mistake in shipped products.",
       },
       {
         q: "Are actions available mid-stream?",
-        loka:
-          "Stop, always. Copy, regenerate, and feedback only on Complete — offering to act on a partial answer is offering to act on a wrong one.",
+        loka: "Stop, always.",
+        why: "Copy, regenerate, and feedback only on Complete — offering to act on a partial answer is offering to act on a wrong one.",
+        shows: "streaming",
       },
       {
         q:
-          "How long may a stream go silent before you say something?",
-        loka:
-          "About five seconds, then say so in place and offer retry. A frozen cursor is an error state the user has to guess at, and they'll guess that the product is broken.",
+          "How long can it go quiet before you say something?",
+        loka: "About five seconds, then say so where it stopped and offer a retry.",
+        why: "A frozen cursor is an error the reader has to guess at, and they will guess the product is broken.",
+        shows: "dropped",
       },
     ],
     controls: {
-      interrupt: { grade: "required", note: "Stop must be present from the first token, not on hover." },
-      inspect: { grade: "recommended", note: "Surface which step or tool is producing the current text." },
+      interrupt: { grade: "required", note: "Stop is there from the first word, not only on hover." },
+      inspect: { grade: "recommended", note: "Show which step is producing the text on screen." },
       verify: { grade: "recommended", note: "Citations resolve after Complete, not mid-stream." },
       correct: { grade: "required", note: "Regenerate and refine on the finished turn." },
       undo: { grade: "na", note: "Nothing outside the view has changed." },
     },
     composedOf: ["Spinner", "Progress Bar", "Button", "Card", "Toast"],
+    optionalParts: ["Spinner", "Progress Bar", "Card", "Toast"],
   },
   {
     id: "staged-reveal",
-    name: "Staged Reveal",
+    name: "Results in Pieces",
     category: "latency",
     status: "documented",
     definition:
-      "Structured output disclosed in finished units — a card, a row, a section at a time — for answers that can't be streamed as prose.",
+      "Results that arrive one finished piece at a time — a card, a row, a section — for answers that can't sensibly appear word by word.",
     states: [
-      { id: "skeletons", label: "All pending", note: "Shape-matched placeholders at the units' real dimensions, so nothing moves when the values land." },
-      { id: "partial", label: "Partly resolved", note: "Each unit arrives complete. A half-rendered table is worse than an empty one — it invites reading." },
-      { id: "slow", label: "One unit lagging", note: "The slow one says so in its own space rather than holding the other five hostage." },
-      { id: "failed", label: "One unit failed", note: "A single failure doesn't discard the four that worked, and it retries on its own." },
-      { id: "complete", label: "Complete", note: "Same layout as the skeletons. If the page reflowed on the way here, the placeholders were the wrong shape." },
+      { id: "skeletons", label: "All pending", note: "Grey outlines at the real size of each piece, so nothing jumps when the values arrive." },
+      { id: "partial", label: "Some arrived", note: "Each piece arrives finished. A half-drawn table is worse than an empty one, because it invites reading." },
+      { id: "slow", label: "One piece lagging", note: "The slow one says so in its own space rather than holding the other five hostage." },
+      { id: "failed", label: "One piece failed", note: "A single failure doesn't discard the four that worked, and it retries on its own." },
+      { id: "complete", label: "Complete", note: "The same layout as the outlines. If the page shifted on the way here, the placeholders were the wrong size." },
     ],
     useWhen: [
-      { lead: "Output is structured, not prose", detail: "Cards, rows, metrics — things read whole rather than left to right." },
-      { lead: "Units resolve independently", detail: "One slow query has no business holding the other five." },
-      { lead: "The layout is known in advance", detail: "You can hold the shape before you have the values." },
+      { lead: "The answer is cards or rows, not paragraphs", detail: "Cards, rows, metrics — things read whole rather than left to right." },
+      { lead: "Each piece finishes on its own", detail: "One slow piece has no business holding up the other five." },
+      { lead: "You know the layout before the values", detail: "You can hold the shape before you have the values." },
     ],
     avoidWhen: [
-      { lead: "Units are meaningless alone", detail: "A total that lands before its rows invites a decision on half the data." },
+      { lead: "One piece means nothing on its own", detail: "A total that lands before its rows invites a decision on half the data." },
       { lead: "They would reorder as they arrive", detail: "A view that reshuffles while it's being read is worse than one that waits." },
     ],
     decisions: [
       {
         q:
-          "What holds the space before a unit resolves?",
-        loka:
-          "A skeleton at that unit's real dimensions. Anything that resizes on arrival makes the reader lose their place, which is the cost this pattern was meant to avoid.",
+          "What holds the space before a piece arrives?",
+        loka: "A grey outline at that piece's real size.",
+        why: "Anything that changes size on arrival makes the reader lose their place, which is the whole thing this pattern exists to avoid.",
+        shows: "skeletons",
       },
       {
         q:
-          "What counts as a unit?",
-        loka:
-          "The smallest thing somebody can act on by itself. A metric card yes; a single cell no. Too fine and the page flickers; too coarse and you've rebuilt the spinner.",
+          "How big is one piece?",
+        loka: "The smallest thing somebody can act on by itself.",
+        why: "A whole metric card, yes; one cell in a table, no. Any smaller and the page flickers; any bigger and you have rebuilt the spinner.",
+        shows: "partial",
       },
       {
         q:
-          "How long before a slow unit says something?",
-        loka:
-          "Around five seconds, in place, without blocking its neighbours. Each unit owns its own delay and its own failure.",
+          "How long before a slow piece says something?",
+        loka: "Around five seconds, in place, without blocking its neighbours.",
+        why: "Each unit owns its own delay and its own failure.",
+        shows: "slow",
       },
       {
         q:
-          "Do finished units get their actions before the rest arrive?",
-        loka:
-          "Yes, per unit. Gating export or drill-down on the whole view finishing spends the entire benefit of staging it.",
+          "Can people act on a finished piece before the rest arrive?",
+        loka: "Yes, per unit.",
+        why: "Gating export or drill-down on the whole view finishing spends the entire benefit of staging it.",
+        shows: "partial",
       },
     ],
     controls: {
       interrupt: { grade: "recommended", note: "Stop the run without losing the units already in." },
-      inspect: { grade: "recommended", note: "Which unit is waiting on what." },
+      inspect: { grade: "recommended", note: "Which piece is waiting, and on what." },
       verify: { grade: "recommended", note: "Each unit carries its own source and freshness." },
-      correct: { grade: "na" },
-      undo: { grade: "na" },
+      correct: { grade: "na", note: "Nothing to correct yet — this is how the answer arrives, not what it says." },
+      undo: { grade: "na", note: "Nothing has been written anywhere, so there's nothing to reverse." },
     },
     composedOf: ["Card", "Spinner", "Progress Bar", "Alert", "Empty State"],
+    optionalParts: ["Spinner", "Progress Bar", "Alert", "Empty State"],
   },
   {
     id: "reasoning-transparency",
-    name: "Reasoning Transparency",
+    name: "Visible Working",
     category: "latency",
     status: "planned",
     definition:
-      "Showing the work in progress — steps, searches, tool calls — as both a progress signal and a trust signal.",
+      "Showing the AI's working as it goes — what it's looking up, what it's doing next — so the wait proves something is happening.",
   },
   {
     id: "interruptible-generation",
-    name: "Interruptible Generation",
+    name: "Stop & Steer",
     category: "latency",
     status: "planned",
     definition:
-      "Stop, pause, and redirect as first-class controls, including what happens to the partial result afterwards.",
+      "Letting people stop, pause or redirect the AI mid-answer — and deciding what happens to the half-finished result.",
   },
 
   // ── Output & Legibility ────────────────────────────────────────────────────
   {
     id: "grounded-answer",
-    name: "Grounded Answer",
+    name: "Sourced Answer",
     category: "output",
     status: "documented",
     definition:
-      "An answer bound to the sources it came from, at a granularity the user can actually check.",
+      "An answer that shows which source each part came from, precisely enough that someone can actually check it.",
     states: [
-      { id: "cited", label: "Cited", note: "Markers sit on the claim, not on the answer. An answer-level source list proves sources were consulted, not that this sentence came from them." },
+      { id: "cited", label: "Sourced", note: "Markers sit on the claim, not on the answer. An answer-level source list proves sources were consulted, not that this sentence came from them." },
       { id: "source", label: "Source open", note: "Opens at the cited passage with its date. A link to page one of a forty-page PDF is a citation nobody checks twice." },
-      { id: "mixed", label: "Mixed", note: "Ungrounded sentences look different. Grounded and generated prose blended into one uniform paragraph is the most dangerous output in AI UI." },
+      { id: "mixed", label: "Partly sourced", note: "Sentences with no source look different from sentences with one. Sourced and invented text blended into a single even paragraph is the most dangerous thing in AI UI." },
       { id: "none", label: "Nothing found", note: "“Searched 12 documents, found nothing” is a useful, trustworthy answer. Falling back to general knowledge in the same style is not." },
-      { id: "locked", label: "Restricted", note: "A source exists and this user can't open it. Hiding it makes a grounded answer look invented; showing the content leaks it." },
+      { id: "locked", label: "Restricted", note: "A source exists and this user can't open it. Hiding it makes a sourced answer look invented; showing what's in it leaks it." },
     ],
     useWhen: [
       { lead: "It's a factual claim", detail: "About the user's own data, or about the world." },
@@ -410,102 +429,111 @@ export const AI_PATTERNS = [
       { lead: "Someone is accountable", detail: "The user will answer to somebody else for acting on it." },
     ],
     avoidWhen: [
-      { lead: "The output is generative", detail: "A draft, a rewrite, a brainstorm. There's no source, and citation UI implies a factuality the task doesn't have." },
-      { lead: "The source is already open", detail: "A marker pointing at the document on screen is ceremony." },
+      { lead: "The AI is writing, not looking things up", detail: "A draft, a rewrite, a brainstorm. There's no source, and citation UI implies a factuality the task doesn't have." },
+      { lead: "The source is already open", detail: "A marker pointing at the document already on screen is just clutter." },
     ],
     decisions: [
       {
-        q: "Citation granularity — answer, paragraph, or sentence?",
-        loka:
-          "Sentence or clause, attached to the specific claim. An answer-level source list is decoration: it proves sources were consulted, not that this sentence came from them.",
+        q: "Do sources attach to the whole answer, each paragraph, or each sentence?",
+        loka: "To each sentence, attached to the specific claim.",
+        why: "A source list at the bottom of the answer is decoration: it proves sources were read, not that this sentence came from them.",
+        shows: "cited",
       },
       {
-        q: "Inline markers or a source panel?",
-        loka:
-          "Both, and linked. Markers for scanning, panel for reading. The marker must open the source at the cited passage — a link to page one of a forty-page PDF is a citation the user won't check twice.",
+        q: "Small markers in the text, or a panel beside it?",
+        loka: "Both, and linked.",
+        why: "Markers for scanning, panel for reading. The marker must open the source at the cited passage — a link to page one of a forty-page PDF is a citation the user won't check twice.",
+        shows: "source",
       },
       {
         q: "What happens to the uncited sentences?",
-        loka:
-          "Make them visibly different. Grounded and generated prose blended into one uniform paragraph is the most dangerous composition in AI UI, and it's the default outcome of doing nothing.",
+        loka: "Make them look different.",
+        why: "Sourced and invented text blended into a single even paragraph is the most dangerous thing in AI UI, and it is what you get by doing nothing.",
+        shows: "mixed",
       },
       {
-        q: "Do you show retrieval that found nothing?",
-        loka:
-          "Yes. “Searched 12 documents, found nothing on this” is a useful and trustworthy answer. Silently falling back to model knowledge, styled identically to a grounded answer, is not.",
+        q: "Do you admit when the search found nothing?",
+        loka: "Yes.",
+        why: "“Searched 12 documents, found nothing on this” is a useful and trustworthy answer. Quietly answering from general knowledge instead, in the same styling as a sourced answer, is not.",
+        shows: "none",
       },
       {
         q:
           "What happens when a citation doesn't support the claim?",
-        loka:
-          "Assume it will happen — it's the pattern's defining failure. Put one-click reporting on the citation itself, and never render an unresolvable citation as though it resolved.",
+        loka: "Assume it will happen — it's the pattern's defining failure.",
+        why: "Put one-click reporting on the citation itself, and never render an unresolvable citation as though it resolved.",
       },
     ],
     controls: {
-      interrupt: { grade: "na" },
-      inspect: { grade: "required", note: "Which sources were searched, not only which were cited." },
+      interrupt: { grade: "na", note: "The answer is already finished by the time it carries sources." },
+      inspect: { grade: "required", note: "Which sources were searched, not only the ones quoted." },
       verify: { grade: "required", note: "The entire point of the pattern; one click to the passage." },
       correct: { grade: "recommended", note: "Dispute a citation without discarding the answer." },
-      undo: { grade: "na" },
+      undo: { grade: "na", note: "Reading an answer changes nothing, so there's nothing to take back." },
     },
     composedOf: ["Link", "Popover", "Tooltip", "Tags", "Accordion", "Card"],
+    optionalParts: ["Popover", "Tooltip", "Tags", "Accordion", "Card"],
   },
   {
     id: "confidence-hedging",
-    name: "Confidence & Hedging",
+    name: "Confidence Levels",
     category: "output",
     status: "documented",
     definition:
-      "Communicating how sure the system is in a way that changes what the reader does — without theatre, and without precision you don't have.",
+      "Saying how sure the AI is, in a way that changes what the reader does next — without theatre, and without pretending to a precision you don't have.",
     states: [
       { id: "high", label: "Above the bar", note: "Shown plainly, action open. Confidence that changes nothing is decoration." },
-      { id: "banded", label: "Banded", note: "A band, labelled, rather than a decimal. Nobody can act on the difference between 73.42% and 71.08%." },
+      { id: "banded", label: "Shown as a range", note: "A labelled range rather than a decimal. Nobody does anything differently at 73.42% than at 71.08%." },
       { id: "low", label: "Below the bar", note: "Hedged, and the action gated behind a check. The interface changes, not just the label." },
-      { id: "unavailable", label: "No score", note: "Not enough signal, said out loud. A number you'd tell somebody to ignore shouldn't be on screen at all." },
+      { id: "unavailable", label: "No score", note: "Too little to go on, said out loud. A number you'd tell somebody to ignore shouldn't be on screen at all." },
     ],
     useWhen: [
       { lead: "A number drives a decision", detail: "Somebody acts differently at 60 than at 80." },
-      { lead: "Certainty varies a lot by record", detail: "Some have signal and some genuinely don't." },
+      { lead: "Some cases are much clearer than others", detail: "Some have plenty to go on and some genuinely don't." },
       { lead: "Being wrong is costly but recoverable", detail: "Worth hedging; not worth blocking." },
     ],
     avoidWhen: [
-      { lead: "Confidence changes no action", detail: "If every band leads to the same next step, the number is decoration." },
+      { lead: "It changes nothing anyone does", detail: "If every level leads to the same next step, the number is decoration." },
       { lead: "You can't explain the number", detail: "An unexplainable score erodes more trust than no score does." },
     ],
     decisions: [
       {
         q:
-          "A number, a band, or a word?",
-        loka:
-          "A labelled band. Precision you don't have reads as precision you do, and the second decimal place is a claim about accuracy nobody can support.",
+          "A number, a range, or a word?",
+        loka: "A labelled range — high, medium, low.",
+        why: "Precision you don't have reads as precision you do, and a decimal place is a claim about accuracy nobody can stand behind.",
+        shows: "banded",
       },
       {
         q:
           "Does confidence change the interface or only annotate it?",
-        loka:
-          "Change it. Low confidence gates the action behind a check; high confidence doesn't. A score that leaves the screen identical is a score nobody uses.",
+        loka: "Change it.",
+        why: "Low confidence gates the action behind a check; high confidence doesn't. A score that leaves the screen identical is a score nobody uses.",
+        shows: "low",
       },
       {
         q:
-          "What happens below the floor?",
-        loka:
-          "No score, with the reason. Showing a number and telling people to disregard it spends trust for nothing.",
+          "What happens when it's too unsure to score at all?",
+        loka: "No score, with the reason.",
+        why: "Showing a number and telling people to disregard it spends trust for nothing.",
+        shows: "unavailable",
       },
       {
         q:
           "Who sees the score?",
-        loka:
-          "Whoever carries the consequence. A score visible to a manager and hidden from the person acting on it is an accountability gap wearing a design decision.",
+        loka: "Whoever carries the consequence.",
+        why: "A score visible to a manager and hidden from the person acting on it is an accountability gap wearing a design decision.",
       },
     ],
     controls: {
-      interrupt: { grade: "na" },
-      inspect: { grade: "required", note: "What the score is built from, in the reader's terms." },
-      verify: { grade: "recommended", note: "Open the evidence behind a band." },
+      interrupt: { grade: "na", note: "The score is already there; there's no run to stop." },
+      inspect: { grade: "required", note: "What the score is built from, in words the reader uses." },
+      verify: { grade: "recommended", note: "Open the evidence behind a level." },
       correct: { grade: "recommended", note: "Flag a score as wrong, and have that go somewhere." },
-      undo: { grade: "na" },
+      undo: { grade: "na", note: "Showing a score changes nothing that needs reversing." },
     },
     composedOf: ["Tags", "Progress Bar", "Tooltip", "Alert", "Card"],
+    optionalParts: ["Progress Bar", "Tooltip", "Alert", "Card"],
   },
   {
     id: "structured-output",
@@ -513,57 +541,62 @@ export const AI_PATTERNS = [
     category: "output",
     status: "documented",
     definition:
-      "Answers rendered as fields, rows or cards rather than prose, when the reader's next action is checking or copying values rather than reading.",
+      "Answers laid out as fields, rows or cards instead of paragraphs — for when the next thing someone does is check or copy a value, not read.",
     states: [
       { id: "extracted", label: "Extracted", note: "Every field carries its own confidence. One number for a whole document tells nobody which line to check." },
       { id: "lowconf", label: "Needs checking", note: "The uncertain field is marked and reachable, not averaged into a document-level score." },
       { id: "missing", label: "Not found", note: "Empty and labelled. A plausible guess in an empty field is the worst thing this pattern can produce, because it's indistinguishable from a read." },
-      { id: "source", label: "Traced to source", note: "Click a value, see where on the page it came from. Extraction without provenance is transcription you have to redo to trust." },
+      { id: "source", label: "Traced to source", note: "Click a value, see where on the page it came from. A value you can't trace is one you would have to re-type before you trusted it." },
       { id: "edited", label: "Corrected", note: "Human-set, marked, and never overwritten by a later run." },
     ],
     useWhen: [
-      { lead: "The next action is entry or comparison", detail: "Somebody is about to copy these values into something else." },
-      { lead: "The shape is known in advance", detail: "You know the fields before you know the answers." },
-      { lead: "Values fail differently", detail: "A wrong total and a wrong date are not the same mistake." },
+      { lead: "They are about to copy or compare", detail: "Somebody is about to copy these values into something else." },
+      { lead: "You know the fields already", detail: "You know the fields before you know the answers." },
+      { lead: "Some values matter more than others", detail: "A wrong total and a wrong date are not the same mistake." },
     ],
     avoidWhen: [
-      { lead: "The answer is genuinely a narrative", detail: "Forcing prose into fields loses the part that mattered." },
-      { lead: "The schema changes per document", detail: "A form that rebuilds itself every time is harder to check than a paragraph." },
+      { lead: "The answer is genuinely a narrative", detail: "Forcing a paragraph into fields loses the part that mattered." },
+      { lead: "The fields change with every document", detail: "A form that rebuilds itself every time is harder to check than a paragraph would be." },
     ],
     decisions: [
       {
         q:
           "Does confidence sit on the document or on each field?",
-        loka:
-          "Each field. A document-level score is unactionable — it says something is wrong somewhere and leaves the reader to find it, which is the work they came here to avoid.",
+        loka: "Each field.",
+        why: "One score for a whole document tells nobody which line to look at — it says something is wrong somewhere and leaves the reader to hunt for it, which is the work they came here to avoid.",
+        shows: "extracted",
       },
       {
         q:
           "What does a value the model couldn't find look like?",
-        loka:
-          "Empty, and labelled “not found”. Never a plausible guess: an inferred value in a field that looks read is the one failure nobody catches.",
+        loka: "Empty, and labelled “not found”.",
+        why: "Never a plausible guess: an inferred value in a field that looks read is the one failure nobody catches.",
+        shows: "missing",
       },
       {
         q:
           "Can a field be traced back to the document?",
-        loka:
-          "Yes — click the value, see the region it came from. Extraction you can't trace is transcription you have to redo before you can trust it.",
+        loka: "Yes — click the value, see the region it came from.",
+        why: "A value you can't trace is one you would have to re-type before you trusted it.",
+        shows: "source",
       },
       {
         q:
           "What happens to a value a person corrected?",
-        loka:
-          "It's marked human-set and survives the next run untouched. Losing a correction to a re-extraction is how you teach people to stop correcting.",
+        loka: "It's marked human-set and survives the next run untouched.",
+        why: "Losing a correction to a re-extraction is how you teach people to stop correcting.",
+        shows: "edited",
       },
     ],
     controls: {
-      interrupt: { grade: "na" },
-      inspect: { grade: "required", note: "Per-field confidence, and which pass produced the value." },
+      interrupt: { grade: "na", note: "The fields are already filled by the time you read them." },
+      inspect: { grade: "required", note: "How sure it is about each field, and which run produced the value." },
       verify: { grade: "required", note: "Every field opens the place in the source it came from." },
       correct: { grade: "required", note: "Edit in place, and the edit sticks." },
       undo: { grade: "recommended", note: "Revert a field to the extracted value." },
     },
     composedOf: ["Input Field", "Tags", "Tooltip", "Card", "Button"],
+    optionalParts: ["Tooltip", "Card", "Button"],
   },
   {
     id: "inline-suggestion",
@@ -571,7 +604,7 @@ export const AI_PATTERNS = [
     category: "output",
     status: "documented",
     definition:
-      "Ghost-text completion inside the user's own work, where accepting is one keystroke and rejecting is silence.",
+      "A greyed-out suggestion inside someone's own writing: one key accepts it, and ignoring it makes it go away.",
     states: [
       { id: "typing", label: "Typing", note: "Nothing offered yet. A suggestion on the first character is a guess about an intent nobody has formed." },
       { id: "offered", label: "Suggestion offered", note: "Visibly not theirs. If a writer can't see where their sentence ends and the model's begins, they'll ship yours without deciding to." },
@@ -592,89 +625,98 @@ export const AI_PATTERNS = [
       {
         q:
           "How is the suggestion told apart from what they typed?",
-        loka:
-          "Visibly lighter, never the same weight, and never the same colour. This is the whole pattern — get it wrong and people publish words they never read.",
+        loka: "Visibly lighter, never the same weight, and never the same colour.",
+        why: "This is the whole pattern — get it wrong and people publish words they never read.",
+        shows: "offered",
       },
       {
         q:
           "What accepts it?",
-        loka:
-          "Tab, and only Tab. Enter belongs to the form; binding both means accepting by accident on every submit.",
+        loka: "Tab, and only Tab.",
+        why: "Enter belongs to the form; binding both means accepting by accident on every submit.",
+        shows: "offered",
       },
       {
         q:
           "When do you offer nothing at all?",
-        loka:
-          "Below your confidence bar, and at the very start of a field. A suggestion that's usually wrong trains people to type straight through it, and then the good ones go past too.",
+        loka: "When the AI isn't sure enough, and at the very start of a field.",
+        why: "A suggestion that is usually wrong teaches people to type straight through it, and then the good ones get missed too.",
+        shows: "unavailable",
       },
       {
         q:
           "Does a suggestion survive the next keystroke?",
-        loka:
-          "No. Anything that isn't accept clears it. A stale suggestion sitting beside changed text is a wrong suggestion that still looks live.",
+        loka: "No.",
+        why: "Anything that isn't accept clears it. A stale suggestion sitting beside changed text is a wrong suggestion that still looks live.",
+        shows: "dismissed",
       },
     ],
     controls: {
-      interrupt: { grade: "na" },
-      inspect: { grade: "recommended", note: "Say what the suggestion was drawn from when it isn't obvious." },
-      verify: { grade: "na" },
+      interrupt: { grade: "na", note: "Ignoring it is the stop — keep typing and it's gone." },
+      inspect: { grade: "recommended", note: "Say where the suggestion came from when it isn't obvious." },
+      verify: { grade: "na", note: "A few predicted words have no source to check them against." },
       correct: { grade: "required", note: "Accepted text is ordinary text — editable immediately, with no special state." },
       undo: { grade: "required", note: "One undo returns to exactly what they had typed, not to an intermediate." },
     },
     composedOf: ["Input Field", "Tooltip", "Tags", "Button"],
+    optionalParts: ["Tooltip", "Tags", "Button"],
   },
 
   // ── Control & Correction ───────────────────────────────────────────────────
   {
     id: "diff-review",
-    name: "Diff Review",
+    name: "Change Review",
     category: "control",
     status: "documented",
     definition:
-      "AI-proposed changes shown against current state, accepted or rejected per unit by the user.",
+      "Showing what the AI wants to change beside what's there now, so a person can accept or reject each change.",
     states: [
       { id: "proposed", label: "Proposed", note: "Nothing applied and nothing pre-selected. Accept-all exists but is never the default." },
-      { id: "partial", label: "Partly accepted", note: "Per hunk, because per-line is precision nobody uses and all-or-nothing is a gamble on the weakest change in the set." },
+      { id: "partial", label: "Partly accepted", note: "One block of changes at a time. Line by line is a precision nobody uses, and all-or-nothing is a bet on the weakest change in the set." },
       { id: "applied", label: "Applied", note: "What landed, in the user's terms, with a stated window to take it back out." },
       { id: "stale", label: "Stale", note: "The file moved under the proposal. Re-propose — applying a stale diff silently corrupts work in progress." },
-      { id: "empty", label: "Nothing to change", note: "A success state, rendered as one. An empty diff reads as a broken feature." },
+      { id: "empty", label: "Nothing to change", note: "A success, and it should look like one. “Nothing to change” shown as an empty screen reads as a broken feature." },
     ],
     useWhen: [
-      { lead: "They already own it", detail: "Code, a document, a config, a record they've invested in." },
-      { lead: "It decomposes", detail: "The change splits into units a person can judge independently." },
-      { lead: "Late discovery is costly", detail: "Cheap to reject now, expensive to find out about later." },
+      { lead: "They already own it", detail: "Code, a document, a setting, a record they've put work into." },
+      { lead: "It breaks into separate changes", detail: "It splits into pieces a person can judge one at a time." },
+      { lead: "Finding out later is expensive", detail: "Cheap to reject now, expensive to find out about later." },
     ],
     avoidWhen: [
-      { lead: "It's one atomic value", detail: "A diff is more ceremony than the change is worth." },
-      { lead: "There's nothing to diff against", detail: "The artifact is being created rather than edited." },
-      { lead: "The volume guarantees rubber-stamping", detail: "Past a certain size the review is theatre. Gate the operation instead." },
+      { lead: "It's a single value", detail: "A side-by-side review is more process than the change is worth." },
+      { lead: "There's nothing to compare against", detail: "The thing is being created from scratch, not edited." },
+      { lead: "There's too much to review properly", detail: "Past a certain size the review is theatre. Gate the operation instead." },
     ],
     decisions: [
       {
-        q: "Accept granularity — all, per file, per hunk, per line?",
-        loka:
-          "Per hunk, with accept-all available but never pre-selected. Per-line is precision nobody uses; all-or-nothing turns a review into a gamble on the weakest change in the set.",
+        q: "What can somebody accept at once — everything, one file, one block, one line?",
+        loka: "One block at a time, with accept-all available but never chosen for them.",
+        why: "Line by line is a precision nobody uses; all-or-nothing turns a review into a bet on the weakest change in the set.",
+        shows: "partial",
       },
       {
         q: "Inline or side-by-side?",
-        loka:
-          "Side-by-side for structural rewrites, inline for small edits in long context. Choose per change size, not once per product.",
+        loka: "Side-by-side for structural rewrites, inline for small edits in long context.",
+        why: "Choose per change size, not once per product.",
       },
       {
         q: "Is the proposal editable before accepting?",
-        loka:
-          "Yes. Forcing reject-and-reprompt to fix a near-miss is the most expensive interaction in the pattern, and near-misses are the common case.",
+        loka: "Yes.",
+        why: "Forcing reject-and-reprompt to fix a near-miss is the most expensive interaction in the pattern, and near-misses are the common case.",
+        shows: "proposed",
       },
       {
         q: "Does anything apply automatically?",
-        loka:
-          "No. Auto-apply plus undo is not equivalent to review plus apply — the user has to notice a change before they can undo it, and the changes they don't notice are precisely the ones that hurt.",
+        loka: "No.",
+        why: "Auto-apply plus undo is not equivalent to review plus apply — the user has to notice a change before they can undo it, and the changes they don't notice are precisely the ones that hurt.",
+        shows: "proposed",
       },
       {
         q:
           "What if the file changed while the proposal was open?",
-        loka:
-          "Detect it and re-propose. Applying a stale diff silently overwrites work somebody else was in the middle of, and nobody finds out until later.",
+        loka: "Detect it and re-propose.",
+        why: "Applying a stale diff silently overwrites work somebody else was in the middle of, and nobody finds out until later.",
+        shows: "stale",
       },
     ],
     controls: {
@@ -682,82 +724,87 @@ export const AI_PATTERNS = [
       inspect: { grade: "required", note: "Before and after, plus why this change was proposed." },
       verify: { grade: "required", note: "Full surrounding context, not just the changed lines." },
       correct: { grade: "required", note: "Edit the proposal in place." },
-      undo: { grade: "required", note: "One reversal of the whole apply, not per-hunk archaeology." },
+      undo: { grade: "required", note: "One action puts everything back, rather than a dig through it block by block." },
     },
     composedOf: ["Card", "Button", "Checkbox", "Tabs", "Alert", "Banner"],
+    optionalParts: ["Checkbox", "Tabs", "Alert", "Banner"],
   },
   {
     id: "regenerate-variants",
-    name: "Regenerate & Variants",
+    name: "Retry & Compare",
     category: "control",
     status: "planned",
     definition:
-      "Re-rolling an answer, and showing alternatives side by side, without losing the one already on screen.",
+      "Asking for another answer, or a few side by side, without losing the one already on screen.",
   },
   {
     id: "refine-in-place",
-    name: "Refine In Place",
+    name: "Edit in Place",
     category: "control",
     status: "planned",
     definition:
-      "Adjusting a result by acting on it directly — select and instruct — rather than by rewriting the original prompt.",
+      "Changing a result by pointing at the part you mean and saying what to do, instead of rewriting the whole request.",
   },
   {
     id: "version-history",
-    name: "Undo & Version History",
+    name: "Undo & History",
     category: "control",
     status: "documented",
     definition:
-      "A legible trail of what the AI changed, when, and on what basis — and a way back to any point on it.",
+      "A readable list of what the AI changed, when, and on what basis — and a way back to any point on it.",
     states: [
-      { id: "trail", label: "Change trail", note: "AI runs named, human edits named. Telling the two apart at a glance is the whole value of a trail." },
-      { id: "diff", label: "One change", note: "What a single run altered, in the record's own terms rather than as a payload." },
-      { id: "attributed", label: "Attribution", note: "The run, the scope it could see, and what triggered it. A diff with no context says what happened and nothing about why." },
+      { id: "trail", label: "Change trail", note: "AI changes are named and so are people's. Telling the two apart at a glance is the whole value of a history." },
+      { id: "diff", label: "One change", note: "What one AI run changed, described in the record's own words rather than as raw data." },
+      { id: "attributed", label: "Why it changed", note: "Which run it was, what it could see, and what set it off. A change with no context tells you what happened and nothing about why." },
       { id: "restore", label: "Restoring", note: "Restoring writes a new entry rather than erasing. History that can be rewritten isn't history." },
     ],
     useWhen: [
-      { lead: "The AI writes to something durable", detail: "A record, a document, a configuration people rely on." },
+      { lead: "The AI changes something that lasts", detail: "A record, a document, a setting people rely on." },
       { lead: "Changes accumulate", detail: "The tenth edit is the one nobody noticed." },
       { lead: "Somebody will ask who changed this", detail: "And “the system” is not an answer." },
     ],
     avoidWhen: [
       { lead: "The output is disposable", detail: "A draft nobody keeps needs no trail." },
-      { lead: "The trail would outweigh the work", detail: "Logging every keystroke of an assisted edit buries the changes that matter." },
+      { lead: "The trail would outweigh the work", detail: "Recording every keystroke buries the changes that actually matter." },
     ],
     decisions: [
       {
         q:
-          "Are AI changes marked differently from human ones?",
-        loka:
-          "Always, and named by the run rather than by “System”. A trail that flattens the two is a log, not a history.",
+          "Are AI changes marked differently from people's?",
+        loka: "Always, and named after what ran rather than just “System”.",
+        why: "A history that treats them the same is a log, not a history.",
+        shows: "trail",
       },
       {
         q:
           "How far back does it go?",
-        loka:
-          "State the window and mean it. An “unlimited” history that silently truncates is worse than an honest thirty days.",
+        loka: "State the window and mean it.",
+        why: "An “unlimited” history that silently truncates is worse than an honest thirty days.",
       },
       {
         q:
           "Does restoring erase what came after?",
-        loka:
-          "No — it appends. The restore is itself a change somebody may have to account for, and a history you can rewrite can't be used as evidence.",
+        loka: "No — it appends.",
+        why: "The restore is itself a change somebody may have to account for, and a history you can rewrite can't be used as evidence.",
+        shows: "restore",
       },
       {
         q:
           "What's recorded beside the change?",
-        loka:
-          "The run, the scope it saw, and the trigger. Without those, a reader can see what happened and still not know whether it should have.",
+        loka: "Which run it was, what it could see, and what set it off.",
+        why: "Without those, a reader can see what happened and still not know whether it should have.",
+        shows: "attributed",
       },
     ],
     controls: {
-      interrupt: { grade: "na" },
-      inspect: { grade: "required", note: "What changed, by which run, on what basis." },
+      interrupt: { grade: "na", note: "Reading the history doesn't run anything." },
+      inspect: { grade: "required", note: "What changed, which run did it, and on what basis." },
       verify: { grade: "required", note: "Compare any point against the current state." },
       correct: { grade: "recommended", note: "Restore a single field rather than the whole record." },
       undo: { grade: "required", note: "Return to any point, as a new entry." },
     },
     composedOf: ["List Item", "Avatar", "Tags", "Button", "Accordion"],
+    optionalParts: ["Avatar", "Tags", "Accordion"],
   },
 
   // ── Agentic & Multi-step ───────────────────────────────────────────────────
@@ -767,59 +814,63 @@ export const AI_PATTERNS = [
     category: "agentic",
     status: "documented",
     definition:
-      "A deliberate stop before an action with consequences outside the interface, where the user authorises what the system is about to do.",
+      "A deliberate stop before the AI does something that reaches the real world, so a person says yes to it first.",
     states: [
-      { id: "await", label: "Awaiting approval", note: "The effect in the user's language with the target named. If the copy is the function signature, they're approving something they haven't understood." },
-      { id: "modified", label: "Modified", note: "Change a parameter, then approve. Approve-or-reject alone forces a full restart to fix one field — which is what trains people not to read." },
-      { id: "executing", label: "Executing", note: "Step-level progress, because step-level failure is possible." },
-      { id: "done", label: "Executed", note: "A receipt of what actually happened, not a toast that it was submitted." },
-      { id: "failed", label: "Failed midway", note: "What did and didn't happen, per step. “Something went wrong” after an authorised multi-step write is the worst message the product can produce." },
+      { id: "await", label: "Awaiting approval", note: "What will happen, in the reader's own words, naming exactly what it happens to. If the button reads like the name of the code, they're approving something they haven't understood." },
+      { id: "modified", label: "Modified", note: "Change one detail, then approve. Approve-or-reject alone forces a full restart to fix one field — which is what trains people not to read." },
+      { id: "executing", label: "Running", note: "Step-level progress, because step-level failure is possible." },
+      { id: "done", label: "Done", note: "A receipt of what actually happened, not a toast that it was submitted." },
+      { id: "failed", label: "Failed midway", note: "What did and didn't happen, per step. “Something went wrong” after somebody approved a multi-step action is the worst message the product can produce." },
     ],
     useWhen: [
-      { lead: "The effect leaves the interface", detail: "It writes to a system of record, spends money, contacts a third party, or can't be undone." },
-      { lead: "It's right 95% of the time", detail: "Which is exactly the number that makes unattended execution unacceptable." },
-      { lead: "Someone else bears it", detail: "The consequence lands on a person who isn't in the room." },
+      { lead: "It reaches outside the screen", detail: "It writes to a system people rely on, spends money, contacts someone outside, or can't be undone." },
+      { lead: "It's right 95% of the time", detail: "Which is exactly the number that makes letting it run unwatched unacceptable." },
+      { lead: "Someone else carries the cost", detail: "The consequence lands on a person who isn't in the room." },
     ],
     avoidWhen: [
-      { lead: "It would fire constantly", detail: "Gates that fire dozens of times a session get dismissed reflexively, which manufactures consent." },
-      { lead: "A scope genuinely covers the risk", detail: "Then ask once, explicitly, instead of asking always." },
+      { lead: "It would appear constantly", detail: "A stop that appears dozens of times a session gets clicked through without being read, which turns approval into a formality." },
+      { lead: "One broad yes genuinely covers it", detail: "Then ask once, explicitly, instead of asking always." },
     ],
     decisions: [
       {
         q: "What exactly is being approved?",
-        loka:
-          "The concrete effect, in the user's language, with the specific target named — “Email 1,240 subscribers”, never “Run send_campaign”. If the copy is the function signature, the user is approving something they haven't understood.",
+        loka: "The concrete effect, in the user's words, with the target named.",
+        why: "“Email 1,240 subscribers”, never “Run send_campaign”. If the wording is the name of the code, the user is approving something they haven't understood.",
+        shows: "await",
       },
       {
-        q: "Per-action, per-session, or per-scope?",
-        loka:
-          "Per-action by default. Offer scope escalation — “allow reads on this repo for this session” — as an explicit user choice, never as a default the system remembered on their behalf.",
+        q: "Ask every time, once per session, or once for a whole area?",
+        loka: "Every time, by default.",
+        why: "Offer to widen it — “allow reads here for this session” — as something the person chooses out loud, never as something the system decided to remember for them.",
       },
       {
         q: "Can the user modify before approving?",
-        loka:
-          "Yes, wherever the parameters are legible. Approve-or-reject alone forces a full restart to change one field, and that friction is what trains people to approve without reading.",
+        loka: "Yes, wherever the parameters are legible.",
+        why: "Approve-or-reject alone forces a full restart to change one field, and that friction is what trains people to approve without reading.",
+        shows: "modified",
       },
       {
         q: "What does a timeout do?",
-        loka:
-          "Nothing. An unanswered gate expires unexecuted. Executing on timeout converts inattention into authorisation, which is the one thing a gate exists to prevent.",
+        loka: "Nothing.",
+        why: "An unanswered gate expires unexecuted. Executing on timeout converts inattention into authorisation, which is the one thing a gate exists to prevent.",
       },
       {
         q:
           "How do you report a failure that happens after approval?",
-        loka:
-          "At step granularity: what did and didn't happen, in counts. “Something went wrong” after an authorised multi-step write is the worst message the product can produce.",
+        loka: "Step by step: what did and didn't happen, in numbers.",
+        why: "“Something went wrong” after somebody approved a multi-step action is the worst message the product can produce.",
+        shows: "failed",
       },
     ],
     controls: {
       interrupt: { grade: "required", note: "Reject, and abort the whole run, not just this step." },
-      inspect: { grade: "required", note: "Exact parameters and the plan step this came from." },
-      verify: { grade: "required", note: "Enough of the target's current state to judge the effect." },
+      inspect: { grade: "required", note: "The exact details, and which step of the plan this came from." },
+      verify: { grade: "required", note: "Enough of what it's about to change to judge the effect." },
       correct: { grade: "recommended", note: "Modify parameters, then approve." },
       undo: { grade: "required", note: "Where the action permits it — and say plainly when it doesn't." },
     },
     composedOf: ["Dialog", "Modal", "Button", "Alert", "Tags", "List Item"],
+    optionalParts: ["Modal", "Alert", "Tags", "List Item"],
   },
   {
     id: "plan-preview",
@@ -827,7 +878,7 @@ export const AI_PATTERNS = [
     category: "agentic",
     status: "documented",
     definition:
-      "The sequence the system intends to run, shown and editable while changing it is still cheap.",
+      "The steps the AI intends to take, shown and editable while changing them is still cheap.",
     states: [
       { id: "proposed", label: "Plan proposed", note: "Every step visible and removable. Nothing has run." },
       { id: "edited", label: "Step removed", note: "Cut a step and the plan re-costs itself. Editing beats rejecting and starting again." },
@@ -841,133 +892,143 @@ export const AI_PATTERNS = [
       { lead: "Fixing beforehand is cheaper", detail: "Editing a plan beats undoing an execution." },
     ],
     avoidWhen: [
-      { lead: "The plan is one step", detail: "Then it's an Approval Gate, and a list of one is ceremony." },
-      { lead: "The steps aren't legible", detail: "A plan nobody can read is a progress bar with extra ceremony." },
+      { lead: "The plan is one step", detail: "Then it's an Approval Gate, and a list of one is just decoration." },
+      { lead: "The steps can't be read", detail: "A plan nobody can read is a progress bar with extra steps." },
     ],
     decisions: [
       {
         q:
-          "Is the plan editable, or only approvable?",
-        loka:
-          "Editable per step. Approve-or-reject on a six-step plan forces a restart to remove one step, and that friction is exactly why people approve steps they'd have cut.",
+          "Can the plan be edited, or only accepted or rejected?",
+        loka: "Editable per step.",
+        why: "Approve-or-reject on a six-step plan forces a restart to remove one step, and that friction is exactly why people approve steps they'd have cut.",
+        shows: "edited",
       },
       {
         q:
           "What counts as a step?",
-        loka:
-          "The level at which somebody would say no. “Send 1,240 emails” is a step; “open connection” is noise, and noise is what makes a plan stop being read.",
+        loka: "The level at which somebody would say no.",
+        why: "“Send 1,240 emails” is a step; “open connection” is noise, and noise is what stops a plan being read at all.",
+        shows: "proposed",
       },
       {
         q:
           "Can it pause mid-run?",
-        loka:
-          "Yes, at step boundaries, stating what's done and what's left. A run you can only kill is a run people won't start.",
+        loka: "Yes, at step boundaries, stating what's done and what's left.",
+        why: "A run you can only kill is a run people won't start.",
+        shows: "paused",
       },
       {
         q:
           "Does a failed run resume or restart?",
-        loka:
-          "Resume. Completed steps stay completed — re-running them is how a retry turns into a duplicate send.",
+        loka: "Resume.",
+        why: "Completed steps stay completed — re-running them is how a retry turns into a duplicate send.",
       },
     ],
     controls: {
       interrupt: { grade: "required", note: "Pause at a boundary, and abandon before anything runs." },
-      inspect: { grade: "required", note: "Every step's real parameters, not its label alone." },
+      inspect: { grade: "required", note: "Every step's real details, not just its label." },
       verify: { grade: "required", note: "What each step will touch, before it touches it." },
       correct: { grade: "required", note: "Remove or edit a step and re-run the plan." },
-      undo: { grade: "recommended", note: "Reverse the steps that can be reversed, and say which can't." },
+      undo: { grade: "recommended", note: "Undo the steps that can be undone, and say plainly which can't." },
     },
     composedOf: ["List Item", "Checkbox", "Button", "Progress Bar", "Modal"],
+    optionalParts: ["Checkbox", "Progress Bar", "Modal"],
   },
   {
     id: "tool-call-trace",
-    name: "Tool-Call Trace",
+    name: "Action Log",
     category: "agentic",
     status: "planned",
     definition:
-      "A readable record of what the system did on the user's behalf — collapsed by default, complete on demand.",
+      "A plain record of everything the AI did on someone's behalf — folded away by default, complete when asked for.",
   },
   {
     id: "background-handoff",
-    name: "Background Task Handoff",
+    name: "Background Work",
     category: "agentic",
     status: "planned",
     definition:
-      "Work that outlives the session: leaving, being notified, and returning to a result that still makes sense.",
+      "Work that carries on after someone closes the tab: leaving, being told it's done, and coming back to something that still makes sense.",
   },
 
   // ── Boundaries & Failure ───────────────────────────────────────────────────
   {
     id: "graceful-refusal",
-    name: "Graceful Refusal",
+    name: "Clear Refusal",
     category: "boundaries",
     status: "documented",
     definition:
-      "The designed state for “I won't or can't do this” — a legitimate outcome of a working system, not an error.",
+      "How the product says “I can't do this” — a normal outcome of a working system, not a bug.",
     states: [
-      { id: "policy", label: "Policy limit", note: "Your product's voice, not the model's — and no red. A policy limit is the system working as intended." },
-      { id: "capability", label: "Capability limit", note: "Specific enough to change the next move. “I can't help with that” just produces a retry of the same request." },
+      { id: "policy", label: "A rule says no", note: "Your product's voice, not the model's — and no red. A policy limit is the system working as intended." },
+      { id: "capability", label: "It can't do this yet", note: "Specific enough to change the next move. “I can't help with that” just produces a retry of the same request." },
       { id: "noanswer", label: "No confident answer", note: "Low confidence is an outcome, not an error. Saying so beats a guess styled as fact." },
       { id: "partial", label: "Stopped partway", note: "Keep and label what was finished. Discarding completed work silently reads as a crash." },
     ],
     useWhen: [
-      { lead: "Always", detail: "Every AI surface produces refusals. The only question is whether yours were designed or inherited from a raw model string." },
+      { lead: "Always", detail: "Every AI feature refuses something. The only question is whether you wrote those words or inherited whatever the model happened to say." },
     ],
     avoidWhen: [
-      { lead: "It's really a missing feature", detail: "Dressing an unbuilt capability as a boundary teaches people the limit is permanent, so they stop asking." },
+      { lead: "It's really a missing feature", detail: "Dressing something you haven't built yet as a rule teaches people the limit is permanent, so they stop asking for it." },
     ],
     decisions: [
       {
         q: "Where does the refusal copy come from?",
-        loka:
-          "Your product, not the model. Raw model refusals are inconsistent in voice, frequently wrong about the actual reason, and sometimes apologise for things your product does support.",
+        loka: "Your product, not the model.",
+        why: "Refusals written by the model wander in tone, are often wrong about the real reason, and sometimes apologise for things your product does perfectly well.",
+        shows: "policy",
       },
       {
         q: "How much reason to give?",
-        loka:
-          "Enough to change the next move. “I can't access private repositories” is actionable; “I can't help with that” produces a reflexive retry of the identical prompt and a second identical refusal.",
+        loka: "Enough to change the next move.",
+        why: "“I can't access private repositories” is actionable; “I can't help with that” produces a reflexive retry of the identical prompt and a second identical refusal.",
+        shows: "capability",
       },
       {
         q: "Does it look like an error?",
-        loka:
-          "No. No red, no error iconography for policy and capability limits — those are working as intended. Reserve error treatment for genuine failures, or you'll spend that signal and have none left when something actually breaks.",
+        loka: "No.",
+        why: "No red, no warning icons for rules and limits — those are the system working as intended. Save the error styling for things that genuinely broke, or you spend it and have nothing left when something really does.",
+        shows: "noanswer",
       },
       {
         q: "Is there a path forward?",
-        loka:
-          "Always. Offer the nearest thing you can do, one click away. A refusal that dead-ends is the moment a user decides the feature doesn't work.",
+        loka: "Always.",
+        why: "Offer the nearest thing you can do, one click away. A refusal that dead-ends is the moment a user decides the feature doesn't work.",
+        shows: "capability",
       },
       {
         q:
           "What happens when you refuse something legitimate?",
-        loka:
-          "Assume over-refusal happens and give a low-friction way to report it. A rising over-refusal rate is a product metric, not a support queue.",
+        loka: "Assume over-refusal happens and give a low-friction way to report it.",
+        why: "A rising over-refusal rate is a product metric, not a support queue.",
+        shows: "policy",
       },
     ],
     controls: {
-      interrupt: { grade: "na" },
-      inspect: { grade: "recommended", note: "Which limit — policy, capability, permission, or data." },
-      verify: { grade: "na" },
+      interrupt: { grade: "na", note: "A refusal is the end of the run, not the middle of one." },
+      inspect: { grade: "recommended", note: "Which kind of limit it is — a rule, a missing ability, a permission, or missing data." },
+      verify: { grade: "na", note: "There's no answer here to check against a source." },
       correct: { grade: "recommended", note: "Reframe the request without retyping it." },
-      undo: { grade: "na" },
+      undo: { grade: "na", note: "Nothing happened, so there's nothing to take back." },
     },
     composedOf: ["Empty State", "Banner", "Link", "Button", "Alert"],
+    optionalParts: ["Banner", "Link", "Alert"],
   },
   {
     id: "no-answer-fallback",
-    name: "No-Answer Fallback",
+    name: "No Good Match",
     category: "boundaries",
     status: "documented",
     definition:
-      "What takes an answer's place when nothing clears the confidence bar — and why that beats a guess dressed as a result.",
+      "What to show when nothing is a good enough match — and why that beats a guess dressed up as an answer.",
     states: [
       { id: "confident", label: "Confident results", note: "The ordinary case, here for contrast: matches above the bar, shown plainly with their scores." },
       { id: "none", label: "Nothing above the bar", note: "An empty result is a real answer. Say what was searched and where the bar sat." },
       { id: "weak", label: "Below the bar", note: "Weak matches shown as weak, behind a deliberate action, never mixed into the same list as strong ones." },
-      { id: "insufficient", label: "Not enough data", note: "Cold start is not no-match. One says come back later, the other says change your criteria, and conflating them wastes the user's next hour." },
+      { id: "insufficient", label: "Not enough data", note: "“No data yet” is not “no match”. One means come back later, the other means change what you asked for — and mixing them up wastes somebody's next hour." },
     ],
     useWhen: [
-      { lead: "Anywhere you rank or match", detail: "Every ranked surface has a case where nothing qualifies, whether or not it was designed." },
+      { lead: "Anywhere you rank or match", detail: "Anything that ranks or matches has a case where nothing qualifies, whether or not anyone designed for it." },
       { lead: "A weak result invites a real decision", detail: "Somebody will act on whatever sits at the top of the list." },
       { lead: "The bar is a product choice", detail: "You set it, so you can say what it was." },
     ],
@@ -978,36 +1039,40 @@ export const AI_PATTERNS = [
       {
         q:
           "What does the empty state actually say?",
-        loka:
-          "What was searched, where the bar was, and what to change. “No results” with no numbers is indistinguishable from a broken query, and gets reported as one.",
+        loka: "What was searched, where the bar was, and what to change.",
+        why: "“No results” with no numbers is indistinguishable from a broken query, and gets reported as one.",
+        shows: "none",
       },
       {
         q:
           "Do you show what fell below the bar?",
-        loka:
-          "Behind an explicit action, labelled as below it. Never merged into the same list — that merge is the failure this pattern is named after.",
+        loka: "Behind an explicit action, labelled as below it.",
+        why: "Never merged into the same list — that merge is the failure this pattern is named after.",
+        shows: "weak",
       },
       {
         q:
-          "Is “no data” the same state as “no match”?",
-        loka:
-          "No, and treating them as one is the most common version of this mistake. Sparse data means wait; no match means change the criteria.",
+          "Is “no data yet” the same as “no match”?",
+        loka: "No, and treating them as one is the most common version of this mistake.",
+        why: "Too little data means wait; no match means change what you asked for.",
+        shows: "insufficient",
       },
       {
         q:
-          "Who can move the bar?",
-        loka:
-          "Say where it is, and let the user loosen it deliberately if the task allows. Never move it silently to fill the page.",
+          "Who gets to lower the bar?",
+        loka: "Say where the bar is, and let the user loosen it deliberately.",
+        why: "Never move it silently to fill the page.",
       },
     ],
     controls: {
-      interrupt: { grade: "na" },
-      inspect: { grade: "required", note: "What was searched, how many candidates, and where the bar sat." },
-      verify: { grade: "recommended", note: "Open any near miss to judge it yourself." },
-      correct: { grade: "required", note: "Widen the criteria without starting the search over." },
-      undo: { grade: "na" },
+      interrupt: { grade: "na", note: "The search has already finished by the time you see this." },
+      inspect: { grade: "required", note: "What was searched, how many things it looked at, and where the bar sat." },
+      verify: { grade: "recommended", note: "Open any near miss and judge it yourself." },
+      correct: { grade: "required", note: "Broaden the search without starting it over." },
+      undo: { grade: "na", note: "Nothing was applied, so there's nothing to reverse." },
     },
     composedOf: ["Empty State", "List Item", "Filter", "Banner", "Button"],
+    optionalParts: ["List Item", "Filter", "Banner"],
   },
   {
     id: "error-retry",
@@ -1015,15 +1080,15 @@ export const AI_PATTERNS = [
     category: "boundaries",
     status: "planned",
     definition:
-      "Genuine failures — timeouts, rate limits, outages — expressed in the user's terms, with the right retry.",
+      "Real breakages — too slow, too busy, offline — explained in plain words, with a retry that suits the cause.",
   },
   {
     id: "capability-disclosure",
-    name: "Capability Disclosure",
+    name: "Known Limits",
     category: "boundaries",
     status: "planned",
     definition:
-      "Setting the boundary before it's hit: what this surface can do, on what data, with what freshness.",
+      "Saying what the AI can do, what data it can see and how current that data is — before someone hits the limit.",
   },
 ];
 

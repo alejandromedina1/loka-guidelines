@@ -33,42 +33,42 @@ export const AI_PRINCIPLES = [
     id: "not-a-conversation",
     title: "Most AI isn't a conversation",
     body:
-      "Chat asks people to describe what they want inside a system that already knows what they're doing. Put the intelligence where the decision happens: the order of a queue, a pre-filled field, a flagged exception. Save prompts for genuinely open-ended intent.",
+      "A chat box asks people to describe what they want inside a product that already knows what they're doing. Put the intelligence where the decision happens instead: the order of a list, a field filled in for them, an item flagged for review. Save the text box for questions that are genuinely open-ended.",
     applies: ["scoped-context", "inline-suggestion", "staged-reveal", "prompt-composer"]
   },
   {
     id: "pick-your-error",
     title: "Start from the error you'd rather make",
     body:
-      "A false positive and a false negative cost different people different amounts, and that asymmetry sets the threshold, the copy, and the review step. Draw the bands yourself — act, review, suppress — or the model's default decides for you.",
+      "Acting when you shouldn't and doing nothing when you should are two different mistakes, and they cost different people different amounts. That gap is what sets the cut-off, the wording, and whether a human checks first. Decide the three bands yourself — act, review, ignore — or a default decides them for you.",
     applies: ["no-answer-fallback", "confidence-hedging", "structured-output"]
   },
   {
     id: "gate-to-cost",
     title: "Gate on consequence, not on confidence",
     body:
-      "What the action costs sets where the gate goes, not how sure the model claims to be: a confident irreversible write needs one, an unsure reversible suggestion doesn't. And assume every gate gets clicked through — one that fires on everything manufactures consent.",
+      "A stop-and-ask belongs where the action is expensive, not where the AI sounds unsure. Something confident but permanent needs one; a shaky suggestion you can ignore doesn't. And assume every one of them gets clicked through — a stop that appears for everything turns approval into a formality.",
     applies: ["approval-gate", "plan-preview", "diff-review"]
   },
   {
     id: "correction-is-input",
     title: "Correction is an input, not a complaint",
     body:
-      "With no prompt, correcting the system is the only way someone expresses intent — so a thumbs-down landing in a dashboard is a discard, not feedback. Decide where a fix lands, then say so: a correction that visibly changes nothing teaches people to stop making them.",
+      "When there's no text box, correcting the AI is the only way someone can tell it anything — so a thumbs-down that ends up in a dashboard is a bin, not feedback. Decide where a fix actually goes, then say so. A correction that visibly changes nothing teaches people to stop bothering.",
     applies: ["diff-review", "inline-suggestion", "version-history"]
   },
   {
     id: "presentation-vs-certainty",
     title: "Never let presentation imply certainty",
     body:
-      "A prediction, a score, and a verified fact render identically unless someone decides otherwise. Visual weight, decisiveness of copy, and friction before the action all have to track how sure the system is — a confidence number beside output styled like fact is decoration.",
+      "A guess, a score and a checked fact all look identical unless somebody decides otherwise. How heavy it looks, how certain it sounds, and how much friction sits before the action all have to move with how sure the system is. A percentage printed next to something styled like a fact is decoration.",
     applies: ["grounded-answer", "confidence-hedging", "structured-output"]
   },
   {
     id: "design-every-state",
     title: "Design every state the model can leave you in",
     body:
-      "Cold start, below threshold, stale, partial, degraded, slow — all normal operating states, and failure is a state, not an error. Latency budgets come from the surface, not the model. Route them all to one spinner and one red toast and the product reads as broken while working as intended.",
+      "No data yet, not sure enough, out of date, half-finished, running slow — all of these are normal, and failure is a state you design rather than an error you catch. How long is too long comes from the screen, not the model. Send them all to one spinner and one red message and the product reads as broken while working exactly as intended.",
     applies: ["streaming-response", "staged-reveal", "no-answer-fallback", "graceful-refusal"]
   },
 ];

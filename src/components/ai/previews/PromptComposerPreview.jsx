@@ -1,12 +1,18 @@
 import { Body, Btn, Btns, Chip, Field, Frame, FrameBar, GhostLines, Label, Note, Say } from "./kit.jsx";
 
-// Prompt Composer — the input surface, in each of its five states.
+// Prompt Box — the input surface, in each of its five states.
+//
+// Framed as a step in a workflow rather than a chat window. The pattern does
+// involve a text field, which is why the hub's first principle says to save one
+// for genuinely open-ended intent — but "open-ended" is not the same as
+// "conversational". This is somebody starting a piece of work by describing it,
+// which is the case that earns a prompt in a product that isn't a chatbot.
 export function PromptComposerPreview({ state }) {
   const over = state === "over";
   const empty = state === "empty";
   return (
     <Frame width={540}>
-      <FrameBar title="Assistant" />
+      <FrameBar title="New analysis" />
       <Body>
         {/* Submitted: the prompt is echoed and locked above the answer it
             produced, and a fresh composer opens below for the follow-up. */}
@@ -20,11 +26,16 @@ export function PromptComposerPreview({ state }) {
           </>
         )}
 
-        {/* Scope shown before the send, not discovered after it. */}
+        {/* The three parameters the decision says belong on chips rather than in
+            prose — target file, date range, output format — shown before the
+            send rather than discovered after it. The format chip used to be
+            missing, which left the first decision naming something the canvas
+            never drew. */}
         {state === "context" && (
           <span className="mk-chips">
             <Chip>accounts_q3.csv</Chip>
             <Chip>Last 90 days</Chip>
+            <Chip>As a table</Chip>
             <Chip>+ Add context</Chip>
           </span>
         )}

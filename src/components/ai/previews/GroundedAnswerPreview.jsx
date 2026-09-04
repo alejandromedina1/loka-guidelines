@@ -1,11 +1,11 @@
 import { Body, Chip, Cite, Frame, FrameBar, GhostLines, Label, Note, Row, Say } from "./kit.jsx";
 
-// Grounded Answer. The Mixed state is the one worth staring at: it's the only
+// Sourced Answer. The Partly sourced state is the one worth staring at: it's the only
 // preview here where two sentences that look equally authoritative aren't.
 export function GroundedAnswerPreview({ state }) {
   return (
     <Frame width={550}>
-      <FrameBar title="Ask your documents" />
+      <FrameBar title="Contract review · Northwind MSA" />
       <Body>
         {state === "none" ? (
           <>
@@ -13,10 +13,6 @@ export function GroundedAnswerPreview({ state }) {
               Searched 12 documents in <strong>Contracts / 2025</strong> and found nothing covering
               renewal notice periods.
             </Note>
-            <Say tone="mute" size="sm">
-              No answer was generated from general knowledge. A silent fallback here, styled like a
-              sourced answer, is the failure this pattern exists to prevent.
-            </Say>
           </>
         ) : (
           <p className="mk-answer">
@@ -66,8 +62,7 @@ export function GroundedAnswerPreview({ state }) {
               <Label>Master Agreement · p.14</Label>
             </Row>
             <Note tone="plain" title="You don't have access to this source">
-              It exists and it supports the claim. Ask the Legal team for access — hiding it entirely
-              would make a sourced answer look invented.
+              Ask Legal for access to Contracts / 2025.
             </Note>
           </div>
         )}

@@ -4,13 +4,18 @@ const ANSWER =
   "Churn concentrated in accounts that onboarded during the March migration: 62 of 148 cancellations came from that cohort, against 19% of total signups.";
 const PARTIAL = "Churn concentrated in accounts that onboarded during the March migration: 62 of";
 
-// Streaming Response. The caret animates on the Streaming state and holds still
-// everywhere else, which is the difference between "working" and "stuck" — and
-// the reason a stalled stream needs a deadline rather than a spinner.
+// Streaming Response, on an analysis panel rather than a chat. The answer was
+// always a churn finding — only the frame said "Assistant", which made the one
+// pattern most associated with chatbots look like it needed one. It doesn't:
+// this is text arriving into a product surface somebody opened on purpose.
+//
+// The caret animates on the Streaming state and holds still everywhere else,
+// which is the difference between "working" and "stuck" — and the reason a
+// stalled stream needs a deadline rather than a spinner.
 export function StreamingPreview({ state }) {
   return (
     <Frame width={540}>
-      <FrameBar title="Assistant" />
+      <FrameBar title="Churn analysis · Q3" />
       <Body>
         {state === "waiting" && (
           <div className="ai-skel" aria-label="Preparing response">
@@ -39,7 +44,7 @@ export function StreamingPreview({ state }) {
             stays neutral; a lost connection is a real failure and reads as one. */}
         {state === "stopped" && (
           <Note tone="plain" title="Stopped — partial answer">
-            Kept, marked, and still copyable.
+            Saved. Copy what arrived, or regenerate.
           </Note>
         )}
         {state === "dropped" && (
@@ -48,11 +53,6 @@ export function StreamingPreview({ state }) {
           </Note>
         )}
 
-        {state === "waiting" && (
-          <Say tone="mute" size="sm">
-            Nothing is drawn for the first 300ms — faster than that and the placeholder is a flash.
-          </Say>
-        )}
 
         <span className="mk-foot">
           <span />

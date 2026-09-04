@@ -56,9 +56,6 @@ export function InlineSuggestionPreview({ state }) {
         )}
         {state === "accepted" && (
           <span className="mk-foot">
-            <Say tone="mute" size="sm">
-              Ordinary text now — no badge, no special state.
-            </Say>
             <Btns align="end">
               <Btn>Undo</Btn>
             </Btns>
@@ -66,11 +63,6 @@ export function InlineSuggestionPreview({ state }) {
         )}
 
 
-        {state === "dismissed" && (
-          <Say tone="mute" size="sm">
-            No dialog and nothing to undo. They kept typing, so it's gone.
-          </Say>
-        )}
 
         {state === "unavailable" && (
           <Note tone="plain" title="No suggestion here">
