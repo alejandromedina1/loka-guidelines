@@ -9,6 +9,14 @@
   --bg:#FFFFFF; --bg-soft:#FAFBFC; --ink:#010812; --ink-2:#2E3F5A; --ink-3:#5C6A82; --ink-4:#828FA5;
   --line:#E7ECF2; --line-2:#EFF1F5; --line-strong:#D6DCE6; --blue:#1957F4; --blue-soft:#EEF2FE;
   --danger:#D64545; --danger-soft:#FBEAEA;
+  /* Red's text rung. --danger is a fill — a border, a dot, a diff row — and it
+     was being spent on running copy too, where it is 4.38:1 on white and
+     3.77:1 on its own soft background. Neither is visible to the eye or to the
+     build, which is the exact failure mode the grade chips had. red-11 is the
+     Destructive button's own darker rung, so this is the ramp the system
+     already reserved for red text rather than a bespoke value. Dark mode's
+     #F16565 already clears AA on every surface it lands on, so it stays. */
+  --danger-text:#BB070E;
   /* Green, from the Semantic ramp, as Red's sibling: green-11 on green-02.
      Both are palette tokens rather than bespoke values, the way the
      Destructive button took red-10/red-11. */
@@ -26,7 +34,7 @@
 .app[data-theme="dark"] {
   --bg:#0A0F17; --bg-soft:#121821; --ink:#F4F6F9; --ink-2:#C3CCDA; --ink-3:#8E9AAE; --ink-4:#6B7688;
   --line:#222B38; --line-2:#1A222E; --line-strong:#2E3947; --blue:#4A85F5; --blue-soft:#16233D;
-  --danger:#F16565; --danger-soft:#3A1E22;
+  --danger:#F16565; --danger-soft:#3A1E22; --danger-text:#F16565;
   --success:#97D2B9; --success-soft:#0F2E21;  /* green-07 on green-12 */
   --topbar-bg:rgba(10,15,23,.82);
 }
@@ -2078,9 +2086,11 @@
 
 /* THE READOUT — the caption for whatever is on the canvas, and the panel's
    focal element — the caption for whatever the track has landed on. */
-.ai-now{margin-top:0;padding:11px 13px;border-left:2px solid var(--blue);background:var(--blue-soft);}
-.ai-now-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:5px;}
-.ai-now-label{font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--blue);}
+/* What the state on the canvas means. Not its name — the canvas captions that
+   and the foot's pills carry it, and three renderings of one string was the
+   duplication that started the rework. */
+.ai-now{margin-top:0;padding:11px 13px;border-left:2px solid var(--blue);
+  background:var(--blue-soft);margin-bottom:18px;}
 .ai-now-text{margin:0;font-size:12.5px;line-height:1.6;color:var(--ink-2);}
 
 /* The five grades, in the panel. Same row rhythm as .bp-spec-row — this is the
@@ -2140,7 +2150,6 @@
   padding:22px;display:flex;flex-direction:column;gap:12px;max-width:74ch;}
 .ai-planned p{margin:0;font-size:14px;line-height:1.7;color:var(--ink-3);}
 .ai-planned-ask{color:var(--ink-4)!important;}
-.ai-shipped{font-size:14px;line-height:1.7;color:var(--ink-2);margin:0;max-width:76ch;}
 
 /* USE / AVOID — two contained lists rather than two bare columns. Without an
    edge, the only thing separating them was an 11px label and the eye read one
@@ -2154,7 +2163,7 @@
   border-bottom:1px solid var(--line);background:var(--bg-soft);
   font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;}
 .ai-when-col[data-tone="yes"] .ai-when-label{color:var(--blue);}
-.ai-when-col[data-tone="no"] .ai-when-label{color:var(--danger);}
+.ai-when-col[data-tone="no"] .ai-when-label{color:var(--danger-text);}
 /* The count says how much there is to read before you start reading. */
 
 .ai-when-list{list-style:none;margin:0;padding:4px 15px 13px;display:flex;flex-direction:column;}
@@ -2321,7 +2330,7 @@
 .mk-say[data-size="lg"]{font-family:var(--display);font-size:var(--pv-title);font-weight:600;
   letter-spacing:-.015em;line-height:1.25;}
 .mk-say[data-tone="mute"]{color:var(--ink-4);}
-.mk-say[data-tone="bad"]{color:var(--danger);}
+.mk-say[data-tone="bad"]{color:var(--danger-text);}
 .mk-label{font-size:var(--pv-micro);font-weight:600;letter-spacing:.07em;
   text-transform:uppercase;color:var(--ink-4);}
 
@@ -2348,7 +2357,7 @@
 .mk-note[data-tone="warn"]{background:var(--bg);
   box-shadow:inset 2px 0 0 var(--ink-4),inset 0 0 0 1px var(--line-strong);}
 .mk-note[data-tone="bad"]{background:var(--danger-soft);box-shadow:inset 0 0 0 1px var(--danger);}
-.mk-note[data-tone="bad"] .mk-note-title{color:var(--danger);}
+.mk-note[data-tone="bad"] .mk-note-title{color:var(--danger-text);}
 .mk-note[data-tone="ok"]{background:var(--blue-soft);box-shadow:inset 0 0 0 1px var(--blue);}
 .mk-note[data-tone="ok"] .mk-note-title{color:var(--blue);}
 
@@ -2378,6 +2387,20 @@
    animates invites the reader to wait for something to finish. */
 .mk-step[data-state="now"] .mk-step-dot{background:var(--bg);box-shadow:0 0 0 2px var(--blue);}
 .mk-step[data-state="now"] .mk-step-label{color:var(--ink);font-weight:600;}
+/* The step that stopped, and the step held at a boundary. Before these,
+   Running and Failed drew the identical four rows and Paused drew the same
+   in-flight ring as Running — so the one thing these patterns claim to
+   localise, which step it was, sat only in the callout above the meter.
+   Held is the same ring in neutral: stopped on purpose is not stopped. */
+.mk-step[data-state="fail"] .mk-step-dot{background:var(--danger);box-shadow:none;}
+.mk-step[data-state="fail"] .mk-step-label{color:var(--danger-text);font-weight:600;}
+.mk-step[data-state="held"] .mk-step-dot{background:var(--bg);box-shadow:0 0 0 2px var(--ink-4);}
+.mk-step[data-state="held"] .mk-step-label{color:var(--ink-2);font-weight:600;}
+/* A readout on the step it describes: "412 of 1,240" beside the send that
+   stopped halfway, rather than in a sentence underneath the meter. */
+.mk-step-note{flex:none;margin-left:auto;padding-left:var(--pv-gap);
+  font-family:var(--mono);font-size:var(--pv-meta);color:var(--ink-4);}
+.mk-step[data-state="fail"] .mk-step-note{color:var(--danger-text);}
 
 /* ── Per-preview compositions ──────────────────────────────────────────── */
 
@@ -2396,13 +2419,25 @@
 .mk-hunk{display:flex;flex-direction:column;gap:7px;
   padding:calc(var(--pv-pad) * .7) var(--pv-pad);box-shadow:inset 0 0 0 1px var(--line);}
 .mk-hunk[data-decided]{background:var(--bg-soft);}
+/* A decided change shows its verdict on the change, not only in the chip
+   beside it. Accepted retires the old line and keeps the new one lit;
+   rejected greys the pair and strikes the line that isn't happening. Colour
+   is never the only signal — the chip still states the verdict in words. */
+.mk-hunk[data-decided="accepted"] .mk-diff-line[data-kind="del"]{
+  background:none;color:var(--ink-4);text-decoration:line-through;}
+.mk-hunk[data-decided="rejected"] .mk-diff-line{background:none;color:var(--ink-4);}
+.mk-hunk[data-decided="rejected"] .mk-diff-line[data-kind="add"]{text-decoration:line-through;}
 .mk-hunk-head{display:flex;align-items:center;justify-content:space-between;gap:var(--pv-gap);}
 .mk-hunk-name{font-size:var(--pv-micro);font-weight:600;letter-spacing:.07em;
   text-transform:uppercase;color:var(--ink-4);}
 .mk-diff{display:flex;flex-direction:column;gap:2px;}
-.mk-diff-line{font-family:var(--mono);font-size:var(--pv-meta);line-height:1.7;padding:2px 8px;
+/* Not monospaced any more. Both remaining uses are a before and an after in
+   plain language — a payment's category, a shop's name — and setting those in
+   a code face asked the reader to parse a language before they could see the
+   pattern. */
+.mk-diff-line{font-size:var(--pv-meta);line-height:1.7;padding:2px 8px;
   white-space:pre-wrap;word-break:break-word;}
-.mk-diff-line[data-kind="del"]{background:var(--danger-soft);color:var(--danger);}
+.mk-diff-line[data-kind="del"]{background:var(--danger-soft);color:var(--danger-text);}
 .mk-diff-line[data-kind="add"]{background:var(--blue-soft);color:var(--blue);}
 
 .mk-params{display:flex;flex-direction:column;}
@@ -2419,16 +2454,73 @@
 @keyframes mk-spin{to{transform:rotate(360deg);}}
 
 /* A raw literal the interface leaked to the user — a function call, an id. */
-.mk-code{display:block;font-family:var(--mono);font-size:var(--pv-meta);line-height:1.6;
-  padding:calc(var(--pv-pad) * .7) var(--pv-pad);background:var(--bg-soft);color:var(--ink-2);
-  box-shadow:inset 0 0 0 1px var(--line);word-break:break-all;}
 
 /* Scoped Context and No-Answer: a name against its status, on one baseline. */
+/* The already-built report, carrying the scope it was made under. Greyed
+   rather than removed: a result that silently outlives its inputs is the thing
+   this pattern exists to prevent, so it has to still be on screen and still
+   look wrong. */
+.mk-stamp{display:flex;flex-direction:column;gap:7px;
+  padding:calc(var(--pv-pad) * .7) var(--pv-pad);background:var(--bg-soft);
+  box-shadow:inset 0 0 0 1px var(--line);}
+.mk-stamp-head{display:flex;align-items:center;justify-content:space-between;gap:var(--pv-gap);}
+
+/* A source row with its control. The checkbox is the on/off signal, so the
+   2px lead rail that used to carry it is gone — two things saying the same
+   thing, one of which nobody could click.
+   
+   The rule sits on the top edge, not the bottom. Every row used to draw its
+   own border-bottom while the locked row added a border-top, so the group
+   break landed as two parallel lines five pixels apart. With each row owning
+   the rule above it, a row that wants a stronger break darkens the line that
+   was already going to be there instead of adding a second one. */
+/* The rows carry their own horizontal padding and the list is pulled back out
+   by the same amount, so names still line up with the label above while the
+   rules and the highlight have room to sit past them. The highlight used to
+   get that room from a negative margin on one row alone, which made its rule
+   8px longer than every other row's — and gave it padding on the left with
+   nothing on the right, so the tint looked cut off. */
+.mk-picks{display:flex;flex-direction:column;margin:0 -8px;}
+/* Taller than the kit's text rows (.mk-row at 8px, .mk-xf at 7px) because
+   this is the only one holding a control: at 6px the checkbox filled almost
+   the whole row and the rules closed in on it. */
+.mk-pick{display:flex;align-items:center;gap:10px;padding:10px 8px;
+  border-top:1px solid var(--line-2);}
+.mk-pick:first-child{border-top:none;}
+.mk-pick > .mk-sys-inline{flex:none;}
+.mk-pick > .mk-src{flex:1;min-width:0;}
+
+/* The row the user just touched. Faint on purpose: it marks where the move
+   happened without competing with the tick that *is* the move. Same box as
+   every other row now, so the tint is even on both sides and the rule above
+   it is the same length as its neighbours'. */
+.mk-pick[data-touched]{background:var(--blue-soft);
+  box-shadow:inset 2px 0 0 var(--blue);}
+
+/* The row nobody can switch, set below a rule rather than mixed in with the
+   ones they can. The break is the distinction: above it is what you choose
+   between, below it is what was decided for you.
+   
+   No margin above it: the rule belongs to the list it closes, so it sits
+   against the last switchable row and the breathing room goes underneath,
+   between the line and the row it introduces. A margin put the gap on the
+   wrong side and left the divider floating away from the list. */
+.mk-pick[data-locked]{padding-top:18px;border-top-color:var(--line-strong);}
+/* The control column, empty on purpose and holding its width so the names
+   below and above the rule still line up. */
+.mk-pick-none{flex:none;width:17px;text-align:center;
+  font-size:var(--pv-meta);color:var(--ink-3);}
+
 .mk-src,.mk-cand{display:flex;align-items:baseline;justify-content:space-between;
   gap:var(--pv-gap);width:100%;}
 .mk-src-name,.mk-cand-name{font-size:var(--pv-body);color:var(--ink);}
 .mk-src-name[data-off],.mk-cand-name[data-weak]{color:var(--ink-4);}
-.mk-src-meta{flex:none;font-size:var(--pv-meta);color:var(--ink-4);}
+/* --ink-3, not --ink-4. The touched row puts a tint behind this line, and
+   --ink-4 was already 3.16:1 on the plain canvas — under the tint it would
+   have gone to 2.92:1. Adding a background is not a licence to make the text
+   on it harder to read. (The wider --ink-4 question is still open; this fixes
+   the one line this change sits under.) */
+.mk-src-meta{flex:none;font-size:var(--pv-meta);color:var(--ink-3);}
 .mk-score{flex:none;font-family:var(--mono);font-size:var(--pv-meta);color:var(--blue);
   font-variant-numeric:tabular-nums;}
 .mk-score[data-weak]{color:var(--ink-4);}
@@ -2441,7 +2533,7 @@
   display:flex;flex-direction:column;gap:7px;justify-content:flex-start;}
 .mk-metric-value{font-family:var(--display);font-size:var(--pv-title);font-weight:600;
   letter-spacing:-.02em;line-height:1.1;}
-.mk-metric-fail{display:flex;align-items:baseline;gap:7px;font-size:var(--pv-meta);color:var(--danger);}
+.mk-metric-fail{display:flex;align-items:baseline;gap:7px;font-size:var(--pv-meta);color:var(--danger-text);}
 .mk-metric-retry{font-size:var(--pv-meta);font-weight:500;color:var(--blue);padding:0;}
 .mk-panel{display:flex;flex-direction:column;gap:9px;
   padding:calc(var(--pv-pad) * .7) var(--pv-pad);box-shadow:inset 0 0 0 1px var(--line);}
@@ -2457,22 +2549,36 @@
 .mk-xf-key{flex:none;width:88px;font-size:var(--pv-micro);font-weight:600;letter-spacing:.07em;
   text-transform:uppercase;color:var(--ink-4);}
 .mk-xf-val{flex:1;min-width:0;font-size:var(--pv-body);color:var(--ink);}
+/* The Corrected state swaps the value for the field it was typed into, so the
+   control takes the column the text had. */
+.mk-xf > .mk-sys-block{flex:1;min-width:0;}
 .mk-xf-val[data-empty]{color:var(--ink-4);font-style:italic;}
 .mk-xf[data-state="low"] .mk-xf-val{color:var(--ink-2);
   box-shadow:inset 0 -1px 0 var(--ink-4);}
 .mk-xf[data-state="missing"] .mk-xf-val{color:var(--ink-4);}
 
 /* Confidence & Hedging's band. A label and a coarse scale, never a decimal —
-   the shortcut variant is the only thing here that prints a raw number. */
+   the anti-pattern wireframe is the only thing here that prints a raw number. */
 .mk-band{display:flex;flex-direction:column;gap:6px;padding:var(--pv-pad);
   box-shadow:inset 0 0 0 1px var(--line);}
 .mk-band-value{font-family:var(--display);font-size:var(--pv-title);font-weight:600;
   letter-spacing:-.02em;line-height:1.1;}
 .mk-band[data-tone="high"] .mk-band-value{color:var(--ink);}
 .mk-band[data-tone="low"] .mk-band-value{color:var(--ink-3);}
-.mk-band-scale{display:block;height:4px;background:var(--line);}
-.mk-band-fill{display:block;height:100%;background:var(--blue);}
-.mk-band[data-tone="low"] .mk-band-fill{background:var(--ink-4);}
+/* The bands themselves, and the reason this preview stopped drawing a
+   continuous fill: a 74% bar is a decimal wearing a different hat. Lighting a
+   span of segments makes width mean certainty — one band is an estimate,
+   three is an estimate that couldn't separate them — so the difference
+   between "Above the bar", "Shown as a range" and "Below the bar" is
+   something the eye gets before it reads a word. */
+.mk-bands{display:flex;gap:3px;}
+.mk-bands-seg{flex:1;display:flex;flex-direction:column;gap:5px;min-width:0;}
+.mk-bands-tick{display:block;height:4px;background:var(--line);}
+.mk-bands-name{font-size:var(--pv-micro);font-weight:600;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ink-4);}
+.mk-bands-seg[data-on] .mk-bands-tick{background:var(--blue);}
+.mk-bands-seg[data-on] .mk-bands-name{color:var(--ink-2);}
+.mk-band[data-tone="low"] .mk-bands-seg[data-on] .mk-bands-tick{background:var(--ink-4);}
 .mk-band-note{font-size:var(--pv-meta);color:var(--ink-4);}
 
 /* Plan Preview's steps, and History's entries: a line of text with its status
@@ -2523,21 +2629,82 @@
    of them carrying labels like "Awaiting approval" ran out of foot before they
    ran out of states. A track holds any number, because only the state you're
    on is named. */
-.ai-track{display:flex;align-items:center;gap:11px;min-width:0;}
-.ai-track-bar{display:flex;align-items:center;gap:3px;flex:none;}
-/* The visible bar is 4px; the hit area is the whole 22px button, so a segment
-   is comfortably clickable without drawing a chunky control. */
-.ai-track-seg{width:26px;height:22px;padding:9px 0;background:none;position:relative;}
-.ai-track-seg::before{content:"";position:absolute;inset:9px 0;background:var(--line-strong);
+/* The run, in the properties column. A list of named things with a current
+   one is what that column is for, and it is the only place with the vertical
+   room to show every step's label at once — the horizontal strip under the
+   canvas could only ever name the step you were standing on, so learning a
+   three-step pattern meant clicking through it. It also had to share a line
+   with Play, which is what kept crowding both. */
+/* The AI lab's foot is a grid rather than the shared flex row, because it
+   carries three levels and the Product Hub's carries one. Play holds the
+   top-right cell — the slot the Product Hub gives its canvas action — and the
+   three rows stack down the left, so nothing competes with it for the end of
+   a line. */
+.ai-lab .pg-canvas-foot{display:grid;grid-template-columns:minmax(0,1fr) auto;
+  align-items:start;gap:10px 16px;}
+.ai-lab .ai-play{grid-column:2;grid-row:1;}
+
+/* Row 1: where you are. Row 2: which way it goes. Row 3: what moved it here.
+   Rows 2 and 3 sit closer to each other than to row 1 — the state and its
+   cause are one thought, and proximity is what says so without a label. */
+.ai-track{display:flex;flex-direction:column;align-items:flex-start;gap:6px;
+  min-width:0;grid-column:1;}
+.ai-track-run{display:flex;align-items:center;gap:11px;min-width:0;margin-bottom:3px;}
+
+/* One segment per slot. A branch is an alternative *inside* a slot, offered by
+   .ai-track-alt, so it never has to be drawn as a segment apart from the run —
+   which is what used to put a hole in the middle of the bar.
+   30x24, not 26x22: these are controls, and 22px missed the 24x24 minimum a
+   pointer target has to clear. The painted bar stays 4px. */
+.ai-track-bar{display:flex;align-items:center;gap:4px;flex:none;}
+.ai-track-seg{width:30px;height:24px;background:none;position:relative;}
+.ai-track-seg::before{content:"";position:absolute;inset:10px 0;background:var(--line-strong);
   border-radius:2px;transition:background .18s ease,transform .18s ease;}
 .ai-track-seg:hover::before{background:var(--ink-4);}
-/* Filled up to where you are — the track carries progress, not just position. */
+/* Filled up to the slot you're in, and because there is one segment per slot
+   that fill is a prefix — holes are impossible. */
 .ai-track-seg[data-on]::before{background:var(--blue);}
-.ai-track-seg[data-active]::before{transform:scaleY(1.75);}
-.ai-track-label{display:flex;align-items:baseline;gap:7px;min-width:0;font-size:12.5px;
-  font-weight:500;color:var(--ink);}
-.ai-track-pos{flex:none;font-family:var(--mono);font-size:10.5px;color:var(--ink-4);
-  font-variant-numeric:tabular-nums;}
+.ai-track-seg[data-active]::before{transform:scaleY(2);box-shadow:0 0 0 3px var(--blue-soft);}
+/* Three states, not two: filled is behind you, solid grey is ahead of you, and
+   hollow is a step this route never reaches. */
+.ai-track-seg[data-unreached]::before{background:none;
+  box-shadow:inset 0 0 0 1px var(--line-strong);}
+
+/* The alternatives at this position — never more than four, and only ever the
+   current slot's, which is what separates this from the pill strip that was
+   cut: that one laid a whole five-state lifecycle out as a menu.
+   
+   Three states that stay quiet. The near-black fill the variant strip uses is
+   right there, but under a blue step bar inside a grey wireframe it became the
+   loudest thing on the page. Selected is an outlined chip instead: same three
+   states, a third of the weight. It still can't be a --line-2 fill, which is
+   the *hover* value here — that made a chosen alternative read as merely
+   hovered. Selected is ordered after hover, the rule .tab-pill sets. */
+.ai-track-alts{display:flex;align-items:center;gap:2px;min-width:0;flex-wrap:wrap;
+  margin-left:-12px;}
+.ai-track-alt{display:inline-flex;align-items:center;min-height:26px;
+  padding:5px 12px;border-radius:999px;font-size:12.5px;font-weight:500;
+  color:var(--ink-3);white-space:nowrap;transition:background .14s,color .14s;}
+.ai-track-alt:hover{background:var(--line-2);color:var(--ink);}
+.ai-track-alt[aria-current]{background:var(--bg);color:var(--ink);
+  box-shadow:inset 0 0 0 1px var(--ink-3);}
+/* A slot holding one state has nothing to pick, so it reads as a label at the
+   same weight rather than as a selector with one option in it. */
+.ai-track-only{font-size:12.5px;font-weight:600;color:var(--ink);}
+.ai-track-pos{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);
+  font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1;}
+/* What moved the system into this state — on a hub about behaviour, the most
+   interesting line in the foot, so it reads at the pills' size rather than
+   11px behind a hairline-coloured arrow. */
+.ai-track-by{font-size:12px;color:var(--ink-2);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;}
+.ai-track-by::before{content:"\21B3\A0";color:var(--ink-4);}
+
+/* Keyboard focus. A 4px bar is the last thing that can rely on a browser
+   default. */
+.ai-track-seg:focus-visible,.ai-track-alt:focus-visible,.ai-play:focus-visible{
+  outline:2px solid var(--blue);outline-offset:2px;border-radius:3px;}
+.ai-track-alt:focus-visible{border-radius:999px;}
 
 /* Play, bottom right, in the slot the Product Hub gives its canvas action —
    and the primary gesture on this page rather than an afterthought beside the
@@ -2549,6 +2716,7 @@
 .ai-play:hover{color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink-4);}
 .ai-play[data-on]{background:var(--blue);color:#fff;box-shadow:none;}
 .ai-play[data-on]:hover{background:var(--ink);color:#fff;}
+.ai-play:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
 
 /* Each state arrives rather than snapping in. Watching a pattern move from
    Waiting to Streaming to Complete is what this page is for, and a hard swap
@@ -2567,6 +2735,7 @@
 @media (prefers-reduced-motion: reduce){
   .ai-swap{animation:none;}
   .ai-track-seg::before{transition:none;}
+  .ai-track-alt{transition:none;}
   .ai-caret{animation:none;}
   .ai-skel-line{animation:none;}
   .mk-spin{animation:none;}

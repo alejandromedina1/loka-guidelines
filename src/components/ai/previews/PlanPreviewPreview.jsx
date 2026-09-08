@@ -1,12 +1,12 @@
 import { Body, Btn, Btns, Chip, Frame, FrameBar, Label, Note, Row, Say, Steps } from "./kit.jsx";
 
-// Plan Preview on a bulk record update. The steps are the point: the outcome
-// ("update 340 records") hides the one step that contacts people.
+// Plan Preview on cancelling unused subscriptions. The steps are the point: the
+// outcome ("cancel 3 subscriptions") hides the one step that contacts people.
 const PLAN = [
-  { label: "Match 340 accounts on region", risk: false },
-  { label: "Recalculate renewal dates", risk: false },
-  { label: "Write the new dates to Salesforce", risk: true },
-  { label: "Email 340 account owners", risk: true },
+  { label: "Find subscriptions you haven't used", risk: false },
+  { label: "Work out what you'd save", risk: false },
+  { label: "Cancel 3 subscriptions", risk: true },
+  { label: "Email the 3 companies to confirm", risk: true },
 ];
 
 export function PlanPreviewPreview({ state }) {
@@ -14,22 +14,25 @@ export function PlanPreviewPreview({ state }) {
     const at = state === "done" ? 4 : state === "paused" ? 2 : 1;
     return (
       <Frame width={540}>
-        <FrameBar title="Bulk update · Q4 renewals" />
+        <FrameBar title="Cancel 3 subscriptions" />
         <Body>
           {state === "done" && (
             <Note tone="ok" title="4 of 4 steps complete">
-              340 records updated, 340 owners emailed. Finished 16:41.
+              3 cancelled, 3 confirmation emails sent. Finished 16:41. You'll save £27 a month.
             </Note>
           )}
           {state === "paused" && (
             <Note tone="warn" title="Paused before step 3">
-              Two steps done and reversible. Nothing has been written to Salesforce yet.
+              Two steps done and reversible. Nothing has been cancelled yet.
             </Note>
           )}
-          <Steps items={PLAN.map((s) => s.label)} at={at} />
+          {/* Paused holds step 3 in a neutral ring rather than the blue one
+              in-flight steps get: the note says nothing has been cancelled
+              yet, and this is that sentence drawn. */}
+          <Steps items={PLAN.map((s) => s.label)} at={at} paused={state === "paused"} />
           <span className="mk-foot">
             <Say tone="mute" size="sm">
-              {state === "done" ? "Receipt kept on the record" : "Pauses at step boundaries"}
+              {state === "done" ? "Receipt kept on your account" : "Pauses between steps"}
             </Say>
             <Btns align="end">
               {state === "paused" && <Btn>Abandon</Btn>}
@@ -38,7 +41,7 @@ export function PlanPreviewPreview({ state }) {
                   {state === "paused" ? "Resume" : "Pause"}
                 </Btn>
               )}
-              {state === "done" && <Btn>View changes</Btn>}
+              {state === "done" && <Btn>View what changed</Btn>}
             </Btns>
           </span>
         </Body>
@@ -49,7 +52,7 @@ export function PlanPreviewPreview({ state }) {
   const removed = state === "edited";
   return (
     <Frame width={540}>
-      <FrameBar title="Bulk update · Q4 renewals" />
+      <FrameBar title="Cancel 3 subscriptions" />
       <Body>
         <span className="mk-scope-head">
           <Label>Plan</Label>
@@ -63,17 +66,20 @@ export function PlanPreviewPreview({ state }) {
                 <span className="mk-plan-step" data-cut={removed && i === 3 ? "" : undefined}>
                   {s.label}
                 </span>
-                {s.risk && !(removed && i === 3) && <Chip>Irreversible</Chip>}
+                {s.risk && !(removed && i === 3) && <Chip>Can't be undone</Chip>}
                 {removed && i === 3 && <Chip>Removed</Chip>}
               </span>
             </Row>
           ))}
         </div>
 
-        <Note tone={removed ? "plain" : "warn"} title={removed ? "Nothing will be sent" : "Two steps can't be undone"}>
+        <Note
+          tone={removed ? "plain" : "warn"}
+          title={removed ? "No emails will go out" : "Two steps can't be undone"}
+        >
           {removed
-            ? "Step 4 was cut, so no email goes out. The other three run as listed."
-            : "Steps 3 and 4 write outside this tool. Remove either before running."}
+            ? "Step 4 was cut, so nothing is emailed. The other three run as listed."
+            : "Steps 3 and 4 reach outside this app. Remove either before running."}
         </Note>
 
         <span className="mk-foot">

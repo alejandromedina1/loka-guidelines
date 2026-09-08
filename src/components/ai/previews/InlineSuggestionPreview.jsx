@@ -1,10 +1,10 @@
 import { Body, Btn, Btns, Frame, FrameBar, Label, Note, Say } from "./kit.jsx";
 
-// Inline Suggestion inside a CRM note field — no assistant, no prompt, just
+// Inline Suggestion inside the note on a payment — no assistant, no prompt, just
 // somebody writing and the system finishing the sentence. The whole pattern
 // lives in one decision: whether the reader can see where their words stop.
-const TYPED = "Renewal call went well. Ops team wants";
-const GHOST = " a shorter onboarding window before they commit to the annual plan.";
+const TYPED = "Dinner with Sam —";
+const GHOST = " split three ways, he owes me £16.";
 const FULL = TYPED + GHOST;
 
 export function InlineSuggestionPreview({ state }) {
@@ -12,13 +12,13 @@ export function InlineSuggestionPreview({ state }) {
 
   return (
     <Frame width={540}>
-      <FrameBar title="Northwind Ltd · Account note" />
+      <FrameBar title="Note on a payment · £48.20" />
       <Body>
         <Label>Note</Label>
         <div className="mk-editor" data-focus>
           {state === "typing" && (
             <span className="mk-typed">
-              Renewal call went well. Ops<span className="ai-caret" aria-hidden />
+              Dinner with<span className="ai-caret" aria-hidden />
             </span>
           )}
 
@@ -35,12 +35,12 @@ export function InlineSuggestionPreview({ state }) {
           {state === "accepted" && <span className="mk-typed">{FULL}</span>}
           {state === "dismissed" && (
             <span className="mk-typed">
-              {TYPED} a phased rollout<span className="ai-caret" aria-hidden />
+              {TYPED} my half of the table<span className="ai-caret" aria-hidden />
             </span>
           )}
           {state === "unavailable" && (
             <span className="mk-typed">
-              Spoke to procurement about the SOC 2 addendum
+              Parking, Stoke Newington
               <span className="ai-caret" aria-hidden />
             </span>
           )}
@@ -62,12 +62,9 @@ export function InlineSuggestionPreview({ state }) {
           </span>
         )}
 
-
-
         {state === "unavailable" && (
           <Note tone="plain" title="No suggestion here">
-            Below the confidence bar for this account, so nothing is offered. Padding with a weak
-            guess is how the good suggestions get ignored too.
+            Nothing above the bar for this payment.
           </Note>
         )}
       </Body>

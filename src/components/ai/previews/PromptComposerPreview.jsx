@@ -12,44 +12,42 @@ export function PromptComposerPreview({ state }) {
   const empty = state === "empty";
   return (
     <Frame width={540}>
-      <FrameBar title="New analysis" />
+      <FrameBar title="New spending report" />
       <Body>
-        {/* Submitted: the prompt is echoed and locked above the answer it
+        {/* Submitted: the request is echoed and locked above the answer it
             produced, and a fresh composer opens below for the follow-up. */}
         {state === "submitted" && (
           <>
             <div className="mk-echo">
               <Label>You asked</Label>
-              <Say size="sm">Summarise last quarter's churn by cohort</Say>
+              <Say size="sm">What did I spend on food last month?</Say>
             </div>
             <GhostLines widths={[100, 95, 88, 54]} />
           </>
         )}
 
         {/* The three parameters the decision says belong on chips rather than in
-            prose — target file, date range, output format — shown before the
-            send rather than discovered after it. The format chip used to be
-            missing, which left the first decision naming something the canvas
-            never drew. */}
+            prose — which account, which dates, what shape the answer takes —
+            shown before the send rather than discovered after it. */}
         {state === "context" && (
           <span className="mk-chips">
-            <Chip>accounts_q3.csv</Chip>
-            <Chip>Last 90 days</Chip>
-            <Chip>As a table</Chip>
-            <Chip>+ Add context</Chip>
+            <Chip>Current account</Chip>
+            <Chip>Last 30 days</Chip>
+            <Chip>As a chart</Chip>
+            <Chip>+ Add</Chip>
           </span>
         )}
 
         <Field
           rows={2}
           state={over ? "error" : empty || state === "submitted" ? "idle" : "focus"}
-          placeholder="Ask about your accounts, or describe what to build…"
+          placeholder="Describe the report you want…"
           value={
             empty || state === "submitted"
               ? ""
               : over
-                ? "Summarise last quarter's churn by cohort, then cross-reference every cancelled account against its onboarding path, support history, invoice disputes…"
-                : "Summarise last quarter's churn by cohort"
+                ? "What did I spend on food last month, and break it down by shop, by day of the week, by card, and compare each one against the same month last year and the year before…"
+                : "What did I spend on food last month?"
           }
         />
 
@@ -64,7 +62,7 @@ export function PromptComposerPreview({ state }) {
             <span />
           )}
           <Btns align="end">
-            <Btn>Attach</Btn>
+            <Btn>Add a file</Btn>
             <Btn variant="primary" disabled={empty || over || state === "submitted"}>
               Send
             </Btn>

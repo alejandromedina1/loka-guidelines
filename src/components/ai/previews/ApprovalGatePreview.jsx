@@ -1,31 +1,42 @@
 import { Body, Btn, Btns, Chip, Field, Frame, FrameBar, Note, Row, Say, Steps } from "./kit.jsx";
 
-const STEPS = ["Build the audience", "Render the template", "Send to 1,240 people", "Log the send"];
+const STEPS = ["Check the balance", "Line up 4 payments", "Send £740", "Log the payments"];
 
 // Approval Gate. The gate itself is stated as an effect in the user's words —
-// "Email 1,240 subscribers", never "run send_campaign" — which is the whole
+// "Pay 4 bills, £740 in total", never "run batch_transfer" — which is the whole
 // difference between approving something and approving something you understood.
+//
+// Four bills rather than one transfer, because this pattern has to be able to
+// fail halfway and mean it. One payment either happens or doesn't; four is
+// where "stopped at step 3" is a real state with real consequences.
 export function ApprovalGatePreview({ state }) {
   if (state === "executing" || state === "done" || state === "failed") {
     return (
       <Frame width={540}>
-        <FrameBar title="Campaign · Winter re-engagement" />
+        <FrameBar title="Pay 4 bills" />
         <Body>
+          {/* The meter now carries which step stopped and how far it got, so
+              the callout only has to say the part a meter can't draw: what
+              the reader has to do about the two that didn't go. */}
           {state === "failed" && (
-            <Note tone="bad" title="Stopped at step 3 of 4">
-              412 of 1,240 emails were sent before the provider rejected the batch. 828 were not
-              sent. Nothing needs undoing for those.
+            <Note tone="bad" title="Your bank declined the batch">
+              2 bills weren't paid. Nothing needs undoing for those.
             </Note>
           )}
           {state === "done" && (
-            <Note tone="ok" title="Sent to 1,240 people">
-              Completed 14:32. Bounces will appear here within an hour.
+            <Note tone="ok" title="4 bills paid · £740">
+              Completed 14:32. Each one will show on your statement within an hour.
             </Note>
           )}
-          <Steps items={STEPS} at={state === "executing" ? 2 : state === "failed" ? 2 : 4} />
+          <Steps
+            items={STEPS}
+            at={state === "done" ? 4 : 2}
+            failed={state === "failed" ? 2 : undefined}
+            notes={state === "failed" ? { 2: "£310 of £740" } : undefined}
+          />
           {state === "failed" && (
             <Btns align="end">
-              <Btn>Download the 828 unsent</Btn>
+              <Btn>See the 2 unpaid</Btn>
               <Btn variant="primary">Retry those only</Btn>
             </Btns>
           )}
@@ -40,35 +51,35 @@ export function ApprovalGatePreview({ state }) {
     <Frame width={540}>
       <FrameBar title="Approval needed" />
       <Body>
-        <Say size="lg">Email 1,240 subscribers</Say>
+        <Say size="lg">Pay 4 bills, £740 in total</Say>
         <div className="mk-params">
           <Row lead>
             <span className="mk-param">
-              <span className="mk-param-key">Audience</span>
-              <span className="mk-param-val">Inactive 90+ days · 1,240 people</span>
+              <span className="mk-param-key">From</span>
+              <span className="mk-param-val">Current account · £1,240 available</span>
             </span>
           </Row>
           <Row>
             <span className="mk-param">
-              <span className="mk-param-key">Send at</span>
+              <span className="mk-param-key">When</span>
               {modified ? (
                 <Field state="focus" value="Tomorrow, 09:00" />
               ) : (
-                <span className="mk-param-val">Immediately</span>
+                <span className="mk-param-val">Now</span>
               )}
             </span>
           </Row>
           <Row>
             <span className="mk-param">
-              <span className="mk-param-key">Reply-to</span>
-              <span className="mk-param-val">hello@…</span>
+              <span className="mk-param-key">Bills</span>
+              <span className="mk-param-val">Energy, water, phone, council tax</span>
             </span>
           </Row>
         </div>
 
-        {modified && <Chip>Send time changed</Chip>}
+        {modified && <Chip>Time changed</Chip>}
 
-        <Note tone="warn">This can't be unsent. Nothing runs until you approve it.</Note>
+        <Note tone="warn">Sent money can't be pulled back.</Note>
 
         <span className="mk-foot">
           <Say tone="mute" size="sm">

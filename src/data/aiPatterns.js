@@ -33,7 +33,22 @@ export const aiPatternId = (id) => `ai-pattern-${id}`;
 //
 // `n/a` is a real answer and is used freely — a refusal has nothing to
 // interrupt. What isn't allowed is leaving an axis unstated.
-export const CONTROL_AXES = [
+export // Every state carries `by` — what moves the system into it — and `from`, the
+// state it follows. A state with no `from` is a way the pattern can *start*.
+//
+// That pair is what lets the canvas draw the shape a pattern actually has
+// instead of assuming all of them are sequences. Only five of the fourteen
+// are: Streaming Response forks three ways at the end, Clear Refusal's four
+// states are four kinds of refusal that never follow one another, Confidence
+// Levels is a set of outcomes ordered by descending certainty. Drawing those
+// as a filled progress bar taught that they happen in order, which is the
+// opposite of true — and it is why Play read as five screenshots on a timer
+// rather than as a behaviour.
+//
+// Nothing declares a shape. It is derived in flow.js from these two fields,
+// so a pattern can't claim to be a sequence while branching.
+
+const CONTROL_AXES = [
   { id: "interrupt", label: "Interrupt", desc: "Can the user stop it mid-flight?" },
   { id: "inspect", label: "Inspect", desc: "Can they see how it got there?" },
   { id: "verify", label: "Verify", desc: "Can they check it against a source?" },
@@ -124,11 +139,11 @@ export const AI_PATTERNS = [
     definition:
       "The box where someone types what they want in their own words — plus the small things around it that make a vague first try easy to fix.",
     states: [
-      { id: "empty", label: "Empty", note: "Placeholder teaches scope, not etiquette. Send is off — there's nothing to send yet." },
-      { id: "composing", label: "Composing", note: "Send turns on the moment there's something to send. No validation message for an empty field." },
-      { id: "context", label: "With context", note: "The file, the dates, the output format — on chips, before anything is sent. Context nobody can see beforehand is context they'll be surprised by." },
-      { id: "submitted", label: "Submitted", note: "Locked and echoed above the answer. An editable prompt that no longer matches the answer lies about what produced it." },
-      { id: "over", label: "Over limit", note: "The limit shows as you approach it, not once you're refused. Quietly cutting the text off produces a confident answer to half a question." },
+      { id: "empty", label: "Empty", note: "Placeholder teaches scope, not etiquette. Send is off — there's nothing to send yet.", by: "you open a new request" },
+      { id: "composing", label: "Composing", note: "Send turns on the moment there's something to send. No validation message for an empty field.", from: "empty", by: "you start typing" },
+      { id: "context", label: "With context", note: "The file, the dates, the output format — on chips, before anything is sent. Context nobody can see beforehand is context they'll be surprised by.", from: "empty", by: "you add context" },
+      { id: "over", label: "Over limit", note: "The limit shows as you approach it, not once you're refused. Quietly cutting the text off produces a confident answer to half a question.", from: "empty", by: "you pass the limit" },
+      { id: "submitted", label: "Submitted", note: "Locked and echoed above the answer. An editable prompt that no longer matches the answer lies about what produced it.", from: "composing", by: "you press Send" },
     ],
     useWhen: [
       { lead: "The request is open-ended", detail: "The request can't be enumerated in a form." },
@@ -195,13 +210,20 @@ export const AI_PATTERNS = [
     category: "intent",
     status: "documented",
     definition:
-      "Showing what the AI is allowed to look at — which sources, which records, which dates — and letting people change it before it runs.",
+      // "Allowed" was doing real damage here. It is permission vocabulary, and
+      // this is the page description — the one string that has to land cold —
+      // so it taught readers that ticking a box grants the AI access. It
+      // doesn't: you already have access to everything you can tick, and the
+      // one row you can't tick is the permission decision, made elsewhere by
+      // somebody else. "For this piece of work" carries what the checkboxes
+      // actually decide, which is relevance.
+      "Showing which data the AI will read for this piece of work — which sources, which records, which dates — and letting people change it before it runs.",
     states: [
-      { id: "default", label: "Default scope", note: "The scope the system picked, stated plainly and before anything runs. A default nobody can see is a default nobody can correct." },
-      { id: "editing", label: "Editing scope", note: "Sources switch on and off right where they're used, not three screens away in settings." },
-      { id: "narrow", label: "Narrowed", note: "The count moves as you go, so “what will it read” is a number rather than a promise." },
-      { id: "empty", label: "Nothing in scope", note: "Blocked, and said out loud. This is the state that stops a silent fall back to general knowledge." },
-      { id: "stale", label: "Scope changed", note: "A result carries the scope it was produced under. Change the scope and the result is marked out of date rather than quietly kept." },
+      { id: "default", label: "Default scope", note: "The scope the system picked, stated plainly and before anything runs. A default nobody can see is a default nobody can correct.", by: "you open a new request" },
+      { id: "editing", label: "Editing scope", note: "Sources switch on and off right where they're used, not three screens away in settings.", from: "default", by: "you switch another one on" },
+      { id: "narrow", label: "Narrowed", note: "The count moves as you go, so “what will it read” is a number rather than a promise.", from: "default", by: "you switch sources off" },
+      { id: "empty", label: "Nothing in scope", note: "Blocked, and said out loud. This is the state that stops a silent fall back to general knowledge.", from: "default", by: "you switch them all off" },
+      { id: "stale", label: "Scope changed", note: "A result carries the scope it was produced under. Change the scope and the result is marked out of date rather than quietly kept.", from: "editing", by: "a source changes after it ran" },
     ],
     useWhen: [
       { lead: "The answer depends on which data", detail: "Two scopes give two different right answers, and only one of them is yours." },
@@ -250,7 +272,11 @@ export const AI_PATTERNS = [
       undo: { grade: "recommended", note: "Get back to the starting selection in one action." },
     },
     composedOf: ["Checkbox", "Filter", "Tags", "Input Dropdown", "Button"],
-    optionalParts: ["Checkbox", "Filter", "Input Dropdown"],
+    // Checkbox moved out of optional: it was listed as a part you could do
+    // without, in the one pattern whose whole argument is that sources switch
+    // on and off where they're used. Filter and Input Dropdown stay optional —
+    // they are ways to cope with a long list, not the thing the pattern is.
+    optionalParts: ["Filter", "Input Dropdown"],
   },
   {
     id: "structured-intent",
@@ -270,11 +296,11 @@ export const AI_PATTERNS = [
     definition:
       "The answer appears as it's being written, so people can start reading before it's finished.",
     states: [
-      { id: "waiting", label: "Waiting", note: "Nothing at all for a third of a second, then a grey outline in the shape of the answer. A spinner says “working”; an outline says what you're going to get." },
-      { id: "streaming", label: "Streaming", note: "A steady pace rather than the model's own stutter, and Stop is there from the first word — never only on hover." },
-      { id: "complete", label: "Complete", note: "Actions unlock here and not before. Offering to act on a partial answer is offering to act on a wrong one." },
-      { id: "stopped", label: "Stopped", note: "The user's own choice, so it stays neutral. The partial is kept, marked, and still copyable." },
-      { id: "dropped", label: "Connection lost", note: "A genuine failure, so it reads as one. The partial survives and both Continue and Retry are offered." },
+      { id: "waiting", label: "Waiting", note: "Nothing at all for a third of a second, then a grey outline in the shape of the answer. A spinner says “working”; an outline says what you're going to get.", by: "you send a request" },
+      { id: "streaming", label: "Streaming", note: "A steady pace rather than the model's own stutter, and Stop is there from the first word — never only on hover.", from: "waiting", by: "the first words arrive" },
+      { id: "complete", label: "Complete", note: "Actions unlock here and not before. Offering to act on a partial answer is offering to act on a wrong one.", from: "streaming", by: "it finishes on its own" },
+      { id: "stopped", label: "Stopped", note: "The user's own choice, so it stays neutral. The partial is kept, marked, and still copyable.", from: "streaming", by: "you press Stop" },
+      { id: "dropped", label: "Connection lost", note: "A genuine failure, so it reads as one. The partial survives and both Continue and Retry are offered.", from: "streaming", by: "the connection drops" },
     ],
     useWhen: [
       { lead: "Slow and linear", detail: "It takes more than a second and the answer is text, code or a list." },
@@ -336,11 +362,11 @@ export const AI_PATTERNS = [
     definition:
       "Results that arrive one finished piece at a time — a card, a row, a section — for answers that can't sensibly appear word by word.",
     states: [
-      { id: "skeletons", label: "All pending", note: "Grey outlines at the real size of each piece, so nothing jumps when the values arrive." },
-      { id: "partial", label: "Some arrived", note: "Each piece arrives finished. A half-drawn table is worse than an empty one, because it invites reading." },
-      { id: "slow", label: "One piece lagging", note: "The slow one says so in its own space rather than holding the other five hostage." },
-      { id: "failed", label: "One piece failed", note: "A single failure doesn't discard the four that worked, and it retries on its own." },
-      { id: "complete", label: "Complete", note: "The same layout as the outlines. If the page shifted on the way here, the placeholders were the wrong size." },
+      { id: "skeletons", label: "All pending", note: "Grey outlines at the real size of each piece, so nothing jumps when the values arrive.", by: "you open the page" },
+      { id: "partial", label: "Some arrived", note: "Each piece arrives finished. A half-drawn table is worse than an empty one, because it invites reading.", from: "skeletons", by: "the first pieces land" },
+      { id: "slow", label: "One piece lagging", note: "The slow one says so in its own space rather than holding the other five hostage.", from: "skeletons", by: "one piece runs long" },
+      { id: "failed", label: "One piece failed", note: "A single failure doesn't discard the four that worked, and it retries on its own.", from: "skeletons", by: "one piece errors" },
+      { id: "complete", label: "Complete", note: "The same layout as the outlines. If the page shifted on the way here, the placeholders were the wrong size.", from: "partial", by: "the last piece lands" },
     ],
     useWhen: [
       { lead: "The answer is cards or rows, not paragraphs", detail: "Cards, rows, metrics — things read whole rather than left to right." },
@@ -417,11 +443,11 @@ export const AI_PATTERNS = [
     definition:
       "An answer that shows which source each part came from, precisely enough that someone can actually check it.",
     states: [
-      { id: "cited", label: "Sourced", note: "Markers sit on the claim, not on the answer. An answer-level source list proves sources were consulted, not that this sentence came from them." },
-      { id: "source", label: "Source open", note: "Opens at the cited passage with its date. A link to page one of a forty-page PDF is a citation nobody checks twice." },
-      { id: "mixed", label: "Partly sourced", note: "Sentences with no source look different from sentences with one. Sourced and invented text blended into a single even paragraph is the most dangerous thing in AI UI." },
-      { id: "none", label: "Nothing found", note: "“Searched 12 documents, found nothing” is a useful, trustworthy answer. Falling back to general knowledge in the same style is not." },
-      { id: "locked", label: "Restricted", note: "A source exists and this user can't open it. Hiding it makes a sourced answer look invented; showing what's in it leaks it." },
+      { id: "cited", label: "Sourced", note: "Markers sit on the claim, not on the answer. An answer-level source list proves sources were consulted, not that this sentence came from them.", by: "every claim has a source" },
+      { id: "mixed", label: "Partly sourced", note: "Sentences with no source look different from sentences with one. Sourced and invented text blended into a single even paragraph is the most dangerous thing in AI UI.", by: "part of it has no source" },
+      { id: "none", label: "Nothing found", note: "“Searched 12 documents, found nothing” is a useful, trustworthy answer. Falling back to general knowledge in the same style is not.", by: "the search finds nothing" },
+      { id: "source", label: "Source open", note: "Opens at the cited passage with its date. A link to page one of a forty-page PDF is a citation nobody checks twice.", from: "cited", by: "you open a marker" },
+      { id: "locked", label: "Restricted", note: "A source exists and this user can't open it. Hiding it makes a sourced answer look invented; showing what's in it leaks it.", from: "cited", by: "you open one you can't see" },
     ],
     useWhen: [
       { lead: "It's a factual claim", detail: "About the user's own data, or about the world." },
@@ -482,10 +508,10 @@ export const AI_PATTERNS = [
     definition:
       "Saying how sure the AI is, in a way that changes what the reader does next — without theatre, and without pretending to a precision you don't have.",
     states: [
-      { id: "high", label: "Above the bar", note: "Shown plainly, action open. Confidence that changes nothing is decoration." },
-      { id: "banded", label: "Shown as a range", note: "A labelled range rather than a decimal. Nobody does anything differently at 73.42% than at 71.08%." },
-      { id: "low", label: "Below the bar", note: "Hedged, and the action gated behind a check. The interface changes, not just the label." },
-      { id: "unavailable", label: "No score", note: "Too little to go on, said out loud. A number you'd tell somebody to ignore shouldn't be on screen at all." },
+      { id: "high", label: "Above the bar", note: "Shown plainly, action open. Confidence that changes nothing is decoration.", by: "the estimate lands in one band" },
+      { id: "banded", label: "Shown as a range", note: "A labelled range rather than a decimal. Nobody does anything differently at 73.42% than at 71.08%.", by: "the estimate spans two bands" },
+      { id: "low", label: "Below the bar", note: "Hedged, and the action gated behind a check. The interface changes, not just the label.", by: "the estimate spans all three" },
+      { id: "unavailable", label: "No score", note: "Too little to go on, said out loud. A number you'd tell somebody to ignore shouldn't be on screen at all.", by: "too little to go on" },
     ],
     useWhen: [
       { lead: "A number drives a decision", detail: "Somebody acts differently at 60 than at 80." },
@@ -543,11 +569,11 @@ export const AI_PATTERNS = [
     definition:
       "Answers laid out as fields, rows or cards instead of paragraphs — for when the next thing someone does is check or copy a value, not read.",
     states: [
-      { id: "extracted", label: "Extracted", note: "Every field carries its own confidence. One number for a whole document tells nobody which line to check." },
-      { id: "lowconf", label: "Needs checking", note: "The uncertain field is marked and reachable, not averaged into a document-level score." },
-      { id: "missing", label: "Not found", note: "Empty and labelled. A plausible guess in an empty field is the worst thing this pattern can produce, because it's indistinguishable from a read." },
-      { id: "source", label: "Traced to source", note: "Click a value, see where on the page it came from. A value you can't trace is one you would have to re-type before you trusted it." },
-      { id: "edited", label: "Corrected", note: "Human-set, marked, and never overwritten by a later run." },
+      { id: "extracted", label: "Extracted", note: "Every field carries its own confidence. One number for a whole document tells nobody which line to check.", by: "the document is read" },
+      { id: "lowconf", label: "Needs checking", note: "The uncertain field is marked and reachable, not averaged into a document-level score.", by: "one field is uncertain" },
+      { id: "missing", label: "Not found", note: "Empty and labelled. A plausible guess in an empty field is the worst thing this pattern can produce, because it's indistinguishable from a read.", by: "one field isn't there" },
+      { id: "source", label: "Traced to source", note: "Click a value, see where on the page it came from. A value you can't trace is one you would have to re-type before you trusted it.", from: "extracted", by: "you open a value" },
+      { id: "edited", label: "Corrected", note: "Human-set, marked, and never overwritten by a later run.", from: "extracted", by: "you correct a value" },
     ],
     useWhen: [
       { lead: "They are about to copy or compare", detail: "Somebody is about to copy these values into something else." },
@@ -606,11 +632,11 @@ export const AI_PATTERNS = [
     definition:
       "A greyed-out suggestion inside someone's own writing: one key accepts it, and ignoring it makes it go away.",
     states: [
-      { id: "typing", label: "Typing", note: "Nothing offered yet. A suggestion on the first character is a guess about an intent nobody has formed." },
-      { id: "offered", label: "Suggestion offered", note: "Visibly not theirs. If a writer can't see where their sentence ends and the model's begins, they'll ship yours without deciding to." },
-      { id: "accepted", label: "Accepted", note: "One keystroke and it becomes their text — plain, no residue, no badge." },
-      { id: "dismissed", label: "Dismissed", note: "Rejection is silence. Keep typing and it's gone: no dialog, nothing to undo." },
-      { id: "unavailable", label: "Nothing to suggest", note: "Absence is a correct state. Padding with a low-confidence guess to look responsive is how the good suggestions get ignored too." },
+      { id: "typing", label: "Typing", note: "Nothing offered yet. A suggestion on the first character is a guess about an intent nobody has formed.", by: "you start writing" },
+      { id: "unavailable", label: "Nothing to suggest", note: "Absence is a correct state. Padding with a low-confidence guess to look responsive is how the good suggestions get ignored too.", by: "nothing clears the bar" },
+      { id: "offered", label: "Suggestion offered", note: "Visibly not theirs. If a writer can't see where their sentence ends and the model's begins, they'll ship yours without deciding to.", from: "typing", by: "you pause mid-sentence" },
+      { id: "accepted", label: "Accepted", note: "One keystroke and it becomes their text — plain, no residue, no badge.", from: "offered", by: "you press Tab" },
+      { id: "dismissed", label: "Dismissed", note: "Rejection is silence. Keep typing and it's gone: no dialog, nothing to undo.", from: "offered", by: "you keep typing" },
     ],
     useWhen: [
       { lead: "They're already writing", detail: "The work exists and you're finishing it, not starting it." },
@@ -671,11 +697,11 @@ export const AI_PATTERNS = [
     definition:
       "Showing what the AI wants to change beside what's there now, so a person can accept or reject each change.",
     states: [
-      { id: "proposed", label: "Proposed", note: "Nothing applied and nothing pre-selected. Accept-all exists but is never the default." },
-      { id: "partial", label: "Partly accepted", note: "One block of changes at a time. Line by line is a precision nobody uses, and all-or-nothing is a bet on the weakest change in the set." },
-      { id: "applied", label: "Applied", note: "What landed, in the user's terms, with a stated window to take it back out." },
-      { id: "stale", label: "Stale", note: "The file moved under the proposal. Re-propose — applying a stale diff silently corrupts work in progress." },
-      { id: "empty", label: "Nothing to change", note: "A success, and it should look like one. “Nothing to change” shown as an empty screen reads as a broken feature." },
+      { id: "proposed", label: "Proposed", note: "Nothing applied and nothing pre-selected. Accept-all exists but is never the default.", by: "the changes are ready" },
+      { id: "empty", label: "Nothing to change", note: "A success, and it should look like one. “Nothing to change” shown as an empty screen reads as a broken feature.", by: "the check comes back clean" },
+      { id: "partial", label: "Partly accepted", note: "One block of changes at a time. Line by line is a precision nobody uses, and all-or-nothing is a bet on the weakest change in the set.", from: "proposed", by: "you decide them one at a time" },
+      { id: "stale", label: "Stale", note: "The file moved under the proposal. Re-propose — applying a stale diff silently corrupts work in progress.", from: "proposed", by: "the original changes underneath" },
+      { id: "applied", label: "Applied", note: "What landed, in the user's terms, with a stated window to take it back out.", from: "partial", by: "you press Apply" },
     ],
     useWhen: [
       { lead: "They already own it", detail: "Code, a document, a setting, a record they've put work into." },
@@ -753,10 +779,10 @@ export const AI_PATTERNS = [
     definition:
       "A readable list of what the AI changed, when, and on what basis — and a way back to any point on it.",
     states: [
-      { id: "trail", label: "Change trail", note: "AI changes are named and so are people's. Telling the two apart at a glance is the whole value of a history." },
-      { id: "diff", label: "One change", note: "What one AI run changed, described in the record's own words rather than as raw data." },
-      { id: "attributed", label: "Why it changed", note: "Which run it was, what it could see, and what set it off. A change with no context tells you what happened and nothing about why." },
-      { id: "restore", label: "Restoring", note: "Restoring writes a new entry rather than erasing. History that can be rewritten isn't history." },
+      { id: "trail", label: "Change trail", note: "AI changes are named and so are people's. Telling the two apart at a glance is the whole value of a history.", by: "you open the history" },
+      { id: "diff", label: "One change", note: "What one AI run changed, described in the record's own words rather than as raw data.", from: "trail", by: "you open one change" },
+      { id: "restore", label: "Restoring", note: "Restoring writes a new entry rather than erasing. History that can be rewritten isn't history.", from: "trail", by: "you pick an earlier point" },
+      { id: "attributed", label: "Why it changed", note: "Which run it was, what it could see, and what set it off. A change with no context tells you what happened and nothing about why.", from: "diff", by: "you ask what it could see" },
     ],
     useWhen: [
       { lead: "The AI changes something that lasts", detail: "A record, a document, a setting people rely on." },
@@ -816,11 +842,11 @@ export const AI_PATTERNS = [
     definition:
       "A deliberate stop before the AI does something that reaches the real world, so a person says yes to it first.",
     states: [
-      { id: "await", label: "Awaiting approval", note: "What will happen, in the reader's own words, naming exactly what it happens to. If the button reads like the name of the code, they're approving something they haven't understood." },
-      { id: "modified", label: "Modified", note: "Change one detail, then approve. Approve-or-reject alone forces a full restart to fix one field — which is what trains people not to read." },
-      { id: "executing", label: "Running", note: "Step-level progress, because step-level failure is possible." },
-      { id: "done", label: "Done", note: "A receipt of what actually happened, not a toast that it was submitted." },
-      { id: "failed", label: "Failed midway", note: "What did and didn't happen, per step. “Something went wrong” after somebody approved a multi-step action is the worst message the product can produce." },
+      { id: "await", label: "Awaiting approval", note: "What will happen, in the reader's own words, naming exactly what it happens to. If the button reads like the name of the code, they're approving something they haven't understood.", by: "it needs a yes before it acts" },
+      { id: "modified", label: "Modified", note: "Change one detail, then approve. Approve-or-reject alone forces a full restart to fix one field — which is what trains people not to read.", by: "you change a detail first" },
+      { id: "executing", label: "Running", note: "Step-level progress, because step-level failure is possible.", from: "await", by: "you approve" },
+      { id: "done", label: "Done", note: "A receipt of what actually happened, not a toast that it was submitted.", from: "executing", by: "every step finishes" },
+      { id: "failed", label: "Failed midway", note: "What did and didn't happen, per step. “Something went wrong” after somebody approved a multi-step action is the worst message the product can produce.", from: "executing", by: "a step fails partway" },
     ],
     useWhen: [
       { lead: "It reaches outside the screen", detail: "It writes to a system people rely on, spends money, contacts someone outside, or can't be undone." },
@@ -835,7 +861,7 @@ export const AI_PATTERNS = [
       {
         q: "What exactly is being approved?",
         loka: "The concrete effect, in the user's words, with the target named.",
-        why: "“Email 1,240 subscribers”, never “Run send_campaign”. If the wording is the name of the code, the user is approving something they haven't understood.",
+        why: "“Pay 4 bills, £740 in total”, never “Run batch_transfer”. If the wording is the name of the code, the user is approving something they haven't understood.",
         shows: "await",
       },
       {
@@ -880,11 +906,11 @@ export const AI_PATTERNS = [
     definition:
       "The steps the AI intends to take, shown and editable while changing them is still cheap.",
     states: [
-      { id: "proposed", label: "Plan proposed", note: "Every step visible and removable. Nothing has run." },
-      { id: "edited", label: "Step removed", note: "Cut a step and the plan re-costs itself. Editing beats rejecting and starting again." },
-      { id: "running", label: "Running", note: "Step-level progress, because step-level failure is what happens." },
-      { id: "paused", label: "Paused", note: "Stopped at a boundary, with what's done and what's left both stated." },
-      { id: "done", label: "Complete", note: "A receipt of what actually ran, not a toast saying it was submitted." },
+      { id: "proposed", label: "Plan proposed", note: "Every step visible and removable. Nothing has run.", by: "it drafts a plan" },
+      { id: "edited", label: "Step removed", note: "Cut a step and the plan re-costs itself. Editing beats rejecting and starting again.", by: "you remove a step" },
+      { id: "running", label: "Running", note: "Step-level progress, because step-level failure is what happens.", from: "proposed", by: "you press Run" },
+      { id: "paused", label: "Paused", note: "Stopped at a boundary, with what's done and what's left both stated.", from: "proposed", by: "you press Pause mid-run" },
+      { id: "done", label: "Complete", note: "A receipt of what actually ran, not a toast saying it was submitted.", from: "running", by: "every step finishes" },
     ],
     useWhen: [
       { lead: "The work is genuinely multi-step", detail: "The outcome hides the steps that produce it." },
@@ -960,10 +986,10 @@ export const AI_PATTERNS = [
     definition:
       "How the product says “I can't do this” — a normal outcome of a working system, not a bug.",
     states: [
-      { id: "policy", label: "A rule says no", note: "Your product's voice, not the model's — and no red. A policy limit is the system working as intended." },
-      { id: "capability", label: "It can't do this yet", note: "Specific enough to change the next move. “I can't help with that” just produces a retry of the same request." },
-      { id: "noanswer", label: "No confident answer", note: "Low confidence is an outcome, not an error. Saying so beats a guess styled as fact." },
-      { id: "partial", label: "Stopped partway", note: "Keep and label what was finished. Discarding completed work silently reads as a crash." },
+      { id: "policy", label: "A rule says no", note: "Your product's voice, not the model's — and no red. A policy limit is the system working as intended.", by: "the payee was added today" },
+      { id: "capability", label: "It can't do this yet", note: "Specific enough to change the next move. “I can't help with that” just produces a retry of the same request.", by: "the connection isn't there" },
+      { id: "noanswer", label: "No confident answer", note: "Low confidence is an outcome, not an error. Saying so beats a guess styled as fact.", by: "the sources disagree" },
+      { id: "partial", label: "Stopped partway", note: "Keep and label what was finished. Discarding completed work silently reads as a crash.", by: "a rule blocks part of it" },
     ],
     useWhen: [
       { lead: "Always", detail: "Every AI feature refuses something. The only question is whether you wrote those words or inherited whatever the model happened to say." },
@@ -981,7 +1007,7 @@ export const AI_PATTERNS = [
       {
         q: "How much reason to give?",
         loka: "Enough to change the next move.",
-        why: "“I can't access private repositories” is actionable; “I can't help with that” produces a reflexive retry of the identical prompt and a second identical refusal.",
+        why: "“Your credit card isn't connected” is actionable; “Sorry, I can't help with that” produces a reflexive retry of the identical request and a second identical refusal.",
         shows: "capability",
       },
       {
@@ -1022,10 +1048,10 @@ export const AI_PATTERNS = [
     definition:
       "What to show when nothing is a good enough match — and why that beats a guess dressed up as an answer.",
     states: [
-      { id: "confident", label: "Confident results", note: "The ordinary case, here for contrast: matches above the bar, shown plainly with their scores." },
-      { id: "none", label: "Nothing above the bar", note: "An empty result is a real answer. Say what was searched and where the bar sat." },
-      { id: "weak", label: "Below the bar", note: "Weak matches shown as weak, behind a deliberate action, never mixed into the same list as strong ones." },
-      { id: "insufficient", label: "Not enough data", note: "“No data yet” is not “no match”. One means come back later, the other means change what you asked for — and mixing them up wastes somebody's next hour." },
+      { id: "confident", label: "Confident results", note: "The ordinary case, here for contrast: matches above the bar, shown plainly with their scores.", by: "results clear the bar" },
+      { id: "none", label: "Nothing above the bar", note: "An empty result is a real answer. Say what was searched and where the bar sat.", by: "the best match is 31%" },
+      { id: "insufficient", label: "Not enough data", note: "“No data yet” is not “no match”. One means come back later, the other means change what you asked for — and mixing them up wastes somebody's next hour.", by: "too little data to rank" },
+      { id: "weak", label: "Below the bar", note: "Weak matches shown as weak, behind a deliberate action, never mixed into the same list as strong ones.", from: "none", by: "you open the near misses" },
     ],
     useWhen: [
       { lead: "Anywhere you rank or match", detail: "Anything that ranks or matches has a case where nothing qualifies, whether or not anyone designed for it." },

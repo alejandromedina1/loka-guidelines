@@ -1,6 +1,7 @@
 import { Button } from "../../common/Button.jsx";
 import { Field as SystemField } from "../../common/Field.jsx";
 import { Tag } from "../../common/Tag.jsx";
+import { Checkbox } from "../../common/Checkbox.jsx";
 // A tiny wireframe kit, shared by every pattern preview.
 //
 // The previews have one job: let a designer or a stakeholder look at a pattern
@@ -143,6 +144,24 @@ export function Btns({ children, align }) {
   );
 }
 
+// The library's Checkbox at its smallest step, scaled onto the preview ramp
+// like every other system control here. Visible Sources lists it in
+// `composedOf` and drew nothing — so the pattern whose argument is "sources
+// switch on and off right where they're used" had no switch on screen.
+export function Check({ checked, hovered, disabled, label }) {
+  return (
+    <span className="mk-sys-inline">
+      <Checkbox
+        checked={checked}
+        hovered={hovered}
+        disabled={disabled}
+        size="24px"
+        label={label}
+      />
+    </span>
+  );
+}
+
 // The library's Tag at its smallest documented height — these sit inside an
 // illustration of a screen, not on the screen itself.
 export function Chip({ children }) {
@@ -187,13 +206,31 @@ export function Cite({ n, open }) {
 }
 
 // A determinate step meter, for multi-step execution.
-export function Steps({ items, at }) {
+//
+// `failed` marks the step that stopped and `paused` holds the one in flight.
+// Both exist because Approval Gate and Plan Preview each state that
+// step-level failure is possible and the meter couldn't draw it: Running and
+// Failed rendered the identical four rows, with the entire difference carried
+// by the callout above them. A meter that can't show the failure it exists to
+// localise is the same mistake as a single spinner over six queries.
+//
+// `notes` hangs a short readout off one step — "412 of 1,240" beside the send
+// that stopped halfway. That number is the pattern's whole claim, so it
+// belongs on the step it describes rather than in prose underneath.
+export function Steps({ items, at, failed, paused, notes }) {
+  const stateAt = (i) => {
+    if (i === failed) return "fail";
+    if (i < at) return "done";
+    if (i === at) return paused ? "held" : "now";
+    return "next";
+  };
   return (
     <ol className="mk-steps">
       {items.map((label, i) => (
-        <li key={label} className="mk-step" data-state={i < at ? "done" : i === at ? "now" : "next"}>
+        <li key={label} className="mk-step" data-state={stateAt(i)}>
           <span className="mk-step-dot" aria-hidden />
           <span className="mk-step-label">{label}</span>
+          {notes?.[i] && <span className="mk-step-note">{notes[i]}</span>}
         </li>
       ))}
     </ol>
@@ -212,8 +249,3 @@ export function Spinner({ label }) {
   );
 }
 
-// A monospaced literal — a function call, an id, a raw model string. Used in the
-// shortcut variants where the interface leaked its implementation to the user.
-export function Code({ children }) {
-  return <code className="mk-code">{children}</code>;
-}

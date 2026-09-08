@@ -1,17 +1,22 @@
 import { Body, Btn, Btns, Chip, Frame, FrameBar, Note, Say } from "./kit.jsx";
 
-// Change Review. Two hunks is enough to make the point the pattern turns on:
-// accept is per unit, and nothing is pre-selected.
+// Change Review on suggested categories for payments. Two changes is enough to
+// make the point the pattern turns on: accept is per unit, and nothing is
+// pre-selected.
+//
+// The proposal used to be a code diff, which asked the reader to parse a
+// language before they could see the pattern. A category on a payment is the
+// same shape of decision — a before and an after, accepted one at a time — and
+// it costs nobody anything to read.
 function Hunk({ n, decided, from, to }) {
   return (
     <div className="mk-hunk" data-decided={decided}>
       <span className="mk-hunk-head">
-        <span className="mk-hunk-name">Change {n}</span>
-        {decided && (
-          <Chip tone={decided === "accepted" ? "ok" : "mute"}>
-            {decided === "accepted" ? "Accepted" : "Rejected"}
-          </Chip>
-        )}
+        <span className="mk-hunk-name">{n}</span>
+        {/* The Tag has one paint, so the chip's word can't be the only
+            signal — Accepted and Rejected drew identically. The outcome now
+            shows on the change itself: see .mk-hunk[data-decided]. */}
+        {decided && <Chip>{decided === "accepted" ? "Accepted" : "Rejected"}</Chip>}
       </span>
       <span className="mk-diff">
         <span className="mk-diff-line" data-kind="del">
@@ -21,7 +26,7 @@ function Hunk({ n, decided, from, to }) {
           {to}
         </span>
       </span>
-      {/* Per-hunk, and under the change they act on rather than beside its
+      {/* Per change, and under the change they act on rather than beside its
           label — at the button's real 40px that row would have overflowed. */}
       {!decided && (
         <Btns>
@@ -37,53 +42,56 @@ function Hunk({ n, decided, from, to }) {
 export function DiffReviewPreview({ state }) {
   return (
     <Frame width={570}>
-      <FrameBar title="billing/renewals.ts — 2 proposed changes" />
+      <FrameBar title="2 payments · suggested categories" />
       <Body>
         {state === "empty" ? (
           <Note tone="ok" title="Nothing to change">
-            Checked 34 files. The renewal logic already handles the 60-day case. Rendered as a
-            result, not as an empty diff.
+            Checked 1,204 payments. Every one is already in the right category.
           </Note>
         ) : state === "applied" ? (
           <>
-            <Note tone="ok" title="2 changes applied to billing/renewals.ts">
+            <Note tone="ok" title="2 payments recategorised">
               Reversible for the next 30 minutes.
             </Note>
             <Btns align="end">
               <Btn>Undo all</Btn>
-              <Btn variant="primary">View file</Btn>
+              <Btn variant="primary">View payments</Btn>
             </Btns>
           </>
         ) : state === "stale" ? (
           <>
-            <Note tone="warn" title="The file changed while this was open">
-              Somebody edited line 47 two minutes ago. These changes were written against the old
-              version, so applying them now would overwrite that work.
+            <Note tone="warn" title="These payments changed while this was open">
+              You renamed one of them two minutes ago. These suggestions were worked out from the
+              old names, so applying them now would undo that.
             </Note>
             <Btns align="end">
               <Btn>Discard</Btn>
-              <Btn variant="primary">Re-check the file</Btn>
+              <Btn variant="primary">Check again</Btn>
             </Btns>
           </>
         ) : (
           <>
-            {/* The shortcut arrives with both changes already accepted and
-                Apply lit. Every per-hunk control is gone, so the only move left
-                is the one nobody read. */}
+            {/* Partly accepted carries opposite verdicts on the two changes
+                rather than one decided and one untouched. Two changes that went
+                different ways is the strongest available drawing of "accept is
+                per unit" — and it's what a reader has to see to believe that
+                accept-all is a convenience rather than the shape of the
+                control. */}
             <Hunk
-              n={1}
+              n="Deliveroo · £34.10"
               decided={state === "partial" ? "accepted" : undefined}
-              from="const NOTICE_DAYS = 30;"
-              to="const NOTICE_DAYS = 60;"
+              from="Shopping"
+              to="Eating out"
             />
             <Hunk
-              n={2}
-              from="if (daysLeft < NOTICE) warn();"
-              to="if (daysLeft <= NOTICE) warn();"
+              n="Pret · £4.60"
+              decided={state === "partial" ? "rejected" : undefined}
+              from="Eating out"
+              to="Coffee"
             />
             <span className="mk-foot">
               <Say tone="mute" size="sm">
-                {state === "partial" ? "1 of 2 accepted" : "Nothing applied yet"}
+                {state === "partial" ? "1 accepted · 1 rejected" : "Nothing applied yet"}
               </Say>
               <Btns align="end">
                 <Btn>Accept all</Btn>

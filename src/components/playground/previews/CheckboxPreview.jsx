@@ -1,5 +1,11 @@
 import { SpecOverlay } from "../SpecOverlay.jsx";
-import { CheckSmall } from "../../common/Icon.jsx";
+import {
+  CHECKBOX_BOX,
+  CHECKBOX_RADIUS,
+  CHECKBOX_TICK,
+  Checkbox,
+  tickFor,
+} from "../../common/Checkbox.jsx";
 import { blocks, htmlDocument, indent, rule, ruleHeadlines, ruleTexts, specPrompt, tokenRef } from "../snippets.js";
 
 // The accessible name for the bare control — there's no text printed beside
@@ -9,15 +15,11 @@ const LABEL = "Option label";
 // Resolved values for the control, in one place — global.css paints these, and
 // the spec sheet and the copyable snippets below both read them from here.
 const T = {
-  // None of these three is the sourced Figma control either (that one
-  // measures 16px) — this system's own scale, for contexts where a bigger,
-  // more tappable target matters more than matching the render exactly.
-  // 28px, the middle step, is the default.
-  boxSize: { "24px": 24, "28px": 28, "32px": 32 },
-  // Rounded is the sourced Figma radius — a full circle. Squared is this
-  // system's own addition, not in the design file; 4px keeps it a square with
-  // soft corners rather than a sharp one, in step with the rest of the system.
-  boxRadius: { Rounded: 100, Squared: 4 },
+  // Both read from common/Checkbox.jsx, which owns the box spec now that the
+  // AI hub's Visible Sources renders the same control — a second copy here is
+  // exactly how the redlines and the rendered thing come apart.
+  boxSize: CHECKBOX_BOX,
+  boxRadius: CHECKBOX_RADIUS,
   boxBorder: "#E7ECF2", // gray-10
   boxChecked: "#186BF3", // blue-100
   tickColor: "#FFFFFF",
@@ -25,12 +27,6 @@ const T = {
   disabledOpacity: 0.5,
 };
 
-// The tick's own size per control size — roughly 57% of the box at every
-// step, not a flat clearance. A fixed gap shrinks proportionally as the box
-// grows, which is what made the tick read as cramped at 32px; scaling it
-// with the box keeps the same visible breathing room at every size instead.
-const TICK_SIZE = { "24px": 14, "28px": 16, "32px": 18 };
-const tickFor = (size) => TICK_SIZE[size];
 
 // Only the two axes that actually change the markup earn a suffix — the
 // default 28px stays silent the way Rounded already does.
@@ -122,26 +118,17 @@ export function CheckboxPreview({
       {/* No padding to redline — the button is the control itself now, not a
           pill wrapping it. */}
       <SpecOverlay on={bestPractices} padX={0} padY={0} widthMode="fixed" heightMode="fixed">
-        <button
-          type="button"
-          role="checkbox"
-          aria-checked={checked}
-          aria-label={LABEL}
-          className="cbx"
-          data-checked={checked || undefined}
-          data-hover={hovered || undefined}
-          // Rounded and 28px are the defaults global.css already paints, so
-          // only a non-default value needs a flag — same trick data-checked
-          // and data-hover use above.
-          data-shape={shape === "Squared" ? "Squared" : undefined}
-          data-size={size !== "28px" ? size : undefined}
+        <Checkbox
+          checked={checked}
+          hovered={hovered}
           disabled={disabled}
+          shape={shape}
+          size={size}
+          label={LABEL}
           // The control stays live, so the pills follow the click rather than
           // drifting out of step with what's on screen.
           onClick={() => setState?.(checked ? "Default" : "Checked")}
-        >
-          {checked ? <CheckSmall size={tickFor(size)} /> : null}
-        </button>
+        />
       </SpecOverlay>
     </div>
   );

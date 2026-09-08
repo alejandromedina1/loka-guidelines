@@ -1,26 +1,26 @@
 import { Body, Btn, Btns, Chip, Frame, FrameBar, Label, Note, Row, Say } from "./kit.jsx";
 
-// Version History on a CRM record. The failure it guards against is quiet: once
-// automated edits are logged as "System", nobody knows which ones to check.
+// Undo & History on one payment. The failure it guards against is quiet: once
+// automatic changes are logged as "System", nobody knows which ones to check.
 const TRAIL = [
-  { who: "Enrichment run 41", ai: true, what: "Set industry, employee count", when: "16:04" },
-  { who: "Priya Raman", ai: false, what: "Corrected billing contact", when: "14:22" },
-  { who: "Enrichment run 40", ai: true, what: "Set renewal date", when: "09:15" },
+  { who: "Auto-sort", ai: true, what: "Set category · Groceries", when: "16:04" },
+  { who: "Sam", ai: false, what: "Renamed to Sainsbury's Local", when: "14:22" },
+  { who: "Auto-sort", ai: true, what: "Read the shop name off the receipt", when: "09:15" },
 ];
 
 export function VersionHistoryPreview({ state }) {
-  // The shortcut flattens every automated change to "System" — a log, not a
+  // The shortcut flattens every automatic change to "System" — a log, not a
   // history, and unusable for deciding what to re-check.
 
   return (
     <Frame width={540}>
-      <FrameBar title="Northwind Ltd · History" />
+      <FrameBar title="Sainsbury's · £48.20" />
       <Body>
         {state === "trail" && (
           <>
             <span className="mk-scope-head">
               <Label>Last 30 days</Label>
-              <Chip>2 automated · 1 person</Chip>
+              <Chip>2 automatic · 1 person</Chip>
             </span>
             <div className="mk-list">
               {TRAIL.map((e) => (
@@ -38,10 +38,14 @@ export function VersionHistoryPreview({ state }) {
 
         {state === "diff" && (
           <>
-            <Label>Enrichment run 41 · 16:04</Label>
+            <Label>Auto-sort · 16:04</Label>
             <span className="mk-diff">
-              <span className="mk-diff-line" data-kind="del">Industry — Logistics</span>
-              <span className="mk-diff-line" data-kind="add">Industry — Freight &amp; Logistics</span>
+              <span className="mk-diff-line" data-kind="del">
+                Category — Shopping
+              </span>
+              <span className="mk-diff-line" data-kind="add">
+                Category — Groceries
+              </span>
             </span>
           </>
         )}
@@ -49,20 +53,20 @@ export function VersionHistoryPreview({ state }) {
         {state === "attributed" && (
           <div className="mk-source">
             <span className="mk-source-head">
-              <Label>Enrichment run 41</Label>
-              <Chip>Scheduled, 16:00</Chip>
+              <Label>Auto-sort</Label>
+              <Chip>Ran at 16:04</Chip>
             </span>
             <div className="mk-params">
               <Row>
                 <span className="mk-param">
                   <span className="mk-param-key">Could see</span>
-                  <span className="mk-param-val">Companies House, website, 2 support tickets</span>
+                  <span className="mk-param-val">The receipt photo, your last 6 payments here</span>
                 </span>
               </Row>
               <Row>
                 <span className="mk-param">
-                  <span className="mk-param-key">Triggered by</span>
-                  <span className="mk-param-val">Weekly enrichment schedule</span>
+                  <span className="mk-param-key">Set off by</span>
+                  <span className="mk-param-val">A new payment landing</span>
                 </span>
               </Row>
             </div>
@@ -70,9 +74,8 @@ export function VersionHistoryPreview({ state }) {
         )}
 
         {state === "restore" && (
-          <Note tone="plain" title="Restoring to 14:22">
-            This adds a new entry rather than removing the two above it. A history you can rewrite
-            can't be used to explain anything.
+          <Note tone="plain" title="Going back to 14:22">
+            This adds a new entry. The two changes above it stay in the record.
           </Note>
         )}
 
@@ -82,7 +85,9 @@ export function VersionHistoryPreview({ state }) {
           </Say>
           <Btns align="end">
             <Btn>Compare</Btn>
-            <Btn variant="primary">{state === "restore" ? "Confirm restore" : "Restore a point"}</Btn>
+            <Btn variant="primary">
+              {state === "restore" ? "Confirm" : "Go back to a point"}
+            </Btn>
           </Btns>
         </span>
       </Body>

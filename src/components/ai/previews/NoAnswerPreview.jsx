@@ -1,16 +1,17 @@
 import { Body, Btn, Btns, Chip, Frame, FrameBar, Label, Note, Row, Say } from "./kit.jsx";
 
-// No Good Match on a matching surface — candidates against a role. A
-// ranked list is where this failure does the most damage, because somebody
-// will act on whatever sits at the top whether or not it deserves to be there.
+// No Good Match on finding a payment from a description. A ranked list is where
+// this failure does the most damage, because somebody will act on whatever sits
+// at the top whether or not it deserves to be there — and here that means
+// querying the wrong charge with their bank.
 const STRONG = [
-  { name: "A. Okonkwo", score: 91 },
-  { name: "R. Villanueva", score: 84 },
+  { name: "Sainsbury's Local · 14 Aug", score: 91 },
+  { name: "Homebase · 12 Aug", score: 84 },
 ];
 const WEAK = [
-  { name: "J. Marsh", score: 31 },
-  { name: "T. Bakker", score: 24 },
-  { name: "S. Idris", score: 12 },
+  { name: "Boots · 9 Aug", score: 31 },
+  { name: "Co-op · 2 Aug", score: 24 },
+  { name: "Shell · 28 Jul", score: 12 },
 ];
 
 function Candidate({ c, weak }) {
@@ -31,13 +32,13 @@ function Candidate({ c, weak }) {
 export function NoAnswerPreview({ state }) {
   return (
     <Frame width={540}>
-      <FrameBar title="Senior Platform Engineer · Matches" />
+      <FrameBar title="Find a payment · about £48, garden centre" />
       <Body>
         {state === "confident" && (
           <>
             <span className="mk-scope-head">
               <Label>Matches above 70%</Label>
-              <Chip>412 searched</Chip>
+              <Chip>1,204 searched</Chip>
             </span>
             <div className="mk-list">
               {STRONG.map((c) => (
@@ -49,16 +50,16 @@ export function NoAnswerPreview({ state }) {
 
         {state === "none" && (
           <>
-            <Note tone="plain" title="No candidate cleared 70%">
-              Searched 412 profiles against this role. The closest was 31%.
+            <Note tone="plain" title="No payment cleared 70%">
+              Searched 1,204 payments. The closest was 31%.
             </Note>
             <span className="mk-foot">
               <Say tone="mute" size="sm">
-                412 searched · 0 above the bar
+                1,204 searched · 0 above the bar
               </Say>
               <Btns align="end">
                 <Btn>Show near misses</Btn>
-                <Btn variant="primary">Widen criteria</Btn>
+                <Btn variant="primary">Search more widely</Btn>
               </Btns>
             </span>
           </>
@@ -80,13 +81,12 @@ export function NoAnswerPreview({ state }) {
 
         {state === "insufficient" && (
           <>
-            <Note tone="warn" title="Not enough data to rank yet">
-              Only 6 profiles carry the skills this role scores on. That's a gap in the data, not an
-              absence of candidates — the two need different actions.
+            <Note tone="warn" title="Not enough loaded to search yet">
+              Only 3 weeks of payments are here. Anything older hasn't been brought in.
             </Note>
             <Btns align="end">
-              <Btn>Import more profiles</Btn>
-              <Btn variant="primary">Score manually</Btn>
+              <Btn>Bring in older payments</Btn>
+              <Btn variant="primary">Search by hand</Btn>
             </Btns>
           </>
         )}

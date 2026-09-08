@@ -1,18 +1,22 @@
 import { Body, Frame, FrameBar, Ghost, GhostLines, Label, Note, Say, Spinner } from "./kit.jsx";
 
-// Results in Pieces on an analytics view — the clearest non-chat case, and the one
+// Results in Pieces on a month summary — the clearest non-chat case, and the one
 // where the alternative (a single spinner over everything) is most obviously
-// worse: five fast queries end up waiting on the sixth.
+// worse: three fast figures end up waiting on the fourth.
 const CARDS = [
-  { key: "revenue", label: "Revenue", value: "£1.24m" },
-  { key: "churn", label: "Churn", value: "3.1%" },
-  { key: "pipeline", label: "Pipeline", value: "£840k" },
-  { key: "nps", label: "NPS", value: "47" },
+  { key: "spent", label: "Spent", value: "£1,840" },
+  { key: "bills", label: "Bills", value: "£740" },
+  { key: "savings", label: "Savings", value: "£320" },
+  { key: "refunds", label: "Refunds", value: "£46" },
 ];
 
 // Which cards have landed at each state, so the layout is identical throughout
 // and only the contents change.
-const RESOLVED = { skeletons: 0, partial: 2, slow: 3, failed: 3, complete: 4 };
+//
+// `slow` stops at 2 so the lagging card is Savings — the one the caption
+// underneath names. It was one further along, which put the spinner on a card
+// the caption never mentioned and left the state contradicting its own readout.
+const RESOLVED = { skeletons: 0, partial: 2, slow: 2, failed: 3, complete: 4 };
 
 function Card({ card, status }) {
   return (
@@ -44,7 +48,7 @@ export function StagedRevealPreview({ state }) {
 
   return (
     <Frame width={540}>
-      <FrameBar title="Account health · Q3" />
+      <FrameBar title="This month at a glance" />
       <Body>
         {/* The same four boxes at the same size in every state. If the grid
             moved between here and Complete, the placeholders were wrong. */}
@@ -55,7 +59,7 @@ export function StagedRevealPreview({ state }) {
         </div>
 
         <div className="mk-panel">
-          <Label>Top movers</Label>
+          <Label>Biggest changes</Label>
           {state === "complete" ? (
             <GhostLines widths={[92, 84, 70]} />
           ) : (
@@ -65,12 +69,12 @@ export function StagedRevealPreview({ state }) {
 
         {state === "failed" && (
           <Note tone="plain" title="1 of 4 didn't load">
-            The other three are current as of 14:02. Nothing here is waiting on the one that failed.
+            The other three are current as of 14:02. Retrying Refunds.
           </Note>
         )}
         {state === "slow" && (
           <Say tone="mute" size="sm">
-            Pipeline is taking longer than the rest.
+            Savings is taking longer than the rest.
           </Say>
         )}
       </Body>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AI_PATTERNS, CONTROL_AXES, CONTROL_GRADES } from "../../data/aiPatterns.js";
 import { PATTERN_PREVIEWS } from "./previews/index.js";
+import { alternatives, continues, depth, place, route, slots } from "../../data/flow.js";
 import { ArrowLeft, ArrowRight, PlayIcon, StopIcon } from "../common/Icon.jsx";
 import { NumberChip } from "../common/NumberChip.jsx";
 
@@ -12,16 +13,34 @@ import { NumberChip } from "../common/NumberChip.jsx";
 //
 // The canvas does the explaining. Three things make it show rather than tell:
 //
-//   States      — pills switch between the pattern's real configurations,
-//                 failures included, exactly as they switch a Button's.
-//   Play        — walks them in order, because a pattern is a behaviour over
-//                 time and a pill strip otherwise reads as a set of unrelated
-//                 alternatives. This replaced a written Lifecycle block that
-//                 said the same thing in prose.
+//   States      — the track switches between the pattern's real configurations,
+//                 failures included, exactly as pills switch a Button's.
+//   Play        — walks one route through the run, because a pattern is a
+//                 behaviour over time and a strip of alternatives can't show
+//                 that. It replaced a written Lifecycle block that said the
+//                 same thing in prose. It walks a *route* and not the states
+//                 array because the array holds alternatives side by side: 31
+//                 of Play's 52 hops used to swap one for another under an
+//                 animation reading "and then this happened".
+//   Shape       — the track draws the structure the states actually have,
+//                 derived in flow.js from `from`/`by` rather than declared.
+//
+// That last one was the correction. The track filled every segment to the left
+// of the cursor and named the position "3/5", which asserts a sequence — and
+// only five of the fourteen patterns are one. Streaming Response forks three
+// ways at the end; Clear Refusal's four states are four kinds of refusal that
+// never follow each other. So Play read as five screenshots on a timer.
+//
+// Now: fill follows the *route* to the current state, a segment joins the one
+// before it only when it really follows it, and the readout says "Step 3" or
+// "2 of 3" — the word that tells you whether these happen in order or instead
+// of each other. Under it sits the trigger: what moved the system here. The
+// track was showing order and hiding cause, and cause is most of a behaviour.
+//
 // The track and Play are one control, not two. A pattern is one thing
-// unfolding, so the canvas is built to be watched: Play runs the sequence,
-// transitions carry each state into the next, and the track is there for
-// stopping on the one you want to study.
+// unfolding, so the canvas is built to be watched: Play runs the states,
+// transitions carry each into the next, and the track is there for stopping
+// on the one you want to study.
 //
 // It replaced a strip of pills. Pills model alternatives — a Button is Primary
 // or Secondary — and they were saying the wrong thing about a lifecycle; they
@@ -54,41 +73,69 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
   // switching patterns remounts and lands on the new one's first state.
   const [stateId, setStateId] = useState(states[0]?.id);
   const [playing, setPlaying] = useState(false);
+  // The route Play is walking, pinned when it starts. It has to be pinned:
+  // Play's first move is back to the top of the run, and a route derived from
+  // whatever is on the canvas would recompute there and lose the ending the
+  // user had chosen to watch.
+  const [run, setRun] = useState(null);
 
   const active = states.find((st) => st.id === stateId) ?? states[0];
-  const index = states.findIndex((st) => st.id === active?.id);
-  const atEnd = index >= states.length - 1;
+  // The run as slots, and where in it the canvas currently sits — see flow.js.
+  // One segment per slot rather than per state is what makes the fill a prefix,
+  // so the bar can't draw a hole and Play can't run backwards.
+  const runSlots = states.length ? slots(states) : [];
+  const at = active ? depth(states, active.id) - 1 : 0;
+  // Whether anything follows the state on the canvas. "Nothing to change" is a
+  // correct place to stop, and the bar shouldn't keep offering it a step 3.
+  const goesOn = active ? continues(states, active.id) : false;
+  // The ways the run can go from this position, this one included.
+  const alts = active ? alternatives(states, active.id) : [];
 
   // A chain of timeouts rather than one interval, so each hop is driven by the
-  // state it just landed on and the run stops cleanly at the last pill.
+  // state it just landed on and the run stops cleanly at the end of the route.
   useEffect(() => {
-    if (!playing) return undefined;
-    if (atEnd) {
+    if (!playing || !run) return undefined;
+    const pos = run.indexOf(stateId);
+    if (pos === -1 || pos >= run.length - 1) {
       setPlaying(false);
+      setRun(null);
       return undefined;
     }
-    const t = setTimeout(() => setStateId(states[index + 1].id), 1700);
+    const t = setTimeout(() => setStateId(run[pos + 1]), 1700);
     return () => clearTimeout(t);
-  }, [playing, atEnd, index, states]);
+  }, [playing, run, stateId]);
 
   const togglePlay = useCallback(() => {
     if (playing) {
       setPlaying(false);
+      setRun(null);
       return;
     }
-    // Pressing Play at the end replays from the top rather than doing nothing.
-    if (atEnd) setStateId(states[0].id);
+    // Always from the top of the road that reaches whatever is on the canvas.
+    // Play and the chooser compose this way: pick the ending you want to
+    // watch, press Play, see the full road to it. Play used to override the
+    // choice and march through every alternative in turn.
+    //
+    // Some states are a road of one — a way the pattern can start that nothing
+    // follows, like "Nothing to change". There is no run to them, so Play
+    // falls back to the pattern's main road rather than sitting there dead.
+    const own = route(states, active.id);
+    const walk = own.length > 1 ? own : route(states, states[0].id);
+    setRun(walk);
+    setStateId(walk[0]);
     setPlaying(true);
-  }, [playing, atEnd, states]);
+  }, [playing, active, states]);
 
   const pickState = useCallback((id) => {
     setPlaying(false);
+    setRun(null);
     setStateId(id);
   }, []);
 
   // Same, plus scroll — used by the decisions, which sit well below the canvas.
   const showState = useCallback((id) => {
     setPlaying(false);
+    setRun(null);
     setStateId(id);
     labRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }, []);
@@ -142,31 +189,69 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
             </div>
 
             <div className="pg-canvas-foot">
-              {/* Filled up to where you are, so the track reads as progress
-                  rather than as a row of tabs. Only the current state is
-                  named — which is what stops a five-state pattern with long
-                  labels running out of room. */}
+              {/* Three rows, one level of the hierarchy each, top to bottom:
+                  where you are in the run, which way it goes from here, and
+                  what moved it here. Play holds its own cell in the grid, so
+                  none of them competes with it for the end of a line. */}
               {states.length > 0 ? (
                 <div className="ai-track">
-                  <div className="ai-track-bar">
-                    {states.map((st, n) => (
-                      <button
-                        key={st.id}
-                        className="ai-track-seg"
-                        data-on={n <= index || undefined}
-                        data-active={n === index || undefined}
-                        aria-label={st.label}
-                        aria-current={n === index ? "true" : undefined}
-                        onClick={() => pickState(st.id)}
-                      />
-                    ))}
-                  </div>
-                  <span className="ai-track-label">
-                    {active?.label}
-                    <span className="ai-track-pos">
-                      {index + 1}/{states.length}
-                    </span>
-                  </span>
+                  {/* One segment per slot, and only when there is more than
+                      one. A pattern with a single slot has no run to report —
+                      Clear Refusal's four states happen instead of each other,
+                      not one after another — so it gets no bar at all. */}
+                  {runSlots.length > 1 && (
+                    <div className="ai-track-run">
+                      <div
+                        className="ai-track-bar"
+                        role="group"
+                        aria-label={`Steps in ${pattern.name}`}
+                      >
+                        {runSlots.map((slot, n) => (
+                          <button
+                            key={slot[0].id}
+                            className="ai-track-seg"
+                            data-on={n <= at || undefined}
+                            data-active={n === at || undefined}
+                            data-unreached={(n > at && !goesOn) || undefined}
+                            aria-label={`Step ${n + 1} of ${runSlots.length}: ${slot.map((st) => st.label).join(" or ")}`}
+                            aria-current={n === at ? "step" : undefined}
+                            onClick={() => pickState(slot[0].id)}
+                          />
+                        ))}
+                      </div>
+                      <span className="ai-track-pos">{place(states, active.id)}</span>
+                    </div>
+                  )}
+
+                  {/* Pills only where there is genuinely something to pick. A
+                      slot holding one state shows its name as a label, so the
+                      appearance of pills is itself the signal that this step
+                      forks. */}
+                  {alts.length > 1 ? (
+                    <div
+                      className="ai-track-alts"
+                      role="group"
+                      aria-label={`Which way ${pattern.name} goes at step ${at + 1}`}
+                    >
+                      {alts.map((st) => (
+                        <button
+                          key={st.id}
+                          className="ai-track-alt"
+                          aria-current={st.id === active.id ? "true" : undefined}
+                          onClick={() => pickState(st.id)}
+                        >
+                          {st.label}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="ai-track-only">{active?.label}</span>
+                  )}
+
+                  {/* What moved the system into this state. Without it the
+                      track shows the order and hides the cause, which is most
+                      of what a behaviour is. */}
+                  {active?.by && <span className="ai-track-by">{active.by}</span>}
                 </div>
               ) : (
                 <span />
@@ -174,7 +259,11 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
 
               {/* Bottom right, in the slot the Product Hub gives its canvas
                   action — and the primary gesture on this page. */}
-              {states.length > 1 ? (
+              {/* Play appears exactly when the bar does. A one-slot pattern has
+                  no run to walk: Clear Refusal's four states are four kinds of
+                  refusal, and Play used to march through them as though one
+                  caused the next — 3 of its 3 hops sideways. */}
+              {runSlots.length > 1 ? (
                 <button
                   className="ai-play"
                   data-on={playing || undefined}
@@ -214,11 +303,12 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
               something. "2 of 5" is doing quiet work: it implies a sequence
               and implies there are more to click, without instructional copy
               telling anyone to click them. */}
+          {/* What the state on the canvas means. Not its name — the canvas
+              captions that and the foot's pills carry it, and three renderings
+              of one string was the duplication that started all this. Not its
+              trigger either: that sits under the pills it belongs to. */}
           {active && (
             <div className="ai-now">
-              <span className="ai-now-head">
-                <span className="ai-now-label">{active.label}</span>
-              </span>
               <p className="ai-now-text">{active.note}</p>
             </div>
           )}
@@ -437,12 +527,6 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
                 ))}
             </div>
           </Group>
-
-          {pattern.shippedIn && (
-            <Group title="Shipped in" desc="Where we have actually run this, not just recommended it.">
-              <p className="ai-shipped">{pattern.shippedIn}</p>
-            </Group>
-          )}
         </>
       )}
     </>

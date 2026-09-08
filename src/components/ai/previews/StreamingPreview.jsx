@@ -1,13 +1,12 @@
-import { Body, Btn, Btns, Frame, FrameBar, Note, Say } from "./kit.jsx";
+import { Body, Btn, Btns, Frame, FrameBar, Note } from "./kit.jsx";
 
 const ANSWER =
-  "Churn concentrated in accounts that onboarded during the March migration: 62 of 148 cancellations came from that cohort, against 19% of total signups.";
-const PARTIAL = "Churn concentrated in accounts that onboarded during the March migration: 62 of";
+  "You spent £412 on food in March, £96 more than February. Most of the rise came from eight takeaway orders in the last week of the month.";
+const PARTIAL = "You spent £412 on food in March, £96 more than February. Most of the";
 
-// Streaming Response, on an analysis panel rather than a chat. The answer was
-// always a churn finding — only the frame said "Assistant", which made the one
-// pattern most associated with chatbots look like it needed one. It doesn't:
-// this is text arriving into a product surface somebody opened on purpose.
+// Streaming Response, on a spending report rather than a chat. This is text
+// arriving into a product surface somebody opened on purpose — a question they
+// asked about their own money, answered in place.
 //
 // The caret animates on the Streaming state and holds still everywhere else,
 // which is the difference between "working" and "stuck" — and the reason a
@@ -15,7 +14,7 @@ const PARTIAL = "Churn concentrated in accounts that onboarded during the March 
 export function StreamingPreview({ state }) {
   return (
     <Frame width={540}>
-      <FrameBar title="Churn analysis · Q3" />
+      <FrameBar title="Spending · March" />
       <Body>
         {state === "waiting" && (
           <div className="ai-skel" aria-label="Preparing response">
@@ -44,7 +43,7 @@ export function StreamingPreview({ state }) {
             stays neutral; a lost connection is a real failure and reads as one. */}
         {state === "stopped" && (
           <Note tone="plain" title="Stopped — partial answer">
-            Saved. Copy what arrived, or regenerate.
+            Saved. Copy what arrived, or run it again.
           </Note>
         )}
         {state === "dropped" && (
@@ -52,7 +51,6 @@ export function StreamingPreview({ state }) {
             The partial answer is kept. Continue from here, or retry.
           </Note>
         )}
-
 
         <span className="mk-foot">
           <span />
@@ -67,12 +65,11 @@ export function StreamingPreview({ state }) {
             ) : (
               <>
                 <Btn disabled={state === "waiting"}>Copy</Btn>
-                <Btn variant="primary">Regenerate</Btn>
+                <Btn variant="primary">Run again</Btn>
               </>
             )}
           </Btns>
         </span>
-
       </Body>
     </Frame>
   );

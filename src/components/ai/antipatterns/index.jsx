@@ -89,9 +89,9 @@ function FeedbackVoid() {
 function SilentFallback() {
   return (
     <Frame width={340}>
-      <FrameBar title="Ask your documents" />
+      <FrameBar title="Why is March higher?" />
       <Body>
-        <Say>Renewal requires 60 days' written notice.</Say>
+        <Say>Food went up £96, mostly takeaways.</Say>
         {/* No marker, no source panel, no mention that the search returned
             nothing — identical to a sourced answer. */}
         <span className="mk-chips">
@@ -140,13 +140,13 @@ function HappyPathDemo() {
         </Note>
         <Row lead>
           <span className="mk-src">
-            <span className="mk-src-name">Northwind Ltd</span>
+            <span className="mk-src-name">Sainsbury's Local</span>
             <span className="mk-score">98%</span>
           </span>
         </Row>
         <Row lead>
           <span className="mk-src">
-            <span className="mk-src-name">Cortado Group</span>
+            <span className="mk-src-name">Homebase</span>
             <span className="mk-score">97%</span>
           </span>
         </Row>
