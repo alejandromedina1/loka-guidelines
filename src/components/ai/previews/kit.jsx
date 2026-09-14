@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "../../common/Button.jsx";
 import { Field as SystemField } from "../../common/Field.jsx";
 import { Tag } from "../../common/Tag.jsx";
@@ -40,6 +41,52 @@ import { Checkbox } from "../../common/Checkbox.jsx";
 // over the 10px label above it. Scaling them together keeps their
 // relationships to each other exactly the system's while fixing their
 // relationship to the copy.
+
+// ── Live controls ───────────────────────────────────────────────────────────
+//
+// The wireframes are worked, not stepped through. A preview holds no state of
+// its own — it is handed the surface's working data and a `set` to replace it —
+// and the *lifecycle state* the canvas names is derived from that data rather
+// than chosen. See the `work` protocol in PatternDetail.jsx.
+//
+// That inversion is the whole of it. A control here used to name the state it
+// jumped to, which made every interaction a click that looked up the next
+// canned frame — Play with extra steps. Now Send sends the text you typed, the
+// Savings checkbox switches Savings on, and "Nothing in scope" happens because
+// you switched the last account off. Nothing names a state.
+//
+// So the kit's controls take ordinary handlers. A control with one is live: a
+// real tab stop, with the documented hover and press states. A control without
+// one is an illustration of a control and stays out of the tab order — several
+// dead buttons per state across ten patterns is a lot of nothing to tab
+// through, and it is also the honest signal for which parts of a wireframe
+// this playground actually implements.
+
+// For everything that isn't already a button — a citation marker, a list row, a
+// value in a table. A span rather than a <button> because it wraps arbitrary
+// wireframe markup, some of which is itself focusable, and a button holding an
+// input is not a thing a browser can be asked to do.
+export function Hot({ onClick, label, block, children }) {
+  if (!onClick) return children;
+  return (
+    <span
+      className="mk-hot"
+      data-block={block ? "" : undefined}
+      role="button"
+      tabIndex={0}
+      aria-label={label}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick(e);
+        }
+      }}
+    >
+      {children}
+    </span>
+  );
+}
 
 // The app surface a pattern sits inside.
 export function Frame({ children, width = 460 }) {
@@ -104,14 +151,20 @@ export function Label({ children }) {
 // inventing a taller input.
 const FIELD_STATES = { idle: "default", focus: "Focus", error: "Error", locked: "Disabled" };
 
-export function Field({ placeholder, value, state = "idle", rows = 1 }) {
+// `onChange` is what makes it a field somebody types in rather than a picture
+// of one — Field renders readOnly without it, so passing one is the whole
+// difference. `onKeyDown` is here for Inline Suggestion, where Tab is the
+// pattern and has to be caught before the browser moves focus.
+export function Field({ placeholder, value, state = "idle", rows = 1, onChange, onKeyDown, autoFocus }) {
   return (
-    <span className="mk-sys-block">
+    <span className="mk-sys-block" data-live={onChange ? "" : undefined} onKeyDown={onKeyDown}>
       <SystemField
         type={rows > 1 ? "Textarea" : "Text"}
         state={FIELD_STATES[state] ?? "default"}
-        value={value || ""}
+        value={value ?? ""}
         placeholder={placeholder}
+        onChange={onChange}
+        autoFocus={autoFocus}
       />
     </span>
   );
@@ -123,13 +176,42 @@ export function Field({ placeholder, value, state = "idle", rows = 1 }) {
 // exactly this.
 const VARIANTS = { primary: "Primary", secondary: "Secondary", danger: "Destructive" };
 
-export function Btn({ children, variant = "secondary", disabled }) {
+export function Btn({ children, variant = "secondary", disabled, onClick, title }) {
+  const live = !!onClick && !disabled;
+  // Button takes its state as a prop rather than painting :hover, so the
+  // playground can hold one open for inspection — which means a live button
+  // here has to drive its own or it would be the only control on the page that
+  // doesn't answer the pointer. The states are the documented ones; nothing is
+  // invented for the wireframe.
+  const [feel, setFeel] = useState(null);
+  const track = live
+    ? {
+        onMouseEnter: () => setFeel("hover"),
+        onMouseLeave: () => setFeel(null),
+        onMouseDown: () => setFeel("pressed"),
+        onMouseUp: () => setFeel("hover"),
+        onFocus: () => setFeel("hover"),
+        onBlur: () => setFeel(null),
+      }
+    : null;
+
   return (
     <span className="mk-sys-inline">
-      {/* Out of the tab order: these are illustrations of a control, not the
-          control. Several dead buttons per state across ten patterns is a lot
-          of nothing to tab through, and only the state pills do anything. */}
-      <Button variant={VARIANTS[variant] ?? "Secondary"} disabled={disabled} type="button" tabIndex={-1}>
+      {/* A button that names an `act` is the control, so it behaves like one —
+          reachable, focusable, and it moves the canvas. The rest stay out of
+          the tab order: they're illustrations of a control, and several dead
+          buttons per state across ten patterns is a lot of nothing to tab
+          through. */}
+      <Button
+        variant={VARIANTS[variant] ?? "Secondary"}
+        state={live && feel ? feel : "default"}
+        disabled={disabled}
+        type="button"
+        tabIndex={live ? undefined : -1}
+        onClick={live ? onClick : undefined}
+        title={title}
+        {...track}
+      >
         {children}
       </Button>
     </span>
@@ -148,7 +230,7 @@ export function Btns({ children, align }) {
 // like every other system control here. Visible Sources lists it in
 // `composedOf` and drew nothing — so the pattern whose argument is "sources
 // switch on and off right where they're used" had no switch on screen.
-export function Check({ checked, hovered, disabled, label }) {
+export function Check({ checked, hovered, disabled, label, onClick }) {
   return (
     <span className="mk-sys-inline">
       <Checkbox
@@ -157,6 +239,8 @@ export function Check({ checked, hovered, disabled, label }) {
         disabled={disabled}
         size="24px"
         label={label}
+        tabIndex={onClick ? undefined : -1}
+        onClick={onClick}
       />
     </span>
   );
@@ -177,31 +261,68 @@ export function Chip({ children }) {
 // needs attention, `bad` only for a genuine failure. Spending the danger colour
 // on a policy limit is the mistake the Clear Refusal pattern warns about, so
 // the kit shouldn't make it the easy option.
-export function Note({ children, tone = "plain", title }) {
+//
+// `kind` and `actions` are the two slots this grew, and both came from watching
+// what every caller was already doing around it by hand.
+//
+//   kind     a short status label — "Rule", "Not connected", "Partly done".
+//            Without it, tone is the only thing separating a rule from a
+//            failure, which is colour as the only signal: the exact mistake the
+//            grade chips made. It is also what Clear Refusal's Inspect axis
+//            asks for in so many words — "which kind of limit it is" — and
+//            nothing on that canvas was answering it.
+//
+//   actions  the way out. Eight callers drew a <Btns> immediately under a Note
+//            and called it a composition; on Clear Refusal, whose fourth
+//            decision is that a refusal must never dead-end, all four states
+//            assembled that pairing separately. A callout that can say no
+//            should be able to carry the thing you can do instead, in the same
+//            box, so the two can't drift apart or be shipped without each other.
+export function Note({ children, tone = "plain", title, kind, actions }) {
   return (
     <div className="mk-note" data-tone={tone}>
-      {title && <span className="mk-note-title">{title}</span>}
+      {(title || kind) && (
+        <span className="mk-note-head">
+          {title && <span className="mk-note-title">{title}</span>}
+          {kind && <Chip>{kind}</Chip>}
+        </span>
+      )}
       <span className="mk-note-body">{children}</span>
+      {actions && <span className="mk-note-act">{actions}</span>}
     </div>
   );
 }
 
 // A list row — a ticket, a file, a step.
-export function Row({ children, tone, lead }) {
-  return (
+export function Row({ children, tone, lead, onClick, label }) {
+  const row = (
     <div className="mk-row" data-tone={tone}>
       {lead && <span className="mk-row-lead" data-tone={tone} aria-hidden />}
       <span className="mk-row-body">{children}</span>
     </div>
   );
+  return onClick ? (
+    <Hot onClick={onClick} label={label} block>
+      {row}
+    </Hot>
+  ) : (
+    row
+  );
 }
 
 // An inline citation marker.
-export function Cite({ n, open }) {
-  return (
+export function Cite({ n, open, onClick }) {
+  const marker = (
     <sup className="mk-cite" data-open={open ? "" : undefined}>
       {n}
     </sup>
+  );
+  return onClick ? (
+    <Hot onClick={onClick} label={open ? `Close source ${n}` : `Open source ${n}`}>
+      {marker}
+    </Hot>
+  ) : (
+    marker
   );
 }
 
@@ -217,6 +338,14 @@ export function Cite({ n, open }) {
 // `notes` hangs a short readout off one step — "412 of 1,240" beside the send
 // that stopped halfway. That number is the pattern's whole claim, so it
 // belongs on the step it describes rather than in prose underneath.
+// Each state in a word as well as in paint. The dot carries done / running /
+// held / failed as a fill and a ring, and nothing else did — so the whole of
+// what separates Running from Failed midway was a colour, on the meter whose
+// entire job is to localise a failure. The word is hidden rather than drawn:
+// four labels reading "Done" down the side of a four-step wireframe is noise on
+// screen and the only signal off it.
+const STEP_WORDS = { done: "Done", now: "Running", held: "Held", fail: "Failed", next: "Not started" };
+
 export function Steps({ items, at, failed, paused, notes }) {
   const stateAt = (i) => {
     if (i === failed) return "fail";
@@ -230,10 +359,31 @@ export function Steps({ items, at, failed, paused, notes }) {
         <li key={label} className="mk-step" data-state={stateAt(i)}>
           <span className="mk-step-dot" aria-hidden />
           <span className="mk-step-label">{label}</span>
+          <span className="vh">{` — ${STEP_WORDS[stateAt(i)]}`}</span>
           {notes?.[i] && <span className="mk-step-note">{notes[i]}</span>}
         </li>
       ))}
     </ol>
+  );
+}
+
+// A before and an after. Two previews hand-rolled this pair, and both left which
+// was which to the fill: red behind one line, blue behind the other, and nothing
+// in the text. Read aloud, Change Review's first change was "Shopping Eating
+// out" — two categories in a row with no way to tell the current one from the
+// suggestion.
+export function Diff({ from, to }) {
+  return (
+    <span className="mk-diff">
+      <span className="mk-diff-line" data-kind="del">
+        <span className="vh">From: </span>
+        {from}
+      </span>
+      <span className="mk-diff-line" data-kind="add">
+        <span className="vh">To: </span>
+        {to}
+      </span>
+    </span>
   );
 }
 

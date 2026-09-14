@@ -13,9 +13,9 @@
 // That is the correction. The bar used to draw one segment per state, so
 // reaching a branch left the segments beside it dark: a lit–dark–lit bar on a
 // third of all states, which reads as a skipped step rather than a road not
-// taken. With one segment per slot the fill is a prefix by construction —
-// holes are impossible — and Play, which walks the array, can only move
-// forward. Both of those were the bug, and neither is fixable by styling.
+// taken. That bar is gone — the canvas is operated rather than played — but
+// the slot survived it, because the tab strip that replaced the bar is exactly
+// one slot's contents and nothing else.
 //
 // The invariant that makes a slot well defined: every state at a given depth
 // shares a parent. smoke27 asserts it, because a bad `from` would silently
@@ -57,44 +57,19 @@ export function alternatives(states, id) {
   return slots(states)[depth(states, id) - 1] ?? [];
 }
 
-// One route through the run — the road that actually reaches a state, then
-// however far the run carries on from it. This is what Play walks.
-//
-// It lives here rather than in the component because effects don't run under
-// renderToString, so a route computed inside the play timer could not be
-// tested at all. Two earlier versions were wrong in ways only a test caught:
-// one walked the states array, so 31 of Play's 52 hops swapped one alternative
-// for another under an animation reading "and then this happened"; the next
-// took one state per slot, which filled the slots *after* the chosen state
-// whether or not anything led there — 20 of 66 routes contained a hop along a
-// link that doesn't exist. Every hop here is a real `from`.
-export function route(states, endId) {
-  const walk = path(states, endId);
-  let cur = endId;
-  for (let guard = 0; guard <= states.length; guard++) {
-    const next = states.find((s) => s.from === cur);
-    if (!next) break;
-    walk.push(next.id);
-    cur = next.id;
-  }
-  return walk;
-}
+// `route`, `continues` and `place` used to sit here, and all three went with
+// the canvas that played itself. `route` was the road Play walked; `continues`
+// marked the segments a route could never reach; `place` was the "Step 2 of 3"
+// readout over the bar. There is no bar and no route: the run is told by
+// operating it, so what the model has to answer is "what are the variants
+// here" and "what does the system do next", which is the two functions above
+// and the one below.
 
-// Whether the run carries on past this state. A dead end isn't a failure —
-// "Nothing to change" and "Nothing in scope" are correct places to stop — but
-// the run list has to stop offering a step this route can't reach. Nineteen of
-// the sixty-six states end where they are.
-export const continues = (states, id) => states.some((s) => s.from === id);
-
-// "Step 2 of 3", or null when there is no run to report. A pattern with one
-// slot — Clear Refusal, Confidence Levels — has no progression, so it gets no
-// readout and no bar. The absence is the honest signal: those states happen
-// instead of each other, not one after another.
-export function place(states, id) {
-  const all = slots(states);
-  if (all.length < 2) return null;
-  return `Step ${depth(states, id)} of ${all.length}`;
-}
+// `onward` used to sit here, reading an `auto` flag off the states to say what
+// the system did next. It went with the flag: a system move is a move through
+// the surface's working data, not a jump between named states, so it belongs to
+// the preview that owns that data — `work.tick` in PatternDetail.jsx. What is
+// left here is the shape of the run, which is all this file was ever for.
 
 // True when the pattern has no run at all — one slot, several ways it can go.
 export const isSet = (states) => slots(states).length < 2;

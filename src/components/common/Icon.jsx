@@ -263,10 +263,15 @@ export function PlayIcon({ size = 11 }) {
   );
 }
 
-export function StopIcon({ size = 11 }) {
+// Start over, on the AI hub's canvas. Stop used to sit beside Play here; both
+// belonged to a canvas that ran on a timer, and only one job survived it —
+// putting a finished run back at its own beginning.
+export function RestartIcon({ size = 11 }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 12 12" fill="currentColor" aria-hidden focusable="false">
-      <rect x="2.2" y="2.2" width="7.6" height="7.6" rx="1.2" />
+    <svg width={size} height={size} viewBox="0 0 12 12" fill="none" stroke="currentColor"
+      strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
+      <path d="M10.1 6a4.1 4.1 0 1 1-1.3-3" />
+      <path d="M9.4 1.3v2.1H7.3" />
     </svg>
   );
 }

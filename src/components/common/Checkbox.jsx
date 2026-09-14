@@ -39,6 +39,7 @@ export function Checkbox({
   size = "28px",
   label = "Option label",
   onClick,
+  tabIndex,
 }) {
   return (
     <button
@@ -54,6 +55,10 @@ export function Checkbox({
       data-shape={shape === "Squared" ? "Squared" : undefined}
       data-size={size !== "28px" ? size : undefined}
       disabled={disabled}
+      // Undefined everywhere it is a real control. The AI hub's wireframes pass
+      // -1 for the ones that only illustrate one, the same call Btn makes: a
+      // frame full of dead controls is a lot of nothing to tab through.
+      tabIndex={tabIndex}
       onClick={onClick}
     >
       {checked ? <CheckSmall size={tickFor(size)} /> : null}

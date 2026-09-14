@@ -47,6 +47,14 @@ export // Every state carries `by` — what moves the system into it — and `fr
 //
 // Nothing declares a shape. It is derived in flow.js from these two fields,
 // so a pattern can't claim to be a sequence while branching.
+//
+// What is NOT here is anything about which states the system reaches on its
+// own. A state carried an `auto: true` for one pass, and it was the wrong place
+// for it: a flag on a state can only say "and then this one happens", which is
+// a jump cut. The system's half of a behaviour is the four cards landing one at
+// a time and the answer arriving a word at a time, and that is a move through
+// the surface's data rather than through this list. It lives on the preview as
+// `work.tick` — see PatternDetail.jsx.
 
 const CONTROL_AXES = [
   { id: "interrupt", label: "Interrupt", desc: "Can the user stop it mid-flight?" },
@@ -55,6 +63,50 @@ const CONTROL_AXES = [
   { id: "correct", label: "Correct", desc: "Can they fix it without starting over?" },
   { id: "undo", label: "Undo", desc: "Can they get back to before?" },
 ];
+
+// The surfaces a pattern has to survive besides the one it is drawn on.
+//
+// These are NOT categories, and the distinction is the whole reason the field
+// exists. The six categories are phases of an interaction — where you are in it
+// — and they were built that way on purpose: "widget-based grouping ages badly
+// and hides the fact that the same decisions recur across surfaces". Voice and
+// canvas are surfaces. Giving them aisles of their own would put the shelf on
+// two axes at once, so a designer whose voice product has a broken-feeling wait
+// would have to choose between Waiting & Progress and Voice — and the answer is
+// both, which is the moment a taxonomy stops being a way in.
+//
+// So the surface goes on the pattern instead, and it is the claim the hub makes
+// about itself finally being checked rather than assumed. Measured before this
+// was written: 45% of the 62 decisions are worded for a screen, and seven of
+// the fourteen definitions name a visual thing outright. The split is not even —
+// Approval Gate, Clear Refusal, Change Review, Undo & History and Plan Preview
+// are almost surface-free at one visual decision in five, while Prompt Box and
+// Sourced Answer are four in five. The phases hold everywhere. The answers
+// don't, and saying which is the useful part.
+//
+// The screen isn't listed: it is what every preview draws, so an entry for it
+// would say "as shown above" fourteen times.
+export const AI_SURFACES = [
+  {
+    id: "voice",
+    label: "Voice",
+    blurb: "Spoken, with nothing on screen to point at and no way to skim back.",
+  },
+  {
+    id: "canvas",
+    label: "Canvas",
+    blurb: "A spatial surface where the output is an object somebody places, moves and edits.",
+  },
+];
+
+// Three answers, and only three. "Different answers" is the interesting one and
+// the commonest: the pattern applies, the decisions it forces are the same, and
+// what you decide is not.
+export const SURFACE_VERDICTS = {
+  holds: "Holds",
+  changes: "Different answers",
+  none: "No form here",
+};
 
 // Grades used on the axes above, in descending order of obligation.
 export const CONTROL_GRADES = {
@@ -115,7 +167,7 @@ export const AI_CATEGORIES = [
 // `states` is what makes a pattern legible to somebody who doesn't design for a
 // living: every documented pattern lists the configurations it actually has —
 // waiting, cited, stale, refused — and each one renders on the canvas as a
-// wireframe you can look at, switched by the pills in the canvas foot. Same
+// wireframe you can look at — and, where the move is a user's, operate. Same
 // mechanism the Product Hub uses for a Button's or an Input Field's states,
 // pointed at a behaviour instead of a control. A pattern nobody can *see* isn't
 // much use in a stakeholder review, however well it's written up.
@@ -192,6 +244,10 @@ export const AI_PATTERNS = [
       verify: { grade: "na", note: "Nothing has been produced yet to check." },
       correct: { grade: "required", note: "Edit-and-resend the previous turn, not only a fresh turn." },
       undo: { grade: "recommended", note: "Restore a cleared draft; drafts are expensive to retype." },
+    },
+    surfaces: {
+      voice: { verdict: "changes", note: "What someone says is the box. Nothing to edit before it goes, so a vague first try gets fixed by the product asking one question back." },
+      canvas: { verdict: "changes", note: "What is selected is the context, so the box opens at the object rather than in a panel and carries that selection as its scope." },
     },
     composedOf: ["Input Field", "File Upload", "Tags", "Button", "Tooltip"],
     optionalParts: ["File Upload", "Tags", "Tooltip"],
@@ -270,6 +326,10 @@ export const AI_PATTERNS = [
       verify: { grade: "required", note: "Open any of the sources straight from the control that lists them." },
       correct: { grade: "required", note: "Change what it can see and run it again without rebuilding the request." },
       undo: { grade: "recommended", note: "Get back to the starting selection in one action." },
+    },
+    surfaces: {
+      voice: { verdict: "changes", note: "Say the scope, don't list it — “reading your current and joint accounts” before the answer. Four items read aloud is a list nobody holds." },
+      canvas: { verdict: "holds", note: "The surface this is easiest on: a selection already is scope at the point of use, visible before anything runs." },
     },
     composedOf: ["Checkbox", "Filter", "Tags", "Input Dropdown", "Button"],
     // Checkbox moved out of optional: it was listed as a part you could do
@@ -351,6 +411,10 @@ export const AI_PATTERNS = [
       correct: { grade: "required", note: "Regenerate and refine on the finished turn." },
       undo: { grade: "na", note: "Nothing outside the view has changed." },
     },
+    surfaces: {
+      voice: { verdict: "changes", note: "Speech already arrives a bit at a time, so there is nothing to put up first. Stop means talking over it, and whatever was said has to survive as text." },
+      canvas: { verdict: "changes", note: "An object doesn't arrive a word at a time. It arrives rough and sharpens, and Stop keeps the last version that finished." },
+    },
     composedOf: ["Spinner", "Progress Bar", "Button", "Card", "Toast"],
     optionalParts: ["Spinner", "Progress Bar", "Card", "Toast"],
   },
@@ -413,6 +477,10 @@ export const AI_PATTERNS = [
       verify: { grade: "recommended", note: "Each unit carries its own source and freshness." },
       correct: { grade: "na", note: "Nothing to correct yet — this is how the answer arrives, not what it says." },
       undo: { grade: "na", note: "Nothing has been written anywhere, so there's nothing to reverse." },
+    },
+    surfaces: {
+      voice: { verdict: "none", note: "Speech is one thing after another, so there are no pieces to land beside each other. Say the fast part, then offer the slow one." },
+      canvas: { verdict: "holds", note: "A board whose parts finish at different times is this pattern. Placeholders at the true size matter more, because here the layout is the work." },
     },
     composedOf: ["Card", "Spinner", "Progress Bar", "Alert", "Empty State"],
     optionalParts: ["Spinner", "Progress Bar", "Alert", "Empty State"],
@@ -497,6 +565,10 @@ export const AI_PATTERNS = [
       correct: { grade: "recommended", note: "Dispute a citation without discarding the answer." },
       undo: { grade: "na", note: "Reading an answer changes nothing, so there's nothing to take back." },
     },
+    surfaces: {
+      voice: { verdict: "none", note: "Reading a source after every claim destroys the answer. Sources move to a follow-up question, or to a screen the voice hands off to." },
+      canvas: { verdict: "changes", note: "The marker sits on the region that came from a source rather than after a clause, so checking it means looking at the thing instead of the sentence." },
+    },
     composedOf: ["Link", "Popover", "Tooltip", "Tags", "Accordion", "Card"],
     optionalParts: ["Popover", "Tooltip", "Tags", "Accordion", "Card"],
   },
@@ -557,6 +629,10 @@ export const AI_PATTERNS = [
       verify: { grade: "recommended", note: "Open the evidence behind a level." },
       correct: { grade: "recommended", note: "Flag a score as wrong, and have that go somewhere." },
       undo: { grade: "na", note: "Showing a score changes nothing that needs reversing." },
+    },
+    surfaces: {
+      voice: { verdict: "changes", note: "The wording is the whole design — “probably”, “it looks like”, “can't tell”. Never a number: a spoken percentage sounds more exact than a printed one." },
+      canvas: { verdict: "changes", note: "Per object rather than per answer, and drawn on it, so a shaky one reads as provisional instead of placed." },
     },
     composedOf: ["Tags", "Progress Bar", "Tooltip", "Alert", "Card"],
     optionalParts: ["Progress Bar", "Tooltip", "Alert", "Card"],
@@ -621,6 +697,10 @@ export const AI_PATTERNS = [
       correct: { grade: "required", note: "Edit in place, and the edit sticks." },
       undo: { grade: "recommended", note: "Revert a field to the extracted value." },
     },
+    surfaces: {
+      voice: { verdict: "none", note: "Fields and rows are a layout. Read out they are a list nobody can hold, so say the value that was asked for and put the rest on a screen." },
+      canvas: { verdict: "changes", note: "Fields on the object's own panel, each one tracing back to the part of the source it was read from." },
+    },
     composedOf: ["Input Field", "Tags", "Tooltip", "Card", "Button"],
     optionalParts: ["Tooltip", "Card", "Button"],
   },
@@ -683,6 +763,10 @@ export const AI_PATTERNS = [
       verify: { grade: "na", note: "A few predicted words have no source to check them against." },
       correct: { grade: "required", note: "Accepted text is ordinary text — editable immediately, with no special state." },
       undo: { grade: "required", note: "One undo returns to exactly what they had typed, not to an intermediate." },
+    },
+    surfaces: {
+      voice: { verdict: "changes", note: "No grey words to ignore, so every suggestion has to be listened to. Offer far fewer, and make yes the short answer." },
+      canvas: { verdict: "changes", note: "A faint object rather than faint words, and carrying on drawing is what dismisses it." },
     },
     composedOf: ["Input Field", "Tooltip", "Tags", "Button"],
     optionalParts: ["Tooltip", "Tags", "Button"],
@@ -751,6 +835,10 @@ export const AI_PATTERNS = [
       verify: { grade: "required", note: "Full surrounding context, not just the changed lines." },
       correct: { grade: "required", note: "Edit the proposal in place." },
       undo: { grade: "required", note: "One action puts everything back, rather than a dig through it block by block." },
+    },
+    surfaces: {
+      voice: { verdict: "none", note: "A before and after is something you scan. Past one change it can't be followed out loud, so the review needs a screen — voice can only approve the summary." },
+      canvas: { verdict: "changes", note: "Before and after as the object itself, toggled or side by side, and accept stays per object rather than per batch." },
     },
     composedOf: ["Card", "Button", "Checkbox", "Tabs", "Alert", "Banner"],
     optionalParts: ["Checkbox", "Tabs", "Alert", "Banner"],
@@ -829,6 +917,10 @@ export const AI_PATTERNS = [
       correct: { grade: "recommended", note: "Restore a single field rather than the whole record." },
       undo: { grade: "required", note: "Return to any point, as a new entry." },
     },
+    surfaces: {
+      voice: { verdict: "changes", note: "“Undo that” reaches the last change and no further; anything older needs a screen. What has to stay sayable is who made each change." },
+      canvas: { verdict: "holds", note: "Canvases already keep every version, and all four answers apply — including the one that says an automatic change is named rather than logged as “System”." },
+    },
     composedOf: ["List Item", "Avatar", "Tags", "Button", "Accordion"],
     optionalParts: ["Avatar", "Tags", "Accordion"],
   },
@@ -895,6 +987,10 @@ export const AI_PATTERNS = [
       correct: { grade: "recommended", note: "Modify parameters, then approve." },
       undo: { grade: "required", note: "Where the action permits it — and say plainly when it doesn't." },
     },
+    surfaces: {
+      voice: { verdict: "holds", note: "All five answers carry over and matter more: there is nothing to re-read, so the effect has to be one sentence somebody can hold to the end." },
+      canvas: { verdict: "holds", note: "Unchanged. The effect still says what will happen in the user's words, and nothing reaches outside the file until somebody says yes." },
+    },
     composedOf: ["Dialog", "Modal", "Button", "Alert", "Tags", "List Item"],
     optionalParts: ["Modal", "Alert", "Tags", "List Item"],
   },
@@ -956,6 +1052,10 @@ export const AI_PATTERNS = [
       verify: { grade: "required", note: "What each step will touch, before it touches it." },
       correct: { grade: "required", note: "Remove or edit a step and re-run the plan." },
       undo: { grade: "recommended", note: "Undo the steps that can be undone, and say plainly which can't." },
+    },
+    surfaces: {
+      voice: { verdict: "changes", note: "Four steps can't be shown and edited at once. Say how many there are, name only the ones that can't be undone, then ask." },
+      canvas: { verdict: "holds", note: "A plan drawn as steps you can cut before running is native here — the pattern with the least translating to do." },
     },
     composedOf: ["List Item", "Checkbox", "Button", "Progress Bar", "Modal"],
     optionalParts: ["Checkbox", "Progress Bar", "Modal"],
@@ -1037,6 +1137,10 @@ export const AI_PATTERNS = [
       correct: { grade: "recommended", note: "Reframe the request without retyping it." },
       undo: { grade: "na", note: "Nothing happened, so there's nothing to take back." },
     },
+    surfaces: {
+      voice: { verdict: "holds", note: "The strongest carry-over in the library. Your words not the model's, a reason that changes the next move, no alarm, and a way on — all unchanged." },
+      canvas: { verdict: "holds", note: "Unchanged, except that the refusal has somewhere to sit: on the object or region it is about, rather than in a message of its own." },
+    },
     composedOf: ["Empty State", "Banner", "Link", "Button", "Alert"],
     optionalParts: ["Banner", "Link", "Alert"],
   },
@@ -1096,6 +1200,10 @@ export const AI_PATTERNS = [
       verify: { grade: "recommended", note: "Open any near miss and judge it yourself." },
       correct: { grade: "required", note: "Broaden the search without starting it over." },
       undo: { grade: "na", note: "Nothing was applied, so there's nothing to reverse." },
+    },
+    surfaces: {
+      voice: { verdict: "changes", note: "No list to rank, so nothing gets promoted by being read first. Say nothing cleared the bar and offer one nearest thing, never three." },
+      canvas: { verdict: "changes", note: "Nothing to place, so the space stays empty and says why. The emptiness is the answer rather than a list of weak ones." },
     },
     composedOf: ["Empty State", "List Item", "Filter", "Banner", "Button"],
     optionalParts: ["List Item", "Filter", "Banner"],

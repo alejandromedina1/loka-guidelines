@@ -14,6 +14,13 @@ import { renderToString } from "react-dom/server";
 import { AI_PATTERNS } from "./src/data/aiPatterns.js";
 import { PATTERN_PREVIEWS } from "./src/components/ai/previews/index.js";
 
+// Rendering a preview means building the surface that reads as the state you
+// want, because a state is no longer something a preview can be handed — it is
+// what its data adds up to. `set` is a no-op: these are render checks, and the
+// moves are smoke29's.
+const draw1 = (C, id) =>
+  renderToString(<C state={id} work={C.work ? C.work.for(id) : undefined} set={() => {}} />);
+
 let fails = 0;
 const bad = (msg) => { fails++; console.log(`FAIL  ${msg}`); };
 
@@ -70,6 +77,33 @@ for (const p of documented) {
     if (new RegExp(`\\b${w}`, "i").test(d)) bad(`${p.name}: definition says "${w}"`);
 }
 console.log(`       ${documented.length} definitions, longest ${Math.max(...documented.map((p) => (p.definition ?? "").split(/\s+/).length))} words`);
+// ── The surface answers ────────────────────────────────────────────────
+// Twenty-eight strings that nothing else reads. They are held to the same rules
+// as the rest of the hub's copy — plain words, no model voice — plus one of
+// their own: an answer for another surface has to say something the pattern's
+// own definition doesn't, or it is the page repeating itself under a heading.
+console.log("\nSurface answers are plain, and say something new");
+{
+  let swept = 0;
+  for (const p of documented)
+    for (const [id, e] of Object.entries(p.surfaces ?? {})) {
+      swept++;
+      const note = e.note ?? "";
+      for (const j of JARGON)
+        if (new RegExp(`\\b${j}`, "i").test(note)) bad(`${p.name} · ${id}: jargon "${j}"`);
+      if (FIRST_PERSON.test(note)) bad(`${p.name} · ${id}: first-person model voice`);
+      // Terms of art a surface note is especially prone to. Every one of these
+      // was reached for while writing them.
+      for (const t of ["utterance", "barge-in", "earcon", "multimodal", "modality", "affordance"])
+        if (new RegExp(`\\b${t}`, "i").test(note)) bad(`${p.name} · ${id}: term of art "${t}"`);
+      // Five consecutive words shared with the definition is the page saying
+      // the same thing twice under a different heading.
+      const shared = [...shingles(note, 5)].filter((x) => shingles(p.definition ?? "", 5).has(x));
+      if (shared.length) bad(`${p.name} · ${id}: restates the definition — "${shared[0]}…"`);
+    }
+  console.log(`       ${swept} surface answers swept`);
+}
+
 console.log(`\nSweeping ${documented.length} documented patterns\n`);
 
 let states = 0, strings = 0, overlaps = 0;
@@ -96,9 +130,20 @@ for (const p of documented) {
   const decisionShingles = shingles(
     (p.decisions ?? []).flatMap((d) => [d.loka, d.why]).filter(Boolean).join(" "), 12);
 
+  // Every drawing of this pattern, on every surface it has one for. A voice
+  // wireframe is as capable of speaking in the model's voice as a screen one —
+  // more so, since the words are all there is on it.
+  const drawings = [Preview, ...Object.values(Preview.surfaces ?? {})];
+
   for (const st of p.states) {
     states++;
-    const text = visible(renderToString(<Preview state={st.id} />));
+    // The work comes from the pattern, not from the drawing: a surface variant
+    // runs off its pattern's states, which is the whole mechanism — so it has
+    // no `work` of its own to read.
+    const w = Preview.work ? Preview.work.for(st.id) : undefined;
+    const text = drawings
+      .map((C) => visible(renderToString(<C state={st.id} work={w} set={() => {}} />)))
+      .join(" ");
     strings++;
 
     if (FIRST_PERSON.test(text))

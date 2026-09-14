@@ -1,12 +1,21 @@
-// smoke27 — the flow model, now built on slots.
+// smoke27 — the flow model, built on slots. It is the only thing in the hub
+// that still reasons about states as a list: everything about *being in* one is
+// now derived from the surface's data, and smoke29 has that.
 //
 // A slot is a position in the run; the states inside one are the alternatives
-// at that position. The properties below are what make the bar drawable, and
-// each of them corresponds to something that was visibly broken when the bar
-// drew one segment per state instead.
+// at that position. That is still the model, but what it has to make drawable
+// has changed: the canvas no longer plays a route on a timer behind a segmented
+// bar, it is operated. So the route, step-readout and unreached-segment checks
+// are gone with the things they described, and what a slot now has to support
+// is the tab strip — the variants at the position you are standing in, and
+// nothing about the order of positions.
+//
+// The rest of the file is unchanged and still earns its keep: depth, parents,
+// and the invariant that makes a slot well defined are what the tabs are
+// computed from.
 import { renderToString } from "react-dom/server";
-import { AI_PATTERNS } from "./src/data/aiPatterns.js";
-import { alternatives, continues, depth, forks, isSet, path, place, route, slots } from "./src/data/flow.js";
+import { AI_PATTERNS, AI_SURFACES, SURFACE_VERDICTS } from "./src/data/aiPatterns.js";
+import { alternatives, depth, forks, isSet, path, slots } from "./src/data/flow.js";
 import { PatternDetail } from "./src/components/ai/PatternDetail.jsx";
 
 let fails = 0;
@@ -54,10 +63,11 @@ for (const p of documented)
   }
 ok("all slots are single sibling groups", true);
 
-// ── Play can only move forward ──────────────────────────────────────────
-// Play walks the array. If depth ever fell between neighbours, the bar would
-// un-fill mid-playback, which is exactly what it used to do.
-console.log("\nThe array is in slot order, so Play never runs backwards");
+// ── The array is in slot order ──────────────────────────────────────────
+// slots() groups by depth and keeps array order inside a group, so a states
+// array whose depth fell between neighbours would hand a position's tabs back
+// in an order nobody authored.
+console.log("\nThe array is in slot order, so a slot's tabs come out in order");
 for (const p of documented) {
   const ds = p.states.map((s) => depth(p.states, s.id));
   const drops = ds.filter((d, i) => i > 0 && d < ds[i - 1]);
@@ -66,127 +76,36 @@ for (const p of documented) {
 }
 ok("depth is non-decreasing across every states array", true);
 
-// ── Play walks a run, not a menu ────────────────────────────────────────
-// Every hop Play makes has to advance the run. It used to walk the states
-// array, so 31 of its 52 hops swapped one alternative for another under an
-// animation that says "and then this happened" — Complete → Stopped →
-// Connection lost, Accepted → Dismissed, Done → Failed midway.
-console.log("\nEvery hop Play makes advances the run");
-let hops = 0;
-for (const p of documented) {
-  const all = slots(p.states);
-  if (all.length < 2) {
-    // No run: Play has nothing to walk and shouldn't be offered at all.
-    ok(`${p.name} has no run, so no Play`, !draw(p).includes("ai-play"));
-    continue;
-  }
-  const byIdIn = Object.fromEntries(p.states.map((x) => [x.id, x]));
-  const lbl = (id) => byIdIn[id].label;
-  for (const st of p.states) {
-    const r = route(p.states, st.id);
-    if (!r.includes(st.id))
-      { fails++; console.log(`FAIL  ${p.name} · ${st.label}: route doesn't pass through it`); }
-    // Starts at a way the pattern can start.
-    if (byIdIn[r[0]].from)
-      { fails++; console.log(`FAIL  ${p.name} · ${st.label}: route starts mid-run at ${lbl(r[0])}`); }
-    // And carries on as far as the run goes, so it never stops early.
-    if (p.states.some((o) => o.from === r[r.length - 1]))
-      { fails++; console.log(`FAIL  ${p.name} · ${st.label}: route stops at ${lbl(r[r.length - 1])} with more to come`); }
-    for (let i = 1; i < r.length; i++) {
-      hops++;
-      // THE check. Depth advancing by one is not enough — a route made of one
-      // state per slot satisfies that while walking links that don't exist,
-      // which is how "Nothing in scope → Scope changed" shipped.
-      if (byIdIn[r[i]].from !== r[i - 1]) {
-        fails++;
-        console.log(`FAIL  ${p.name}: ${lbl(r[i - 1])} → ${lbl(r[i])} is not a link the pattern has`);
-      }
-    }
-  }
-}
-ok(`${hops} hops across every route, every one a real link`, true);
-// The ending you picked is the ending Play walks to — the full road to it.
-const srp = byName("Streaming Response").states;
-ok("choosing Connection lost makes Play walk the road to it",
-  route(srp, "dropped").join(" → ") === "waiting → streaming → dropped",
-  route(srp, "dropped").join(" → "));
-ok("and choosing nothing walks the ordinary road",
-  route(srp, "waiting").join(" → ") === "waiting → streaming → complete",
-  route(srp, "waiting").join(" → "));
-// A branch in the middle of a run stops where it stops, rather than being
-// carried on to a state nothing led to.
-const vs = byName("Visible Sources").states;
-ok("Visible Sources stops at Nothing in scope instead of walking past it",
-  route(vs, "empty").join(" → ") === "default → empty", route(vs, "empty").join(" → "));
-ok("…and still walks the whole road when there is one",
-  route(vs, "stale").join(" → ") === "default → editing → stale", route(vs, "stale").join(" → "));
+// The system's own moves used to be asserted here, off an `auto` flag on the
+// states. Both are gone: a system move is a move through the surface's working
+// data rather than a jump between named states, so it lives on the preview as
+// `work.tick` and is tested in smoke29 — which can walk it, because it has the
+// data to walk.
 
-// ── The bar can't draw a hole ───────────────────────────────────────────
-// One segment per slot makes the fill a prefix by construction. Asserted from
-// the rendered markup rather than from the model, so a regression in the
-// component fails here too.
-console.log("\nThe rendered bar is always a filled prefix");
-let holes = 0, bars = 0;
-for (const p of documented) {
-  const segs = [...draw(p).matchAll(/class="ai-track-seg"([^>]*)>/g)].map((m) => m[1].includes("data-on"));
-  if (!segs.length) continue;
-  bars++;
-  if (segs.some((on, i) => !on && segs.slice(i + 1).includes(true))) holes++;
-}
-ok(`${bars} bars drawn, none with a gap`, holes === 0, `${holes} holed`);
-
-// ── A route that stops says so ──────────────────────────────────────────
-// A dead end is a correct place to be — "Nothing to change", "Nothing in
-// scope" — but the segments past it must not read as steps still to come.
-//
-// PatternDetail owns which state is on the canvas, so the only way to render
-// one is to put it first in the array it's handed. Depth comes from the `from`
-// links, not from array position, so reordering doesn't disturb what's tested.
-console.log("\nSegments a route can't reach are drawn as unreached, not as ahead");
-const withFirst = (p, id) => ({ ...p, states: [p.states.find((s) => s.id === id), ...p.states.filter((s) => s.id !== id)] });
-let ends = 0;
-for (const p of documented) {
-  const total = slots(p.states).length;
-  if (total < 2) continue;
-  for (const st of p.states) {
-    const d = depth(p.states, st.id);
-    const html = draw(withFirst(p, st.id));
-    const marked = (html.match(/data-unreached=/g) || []).length;
-    // One bar segment per slot, so a route that stops marks one per slot ahead.
-    const expected = continues(p.states, st.id) ? 0 : total - d;
-    if (marked !== expected) {
-      fails++;
-      console.log(`FAIL  ${p.name} · ${st.label}: ${marked} segments marked unreached, expected ${expected}`);
-    }
-    if (expected > 0) ends++;
-  }
-}
-ok(`${ends} dead-end states, each marking exactly the steps it can't reach`, true);
-// And the ordinary case is untouched: a state that carries on marks nothing.
-ok("Streaming · Waiting marks nothing unreached",
-  !draw(withFirst(byName("Streaming Response"), "waiting")).includes("data-unreached"));
-// Change Review from "Nothing to change": slot 2 holds two alternatives and
-// slot 3 holds one, none of them reachable from there.
-ok("Change Review · Nothing to change marks the two steps it never gets to",
-  (draw(withFirst(byName("Change Review"), "empty")).match(/data-unreached=/g) || []).length === 2);
-
-// ── A pattern with no run gets no bar ───────────────────────────────────
-console.log("\nA one-slot pattern is not numbered like a run");
+// ── A pattern with no run is still a pattern with variants ─────────────
+// This is the case the tab strip exists for, and the one the segmented track
+// got most wrong: Clear Refusal's four states are four kinds of refusal that
+// never follow each other. Numbered as steps they read as a sequence; as tabs
+// they read as what they are.
+console.log("\nA one-slot pattern is variants, not a run");
 for (const name of ["Clear Refusal", "Confidence Levels"]) {
   const p = byName(name);
   const html = draw(p);
   ok(`${name} is one slot`, isSet(p.states), `${slots(p.states).length}`);
-  // No step numbers: numbering four kinds of refusal 1..4 would say they
-  // happen in order, which is the whole thing this model exists to stop.
-  ok(`  …so it renders no bar`, !html.includes("ai-track-bar"));
-  ok(`  …and no step readout`, place(p.states, p.states[0].id) === null);
-  ok(`  …and offers no Play`, !html.includes("ai-play"));
+  ok(`  …so every state is a tab`,
+    (html.match(/class="ai-state-tab"/g) || []).length === p.states.length);
+  // Nothing to start over from: all four are ways the pattern begins.
+  ok(`  …and there is nothing to start over from`, !html.includes("ai-restart"));
+  ok(`  …and no Play`, !html.includes("ai-play"));
 }
+// And the opposite case: a position holding one state is a label, not a
+// selector with one option in it. The appearance of tabs is the signal that
+// this is where the pattern forks, so it has to be absent where it doesn't.
 const srh = draw(byName("Streaming Response"));
-ok("Streaming Response draws one segment per slot",
-  (srh.match(/class="ai-track-seg"/g) || []).length === 3);
-ok("…and marks the step the canvas is in",
-  /class="ai-track-seg"[^>]*aria-current="step"/.test(srh));
+ok("Streaming Response opens on a position that doesn't fork",
+  !srh.includes("ai-state-tab") && srh.includes("ai-state-name"));
+ok("…and nothing has happened yet, so there is nothing to start over from",
+  !srh.includes("ai-restart"));
 
 // ── The chooser offers exactly the slot it is in ────────────────────────
 console.log("\nThe chooser offers the alternatives at the current position");
@@ -205,35 +124,74 @@ ok("Plan Preview: Step removed sits beside Plan proposed",
   depth(pp, "edited") === 1 && depth(pp, "proposed") === 1);
 ok("…and Paused sits beside Running", alternatives(pp, "paused").map((s) => s.id).join(",") === "running,paused");
 
-// ── One row per state, one number per step ──────────────────────────────
-// The run list is the whole model on screen, so it has to render every state
-// exactly once and number each step exactly once. The horizontal readout it
-// replaced could only name the step you were standing on.
-// ── The readout means one thing ─────────────────────────────────────────
-// Two states may share a readout only when they really are at the same
-// position — and then the pills tell them apart.
-console.log("\nStates sharing a readout are states at the same position");
-for (const p of documented)
-  for (const st of p.states) {
-    const same = p.states.filter((o) => place(p.states, o.id) === place(p.states, st.id));
-    const alt = alternatives(p.states, st.id);
-    if (same.length !== alt.length)
-      { fails++; console.log(`FAIL  ${p.name} · ${st.label}: ${same.length} share its readout but its slot holds ${alt.length}`); }
-  }
-ok("every shared readout is a shared slot", true);
-// One pill per alternative at the current position, and a bar segment per slot.
+// ── The tabs offer the position, and only the position ────────────────
+// One tab per variant at the position the canvas is standing in, and none at
+// all where there is only one way to be there. This is the whole of what
+// survived the track: the part that named alternatives without also asserting
+// an order between positions.
+console.log("\nThe tab strip is exactly the current position's variants")
 for (const p of documented) {
   const html = draw(p);
-  const pills = (html.match(/class="ai-track-alt"/g) || []).length;
+  const tabs = (html.match(/class="ai-state-tab"/g) || []).length;
   const want = alternatives(p.states, p.states[0].id).length;
-  if (pills !== (want > 1 ? want : 0))
-    { fails++; console.log(`FAIL  ${p.name}: ${pills} pills, expected ${want > 1 ? want : 0}`); }
-  const segs = (html.match(/class="ai-track-seg"/g) || []).length;
-  const wantSegs = slots(p.states).length > 1 ? slots(p.states).length : 0;
-  if (segs !== wantSegs)
-    { fails++; console.log(`FAIL  ${p.name}: ${segs} segments, expected ${wantSegs}`); }
+  const expected = want > 1 ? want : 0;
+  if (tabs !== expected)
+    { fails++; console.log(`FAIL  ${p.name}: ${tabs} tabs, expected ${expected}`); }
+  // A position that doesn't fork names itself instead.
+  if ((want > 1) === html.includes("ai-state-name"))
+    { fails++; console.log(`FAIL  ${p.name}: tabs and a bare name are not exclusive`); }
 }
-ok("a segment per slot, a pill per alternative where there is a choice", true);
+ok("a tab per variant where there is a choice, a name where there isn't", true);
+
+// ── Every pattern says where else it lives ─────────────────────────────
+// Surfaces are on the pattern rather than in the taxonomy, which only works if
+// every pattern answers for every surface — a gap here is a designer building
+// for voice finding nothing and concluding the hub is for screens.
+console.log("\nEvery documented pattern answers for every surface");
+{
+  const tally = {};
+  for (const p of documented) {
+    const missing = AI_SURFACES.filter((sf) => !p.surfaces?.[sf.id]);
+    if (missing.length) {
+      fails++;
+      console.log(`FAIL  ${p.name}: no answer for ${missing.map((s) => s.label).join(", ")}`);
+      continue;
+    }
+    for (const sf of AI_SURFACES) {
+      const e = p.surfaces[sf.id];
+      const key = `${sf.id}:${e.verdict}`;
+      tally[key] = (tally[key] ?? 0) + 1;
+      if (!SURFACE_VERDICTS[e.verdict])
+        { fails++; console.log(`FAIL  ${p.name} · ${sf.label}: "${e.verdict}" is not a verdict`); }
+      // A verdict with no reason is the thing this field exists to avoid: the
+      // useful half is what replaces the answer, not that it changed.
+      if (!e.note || e.note.split(/\s+/).length < 8)
+        { fails++; console.log(`FAIL  ${p.name} · ${sf.label}: no reason given`); }
+      if (e.note && e.note.split(/\s+/).length > 34)
+        { fails++; console.log(`FAIL  ${p.name} · ${sf.label}: ${e.note.split(/\s+/).length} words`); }
+    }
+  }
+  ok(`${documented.length * AI_SURFACES.length} answers, every one graded and reasoned`, true);
+
+  // The claim being tested is that the phases carry and the answers don't. If
+  // every entry came back "Holds" the field would be decoration; if every one
+  // came back "No form here" the hub really would be a screen library. Both
+  // extremes are findings, so neither is allowed to pass silently.
+  for (const sf of AI_SURFACES) {
+    const counts = Object.entries(tally).filter(([k]) => k.startsWith(`${sf.id}:`));
+    const top = Math.max(...counts.map(([, n]) => n));
+    ok(`${sf.label} is not one answer repeated`, top < documented.length,
+      counts.map(([k, n]) => `${k.split(":")[1]} ${n}`).join(" · "));
+  }
+
+  // And the split the field was written to record: the patterns whose decisions
+  // were already surface-free are the ones that carry.
+  const holds = (name, sf) => byName(name).surfaces[sf].verdict === "holds";
+  ok("Approval Gate and Clear Refusal carry to voice", holds("Approval Gate", "voice") && holds("Clear Refusal", "voice"));
+  ok("…and the three most screen-bound patterns do not",
+    ["Sourced Answer", "Structured Output", "Prompt Box"].every(
+      (n) => byName(n).surfaces.voice.verdict !== "holds"));
+}
 
 // ── Shapes still differ ─────────────────────────────────────────────────
 console.log("\nThe patterns still do not all have the same shape");

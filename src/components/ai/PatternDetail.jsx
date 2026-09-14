@@ -1,62 +1,85 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AI_PATTERNS, CONTROL_AXES, CONTROL_GRADES } from "../../data/aiPatterns.js";
+import {
+  AI_PATTERNS,
+  AI_SURFACES,
+  CONTROL_AXES,
+  CONTROL_GRADES,
+  SURFACE_VERDICTS,
+} from "../../data/aiPatterns.js";
 import { PATTERN_PREVIEWS } from "./previews/index.js";
-import { alternatives, continues, depth, place, route, slots } from "../../data/flow.js";
-import { ArrowLeft, ArrowRight, PlayIcon, StopIcon } from "../common/Icon.jsx";
+import { alternatives, path } from "../../data/flow.js";
+import { ArrowLeft, ArrowRight, PlayIcon, RestartIcon } from "../common/Icon.jsx";
 import { NumberChip } from "../common/NumberChip.jsx";
 
-// One pattern, on the same lab shell every other hub uses: canvas on the left
-// with prev/next in its nav and state pills in its foot, the 260px properties
-// column on the right. A pattern isn't a component, but it is the same *kind*
-// of page — one thing on stage, its spec beside it — so it gets the same
-// furniture rather than a second layout meaning the same thing.
+// One pattern, on the same lab shell every other hub uses: canvas on the left,
+// the 260px properties column on the right. A pattern isn't a component, but it
+// is the same *kind* of page — one thing on stage, its spec beside it — so it
+// gets the same furniture rather than a second layout meaning the same thing.
 //
-// The canvas does the explaining. Three things make it show rather than tell:
+// THE STATE IS AN OUTPUT, NOT AN INPUT
 //
-//   States      — the track switches between the pattern's real configurations,
-//                 failures included, exactly as pills switch a Button's.
-//   Play        — walks one route through the run, because a pattern is a
-//                 behaviour over time and a strip of alternatives can't show
-//                 that. It replaced a written Lifecycle block that said the
-//                 same thing in prose. It walks a *route* and not the states
-//                 array because the array holds alternatives side by side: 31
-//                 of Play's 52 hops used to swap one for another under an
-//                 animation reading "and then this happened".
-//   Shape       — the track draws the structure the states actually have,
-//                 derived in flow.js from `from`/`by` rather than declared.
+// This is the third answer and the first one that is actually a playground.
 //
-// That last one was the correction. The track filled every segment to the left
-// of the cursor and named the position "3/5", which asserts a sequence — and
-// only five of the fourteen patterns are one. Streaming Response forks three
-// ways at the end; Clear Refusal's four states are four kinds of refusal that
-// never follow each other. So Play read as five screenshots on a timer.
+// The first was a strip of pills: every state of the pattern laid out as a
+// menu, click one to see it. The second was a segmented track and a Play
+// button, which walked a route on a timer. The third made the wireframe's
+// controls live, and it was still the second one wearing a different hat —
+// pressing Approve looked up the canned "Running" frame exactly as clicking a
+// pill had. You could cause the jump, but there was nothing behind it.
 //
-// Now: fill follows the *route* to the current state, a segment joins the one
-// before it only when it really follows it, and the readout says "Step 3" or
-// "2 of 3" — the word that tells you whether these happen in order or instead
-// of each other. Under it sits the trigger: what moved the system here. The
-// track was showing order and hiding cause, and cause is most of a behaviour.
+// What all three share is the mistake: the lifecycle state was the *input*. You
+// chose "Nothing in scope" and the frame was fetched from it.
 //
-// The track and Play are one control, not two. A pattern is one thing
-// unfolding, so the canvas is built to be watched: Play runs the states,
-// transitions carry each into the next, and the track is there for stopping
-// on the one you want to study.
+// Now the state is the output. A preview is handed the surface's real working
+// data — the text in the box, which sources are ticked, which changes you
+// decided, how many characters of the answer have arrived — and it renders that
+// and nothing else. The canvas derives which state the pattern is in *from* the
+// data. So "Nothing in scope" is what it is called when you have switched the
+// last account off, and it cannot be reached any other way, because there is no
+// other way to be in it.
 //
-// It replaced a strip of pills. Pills model alternatives — a Button is Primary
-// or Secondary — and they were saying the wrong thing about a lifecycle; they
-// also collapsed under five labels the length of "Awaiting approval". Numbering
-// them made the crowding worse and diverged from the other hubs for a reason
-// nobody could see. A track never collapses, because only the state you're on
-// is named.
+// THE PROTOCOL
 //
-// A "Compare with what usually ships" control used to sit in the foot too. It
-// was cut: the Anti-patterns view carries that argument with nine wireframes
-// built for it, and the playground is better for being about one thing.
+// A preview that has a surface to work carries a `work` static:
+//
+//   work.for(stateId)   a working state that reads as this lifecycle state.
+//                       Tabs, the decisions' "See it on …" links and Start over
+//                       all name a state, so every state has to be expressible
+//                       as data or those three would be lying about where they
+//                       put you.
+//   work.state(w)       which lifecycle state this data is in. The canvas names
+//                       this, the properties panel describes it, and the tabs
+//                       are computed from it. One source of truth: the data.
+//   work.tick(w)        what the system does next on its own, as
+//                       `{ work, in: ms }` or null. This is the wait passing,
+//                       the words arriving, the steps running — the half of a
+//                       behaviour that isn't the user's, which a canvas about
+//                       behaviour cannot leave out.
+//
+// `work.tick` replaced the `auto` flag the states used to carry. A flag could
+// only say "and then this state happens"; a tick moves the data, so four cards
+// land one at a time instead of the frame cutting from two to four, and Stop
+// keeps the characters that had actually arrived when you pressed it.
+//
+// Two patterns carry no `work` at all, and that is the right answer for them:
+// Confidence Levels and Clear Refusal are sets of outcomes rather than
+// behaviours — four kinds of refusal that never follow one another — so there
+// is nothing to work and the tabs are the whole control.
+//
+// WHAT'S LEFT AROUND THE CANVAS
+//
+//   Tabs, at forks only.  The variants at the position you are standing in, and
+//                 nothing about the order of positions. A position holding one
+//                 state shows its name instead, so the appearance of tabs is
+//                 itself the signal that the pattern forks here.
+//   Start over.   Resets the surface to the top of the road it is on, and lets
+//                 the system start moving again. It is also how you get out of
+//                 a state you tabbed to, because tabbing holds the system still
+//                 — you asked to look at that one.
 //
 // Below the lab, only what the canvas can't show: whether to use it at all,
-// what it forces you to decide, and what it's built from. A written Lifecycle
-// and a Failure modes table used to sit there too — both were duplicating the
-// state pills by the time the previews existed.
+// what it forces you to decide, and what it's built from.
+
 export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern }) {
   // A decision names the state that demonstrates it, and clicking that puts the
   // state on the canvas — which is above and usually off-screen by the time
@@ -66,79 +89,130 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
   const Preview = PATTERN_PREVIEWS[pattern.id];
   const planned = pattern.status === "planned";
   const states = pattern.states ?? [];
+  // The surface's protocol, or null for the two patterns that are a set of
+  // outcomes rather than a behaviour.
+  const W = Preview?.work ?? null;
 
-  // Which state is on the canvas, and whether we're drawing our default or the
-  // common shortcut. Local rather than lifted to App: nothing outside this page
-  // selects either. AiPatternsSection keys this component on the pattern id, so
-  // switching patterns remounts and lands on the new one's first state.
-  const [stateId, setStateId] = useState(states[0]?.id);
-  const [playing, setPlaying] = useState(false);
-  // The route Play is walking, pinned when it starts. It has to be pinned:
-  // Play's first move is back to the top of the run, and a route derived from
-  // whatever is on the canvas would recompute there and lose the ending the
-  // user had chosen to watch.
-  const [run, setRun] = useState(null);
+  // The working data the frame renders, and — for a pattern with no surface to
+  // work — the state somebody picked. Exactly one of these is live, which is
+  // what keeps the canvas and the frame from ever disagreeing: with `work`, the
+  // state is computed from the data, so there is no second copy of it to drift.
+  //
+  // Local rather than lifted to App: nothing outside this page reads either.
+  // AiPatternsSection keys this component on the pattern id, so switching
+  // patterns remounts and lands on the new one's opening state.
+  const [work, setWork] = useState(() => (W ? W.for(states[0]?.id) : null));
+  const [picked, setPicked] = useState(states[0]?.id);
+  const stateId = W ? W.state(work) : picked;
+
+  // Whether to hold the system still. Its own moves run unprompted — that is
+  // the point — but not when somebody has asked for one state by name. A tab,
+  // or a decision's "See it on Stopped", is a request to look at that one, and
+  // a canvas that walks off it a second later is a canvas that ignored the
+  // click. Working the frame clears the hold, because pressing Approve is a
+  // request to see what happens next.
+  const [held, setHeld] = useState(false);
+  // Which surface the canvas is drawing. The pattern, its states and its working
+  // data are all the same across the three — that identity is the demonstration,
+  // so it is the *drawing* that switches and nothing else. Reset on the pattern
+  // itself changing, which the key on this component already does.
+  const [surface, setSurface] = useState("screen");
 
   const active = states.find((st) => st.id === stateId) ?? states[0];
-  // The run as slots, and where in it the canvas currently sits — see flow.js.
-  // One segment per slot rather than per state is what makes the fill a prefix,
-  // so the bar can't draw a hole and Play can't run backwards.
-  const runSlots = states.length ? slots(states) : [];
-  const at = active ? depth(states, active.id) - 1 : 0;
-  // Whether anything follows the state on the canvas. "Nothing to change" is a
-  // correct place to stop, and the bar shouldn't keep offering it a step 3.
-  const goesOn = active ? continues(states, active.id) : false;
-  // The ways the run can go from this position, this one included.
+  // The ways the run can go from this position, this one included. More than
+  // one and this position is a fork, which is the only thing that puts tabs on
+  // the canvas.
   const alts = active ? alternatives(states, active.id) : [];
+  // Where "Start over" goes — the first state of the road this one is on, not
+  // the pattern's first state. Sourced Answer starts three different ways, and
+  // a restart that ignored which one you were on would be a fourth thing
+  // happening rather than the same thing again.
+  const first = active ? path(states, active.id)[0] : null;
 
-  // A chain of timeouts rather than one interval, so each hop is driven by the
-  // state it just landed on and the run stops cleanly at the end of the route.
+  // The system, doing its half: the wait passing, the words arriving, the four
+  // cards landing one at a time. One timeout per move rather than a schedule
+  // walked from the top, so every move is decided by the data actually on the
+  // canvas — press Stop mid-stream and the chain ends with it, leaving nothing
+  // running that still believes in the answer it was part-way through.
+  // Keyed on the data's *value* rather than its identity. A fresh object every
+  // render would rebuild the timer every render, and the renders this component
+  // gets are not all its own — the page's scroll spy re-renders it while you
+  // are looking at it, which on a 24ms stream would reset the clock before it
+  // ever struck and leave the answer frozen a word in.
+  const workKey = W ? JSON.stringify(work) : null;
   useEffect(() => {
-    if (!playing || !run) return undefined;
-    const pos = run.indexOf(stateId);
-    if (pos === -1 || pos >= run.length - 1) {
-      setPlaying(false);
-      setRun(null);
-      return undefined;
-    }
-    const t = setTimeout(() => setStateId(run[pos + 1]), 1700);
-    return () => clearTimeout(t);
-  }, [playing, run, stateId]);
+    if (!W?.tick || held) return undefined;
+    const t = W.tick(work);
+    if (!t) return undefined;
+    const timer = setTimeout(() => setWork(t.work), t.in);
+    return () => clearTimeout(timer);
+    // `work` is read here and covered by `workKey`, which is what makes it
+    // safe to leave out: two equal surfaces are the same surface.
+  }, [W, workKey, held]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const togglePlay = useCallback(() => {
-    if (playing) {
-      setPlaying(false);
-      setRun(null);
-      return;
-    }
-    // Always from the top of the road that reaches whatever is on the canvas.
-    // Play and the chooser compose this way: pick the ending you want to
-    // watch, press Play, see the full road to it. Play used to override the
-    // choice and march through every alternative in turn.
-    //
-    // Some states are a road of one — a way the pattern can start that nothing
-    // follows, like "Nothing to change". There is no run to them, so Play
-    // falls back to the pattern's main road rather than sitting there dead.
-    const own = route(states, active.id);
-    const walk = own.length > 1 ? own : route(states, states[0].id);
-    setRun(walk);
-    setStateId(walk[0]);
-    setPlaying(true);
-  }, [playing, active, states]);
-
-  const pickState = useCallback((id) => {
-    setPlaying(false);
-    setRun(null);
-    setStateId(id);
+  // The frame worked its own surface. Nothing here decides which state that
+  // is — `W.state` does, off the data — so a control can't put the canvas
+  // somewhere the wireframe isn't.
+  const set = useCallback((next) => {
+    setHeld(false);
+    setWork(next);
   }, []);
+
+  // Naming a state, which is the tabs' and the decision links' way in. With a
+  // surface this has to go through `for`, or the frame would keep rendering the
+  // data it had while the caption claimed something else.
+  const goTo = useCallback((id) => {
+    if (W) setWork(W.for(id));
+    else setPicked(id);
+  }, [W]);
+
+  // A tab. An explicit pick of one variant, so the system stays put on it.
+  const pickState = useCallback((id) => {
+    setHeld(true);
+    goTo(id);
+  }, [goTo]);
 
   // Same, plus scroll — used by the decisions, which sit well below the canvas.
   const showState = useCallback((id) => {
-    setPlaying(false);
-    setRun(null);
-    setStateId(id);
+    setHeld(true);
+    goTo(id);
     labRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, []);
+  }, [goTo]);
+
+  // Back to the top of this road, with the system free to move again. This is
+  // also the way out of a state you tabbed to: that hold has to be releasable
+  // by something, and on a pattern like Results in Pieces — which has no
+  // controls at all, because the whole behaviour is the system's — it is the
+  // only control there is.
+  const restart = useCallback(() => {
+    setHeld(false);
+    goTo(first);
+  }, [goTo, first]);
+
+  // The surfaces this pattern has a drawing of its own for, and so the only
+  // ones the strip offers. A control appears exactly when it has something to
+  // do — the same rule the state tabs follow (forks only) and Start over
+  // follows (only with a road behind you).
+  //
+  // Two kinds of surface are deliberately not offered, and neither is a gap:
+  //
+  //   holds    the screen drawing *is* the voice answer, so a tab that
+  //            re-rendered the identical frame would be a control that does
+  //            nothing. Approval Gate carries verbatim to both surfaces, and
+  //            the way to say that is the block below the lab, in words.
+  //   undrawn  a surface whose answer differs but whose wireframe isn't built
+  //            yet. Offering it would land the reader on "not drawn yet", which
+  //            is worse than not offering it: the prose below still carries the
+  //            whole answer, and an empty tab implies the prose is incomplete.
+  //
+  // So the strip is absent on most patterns today and that is honest — it
+  // appears when there is a second drawing to see, and the count grows as the
+  // remaining seventeen get built.
+  const drawnSurfaces = AI_SURFACES.filter(
+    (sf) => pattern.surfaces?.[sf.id]?.verdict !== "holds" && Preview?.surfaces?.[sf.id]
+  );
+  const surfaceEntry = surface === "screen" ? null : pattern.surfaces?.[surface];
+  const Drawn = surface === "screen" ? Preview : Preview?.surfaces?.[surface];
 
   // Prev/next walks the whole shelf in declaration order rather than staying
   // inside the category: browsing a library end to end is a real way people use
@@ -164,19 +238,92 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
       <div className="pg ai-lab" ref={labRef}>
         <div className="pg-stage">
           <div className="pg-canvas grey">
+            {/* Which state is on the canvas, centred, with prev/next holding
+                the right rail.
+
+                It reads before the frame because it names what the frame is,
+                and it shares the frame's axis: this band was the only element
+                in the lab with a width of its own, and anchored to the left
+                edge it pulled the eye off the frame's centre every time a
+                state label changed length. */}
             <div className="pg-canvas-nav">
-              {active && <span className="pg-state-label">{active.label}</span>}
-              {arrows}
+              {states.length > 0 && (
+                <div className="ai-state">
+                  {/* Tabs only where the pattern genuinely branches. A position
+                      holding one state shows its name as a label instead, so
+                      the appearance of tabs is itself the signal that this is
+                      the point where the pattern forks — which is the one thing
+                      the segmented track it replaced could not say without also
+                      asserting an order. */}
+                  {alts.length > 1 ? (
+                    <div
+                      className="ai-state-tabs"
+                      role="group"
+                      aria-label={`Which way ${pattern.name} goes here`}
+                    >
+                      {alts.map((st) => (
+                        <button
+                          key={st.id}
+                          className="ai-state-tab"
+                          aria-current={st.id === active.id ? "true" : undefined}
+                          onClick={() => pickState(st.id)}
+                        >
+                          {st.label}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="ai-state-name">{active?.label}</span>
+                  )}
+
+                  {/* What moved the system into this state, on its own row
+                      under the tabs. On a canvas you operate it's the other
+                      half of the caption: the tabs say where you are, this says
+                      what put you there — and half of the time the answer is
+                      something you just did. Beside them it read as one more
+                      tab; under them it reads as the caption it is. */}
+                  {active?.by && <span className="ai-state-by">{active.by}</span>}
+                </div>
+              )}
+
+              <div className="ai-canvas-arrows">{arrows}</div>
+
+              {/* The spoken half of the caption. Half the moves on this canvas
+                  are the system's — the wait passing, the cards landing — and
+                  nothing else announces them.
+
+                  Its own node, hidden, rather than aria-live on the caption
+                  itself: that version wrapped the tab strip, so every change
+                  re-announced a group of buttons along with the state, and a
+                  live region full of controls is a live region that talks over
+                  the thing somebody is trying to press. This carries one
+                  sentence and nothing that can be focused. */}
+              <span className="vh" aria-live="polite">
+                {active ? `${active.label}${active.by ? `. ${active.by}` : ""}` : ""}
+              </span>
             </div>
 
             <div className="pg-canvas-center ai-preview">
-              {Preview && active ? (
-                /* Keyed on the state, so React remounts and the wireframe
-                   arrives rather than snapping. Watching a pattern move from
-                   Waiting to Streaming to Complete is the thing this page is
-                   for; a hard swap reads as five separate screenshots. */
-                <div className="ai-swap" key={active.id}>
-                  <Preview state={active.id} />
+              {Drawn && active ? (
+                /* Keyed on the state only where there is no surface to work.
+                   With one, the frame has to survive its own data changing:
+                   typing the first character moves Prompt Box from Empty to
+                   Composing, and a key would unmount the field mid-keystroke
+                   and take the focus with it. Without one — Confidence Levels'
+                   four bands, Clear Refusal's four kinds — a tab really is a
+                   swap between unrelated frames, so it gets the transition that
+                   stops four of them reading as four screenshots. */
+                <div className="ai-swap" key={W && surface === "screen" ? undefined : `${surface}-${active.id}`}>
+                  <Drawn state={active.id} work={work} set={set} />
+                  {/* Said on the canvas rather than only in the block below,
+                      because a reader who switched surfaces is asking a
+                      question and this is the answer to it. Under the frame, so
+                      the frame is still the first thing read. */}
+                  {surfaceEntry && (
+                    <span className="ai-surf-say" data-verdict={surfaceEntry.verdict}>
+                      <strong>{SURFACE_VERDICTS[surfaceEntry.verdict]}.</strong> {surfaceEntry.note}
+                    </span>
+                  )}
                 </div>
               ) : (
                 <div className="pg-empty">
@@ -188,92 +335,49 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
               )}
             </div>
 
+            {/* The foot holds one control, bottom right, in the slot the
+                Product Hub gives its canvas action — and it is kept the height
+                of the band above it so the wireframe sits on the canvas's true
+                centre rather than the centre of whatever the caption left over.
+
+                Start over, and only once there is something to start over from.
+                The tabs reach across one position, so a finished run has no way
+                back to its own beginning; on a pattern whose states all start
+                the run — Clear Refusal's four kinds of refusal — there is
+                nothing to restart and the foot stays empty — until a tab holds
+                the system, which is the other thing this releases. */}
             <div className="pg-canvas-foot">
-              {/* Three rows, one level of the hierarchy each, top to bottom:
-                  where you are in the run, which way it goes from here, and
-                  what moved it here. Play holds its own cell in the grid, so
-                  none of them competes with it for the end of a line. */}
-              {states.length > 0 ? (
-                <div className="ai-track">
-                  {/* One segment per slot, and only when there is more than
-                      one. A pattern with a single slot has no run to report —
-                      Clear Refusal's four states happen instead of each other,
-                      not one after another — so it gets no bar at all. */}
-                  {runSlots.length > 1 && (
-                    <div className="ai-track-run">
-                      <div
-                        className="ai-track-bar"
-                        role="group"
-                        aria-label={`Steps in ${pattern.name}`}
-                      >
-                        {runSlots.map((slot, n) => (
-                          <button
-                            key={slot[0].id}
-                            className="ai-track-seg"
-                            data-on={n <= at || undefined}
-                            data-active={n === at || undefined}
-                            data-unreached={(n > at && !goesOn) || undefined}
-                            aria-label={`Step ${n + 1} of ${runSlots.length}: ${slot.map((st) => st.label).join(" or ")}`}
-                            aria-current={n === at ? "step" : undefined}
-                            onClick={() => pickState(slot[0].id)}
-                          />
-                        ))}
-                      </div>
-                      <span className="ai-track-pos">{place(states, active.id)}</span>
-                    </div>
-                  )}
+              {/* The surface strip, in the foot the Product Hub gives its
+                  variant pills and using the same control, because it does the
+                  same job: it switches what the canvas is showing at the top
+                  level. Deliberately not the state tabs' language — those sit
+                  above the frame and pick a variant *within* one surface, and
+                  two look-alike strips picking different things is the
+                  confusion worth a second treatment to avoid.
 
-                  {/* Pills only where there is genuinely something to pick. A
-                      slot holding one state shows its name as a label, so the
-                      appearance of pills is itself the signal that this step
-                      forks. */}
-                  {alts.length > 1 ? (
-                    <div
-                      className="ai-track-alts"
-                      role="group"
-                      aria-label={`Which way ${pattern.name} goes at step ${at + 1}`}
+                  Only where there is a second drawing to see. See
+                  `drawnSurfaces`: a pattern that carries to voice unchanged, or
+                  whose voice wireframe isn't built yet, gets no strip at all
+                  and answers in the block below instead. */}
+              {drawnSurfaces.length > 0 && (
+                <div className="canvas-variants" role="group" aria-label="Surface">
+                  {[{ id: "screen", label: "Screen" }, ...drawnSurfaces].map((sf) => (
+                    <button
+                      key={sf.id}
+                      className="canvas-variant-btn"
+                      data-active={sf.id === surface}
+                      onClick={() => setSurface(sf.id)}
                     >
-                      {alts.map((st) => (
-                        <button
-                          key={st.id}
-                          className="ai-track-alt"
-                          aria-current={st.id === active.id ? "true" : undefined}
-                          onClick={() => pickState(st.id)}
-                        >
-                          {st.label}
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="ai-track-only">{active?.label}</span>
-                  )}
-
-                  {/* What moved the system into this state. Without it the
-                      track shows the order and hides the cause, which is most
-                      of what a behaviour is. */}
-                  {active?.by && <span className="ai-track-by">{active.by}</span>}
+                      {sf.label}
+                    </button>
+                  ))}
                 </div>
-              ) : (
-                <span />
               )}
-
-              {/* Bottom right, in the slot the Product Hub gives its canvas
-                  action — and the primary gesture on this page. */}
-              {/* Play appears exactly when the bar does. A one-slot pattern has
-                  no run to walk: Clear Refusal's four states are four kinds of
-                  refusal, and Play used to march through them as though one
-                  caused the next — 3 of its 3 hops sideways. */}
-              {runSlots.length > 1 ? (
-                <button
-                  className="ai-play"
-                  data-on={playing || undefined}
-                  onClick={togglePlay}
-                >
-                  {playing ? <StopIcon /> : <PlayIcon />}
-                  <span>{playing ? "Stop" : "Play"}</span>
+              {(active?.from || held) && (
+                <button className="ai-restart" onClick={restart}>
+                  <RestartIcon />
+                  <span>Start over</span>
                 </button>
-              ) : (
-                <span />
               )}
             </div>
           </div>
@@ -298,15 +402,12 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
               left is the readout, the one control, and the spec — everything
               here either changes the canvas or is a value the canvas can't
               draw. */}
-          {/* The caption for whatever is on the canvas, and the first thing
-              under the title because it's what makes clicking a pill mean
-              something. "2 of 5" is doing quiet work: it implies a sequence
-              and implies there are more to click, without instructional copy
-              telling anyone to click them. */}
           {/* What the state on the canvas means. Not its name — the canvas
-              captions that and the foot's pills carry it, and three renderings
-              of one string was the duplication that started all this. Not its
-              trigger either: that sits under the pills it belongs to. */}
+              captions that above the frame, and three renderings of one string
+              was the duplication that started all this. Not its trigger
+              either: that sits beside the name it belongs to. This is the one
+              line that says why the state is drawn the way it is, so it moves
+              every time the frame does. */}
           {active && (
             <div className="ai-now">
               <p className="ai-now-text">{active.note}</p>
@@ -480,6 +581,45 @@ export function PatternDetail({ pattern, onSelectComponent, onSelectAiPattern })
                   </dd>
                 </div>
               ))}
+            </dl>
+          </Group>
+
+          {/* Where this lands off the screen it is drawn on. It sits after the
+              decisions rather than before them because the decisions are the
+              pattern's substance and most of them carry: the answer to "does
+              this work on voice" is usually "the same questions, different
+              answers", which only means something once you have read the
+              questions.
+
+              Not a category, and the difference matters. The six categories are
+              phases of an interaction; voice and canvas are surfaces, and a
+              shelf on two axes at once stops being a way in — see the note on
+              AI_SURFACES. This is also the hub's own claim about itself being
+              checked instead of assumed: it says the same decisions recur
+              across surfaces, and 45% of its decisions are worded for a screen.
+
+              On the 190px rail the Principles page uses for the control axes,
+              so the verdict reads straight down the left margin: somebody
+              building for voice can answer "is there anything here for me"
+              without reading a single note. */}
+          <Group
+            title="On other surfaces"
+            desc="The same pattern away from the screen it is drawn on. Where the answers change, what replaces them — and where there is no form at all, what takes its place."
+          >
+            <dl className="ai-defs">
+              {AI_SURFACES.map((sf) => {
+                const entry = pattern.surfaces?.[sf.id];
+                if (!entry) return null;
+                return (
+                  <div key={sf.id} className="ai-defs-row">
+                    <dt>
+                      {sf.label}
+                      <span className="ai-surf-verdict">{SURFACE_VERDICTS[entry.verdict]}</span>
+                    </dt>
+                    <dd>{entry.note}</dd>
+                  </div>
+                );
+              })}
             </dl>
           </Group>
 

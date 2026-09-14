@@ -17,10 +17,17 @@ import { VersionHistoryPreview } from "./VersionHistoryPreview.jsx";
 // the playground's own empty state, so an unbuilt one reads as unbuilt rather
 // than as broken — the same call Components makes for previews it hasn't built.
 //
-// Every preview is a pure function of `state`: the pill strip in the canvas foot
-// owns which state is showing, exactly as it does for a Button or an Input
-// Field in the Product Hub. Nothing here holds state of its own, so there's no
-// way for the canvas and the pills to disagree.
+// Every preview is a pure function of the surface it is handed. It holds no
+// state of its own — PatternDetail owns the working data and the preview
+// renders it — which is what keeps the canvas and the frame from disagreeing:
+// the state the page names is derived from the same data the frame drew, so
+// there is no second copy of it to drift.
+//
+// Twelve of the fourteen carry a `work` static beside the component: `for`,
+// `state` and sometimes `tick`. See PatternDetail.jsx for the protocol, and
+// smoke29 for the properties it has to keep — chiefly that `state(for(id))` is
+// `id` for every state, or the tabs and the decision links would be naming
+// frames the canvas isn't showing.
 export const PATTERN_PREVIEWS = {
   "prompt-composer": PromptComposerPreview,
   "streaming-response": StreamingPreview,

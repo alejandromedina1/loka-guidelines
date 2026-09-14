@@ -27,6 +27,10 @@ export function Field({
   error,
   rows,
   onChange,
+  // Only for a field that has just replaced something else in place — the AI
+  // hub opens one where a read-only value was, and a caret that doesn't arrive
+  // with it makes the reader click twice to do the thing they just asked for.
+  autoFocus,
   wrap = (control) => control,
 }) {
   const disabled = state === "Disabled";
@@ -71,6 +75,7 @@ export function Field({
         value={value}
         onChange={onChange}
         readOnly={!onChange}
+        autoFocus={autoFocus}
       />
     ) : (
       <input
@@ -83,6 +88,7 @@ export function Field({
         value={value}
         onChange={onChange}
         readOnly={!onChange}
+        autoFocus={autoFocus}
       />
     );
 

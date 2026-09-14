@@ -10,6 +10,7 @@ import { ApprovalGatePreview } from "./src/components/ai/previews/ApprovalGatePr
 import { PlanPreviewPreview } from "./src/components/ai/previews/PlanPreviewPreview.jsx";
 import { DiffReviewPreview } from "./src/components/ai/previews/DiffReviewPreview.jsx";
 import { StagedRevealPreview } from "./src/components/ai/previews/StagedRevealPreview.jsx";
+import { RefusalPreview } from "./src/components/ai/previews/RefusalPreview.jsx";
 import fs from "node:fs";
 
 let fails = 0;
@@ -18,7 +19,13 @@ const ok = (name, cond, detail = "") => {
   console.log(`${cond ? "  ok  " : "FAIL  "}${name}${detail ? ` — ${detail}` : ""}`);
 };
 
-const r = (C, state) => renderToString(<C state={state} />);
+// Rendering a preview means building the surface that reads as the state you
+// want, because a state is no longer something a preview can be handed — it is
+// what its data adds up to. `set` is a no-op: these are render checks, and the
+// moves are smoke29's.
+const draw1 = (C, id) =>
+  renderToString(<C state={id} work={C.work ? C.work.for(id) : undefined} set={() => {}} />);
+const r = (C, state) => draw1(C, state);
 const count = (html, needle) => html.split(needle).length - 1;
 
 // ── Confidence Levels ───────────────────────────────────────────────────
@@ -71,6 +78,50 @@ ok("both verdicts appear in the partly-accepted state",
 ok("and they carry their verdict in words, not colour alone",
   partial.includes("Accepted") && partial.includes("Rejected"));
 
+// ── Clear Refusal ───────────────────────────────────────────────────────
+// The pattern's thesis is that refusal is something products do rather than
+// something chatbots say — "four frames make the point". For a long time it
+// drew four callouts instead: same box, same two buttons, different words. Four
+// messages in a row is the chatbot reply it is arguing against, and it left the
+// reader with no idea what had actually been refused.
+console.log("\nClear Refusal — four surfaces, not four messages");
+{
+  const STATES = ["policy", "capability", "noanswer", "partial"];
+  const frames = Object.fromEntries(STATES.map((id) => [id, r(RefusalPreview, id)]));
+
+  // Strip every word and compare what is left. Two states with the same
+  // skeleton are the same drawing with different copy, which is exactly what
+  // this was — and no amount of rewriting the sentences would have fixed it.
+  const skeleton = (h) => h.replace(/>[^<]*</g, "><");
+  const shapes = new Map();
+  for (const [id, h] of Object.entries(frames)) {
+    const k = skeleton(h);
+    shapes.set(k, [...(shapes.get(k) ?? []), id]);
+  }
+  ok(`${STATES.length} states, ${shapes.size} distinct drawings`, shapes.size === STATES.length,
+    [...shapes.values()].filter((g) => g.length > 1).map((g) => g.join(" = ")).join(", "));
+
+  for (const id of STATES) {
+    const h = frames[id];
+    // Something was refused, and it has to be on screen. A callout alone is a
+    // message; a callout over the payment that didn't go is the pattern.
+    const drew = ["mk-params", "mk-list", "mk-steps"].filter((c) => h.includes(c));
+    ok(`  ${id}: draws what was refused`, drew.length > 0, drew.join(", ") || "callout only");
+    // "Is there a path forward? Always." — carried inside the callout now, so
+    // it cannot be shipped without one.
+    ok(`  ${id}: the way out is inside the callout`, h.includes("mk-note-act"));
+    // "Assume over-refusal happens and give a low-friction way to report it."
+    ok(`  ${id}: over-refusal is reportable`, h.includes("This looks wrong"));
+    // Inspect is graded Recommended: "which kind of limit it is". Tone was the
+    // only thing saying it, and tone is colour.
+    ok(`  ${id}: names its kind`, h.includes("mk-note-head") && h.includes("tag-chip"));
+    // "Does it look like an error? No." No red on any of the four — a rule and
+    // a missing connection are the system working as designed, and spending the
+    // error treatment on them leaves nothing for what really breaks.
+    ok(`  ${id}: is not styled as an error`, !h.includes('data-tone="bad"'));
+  }
+}
+
 // ── Results in Pieces ───────────────────────────────────────────────────
 // The caption names the card that's lagging, so the spinner has to be on that
 // card. It wasn't: the caption said Pipeline and the spinner sat on NPS.
@@ -108,6 +159,22 @@ const token = (theme, name) => {
   const block = css.slice(css.indexOf(theme));
   const m = block.match(new RegExp(`--${name}:\\s*(#[0-9A-Fa-f]{6})`));
   return m && m[1];
+};
+// --select is an rgba(), because a wash has to tint whatever it lands on. This
+// reads it out rather than restating it, so moving the token is what fails.
+const rgbaToken = (theme, name) => {
+  const block = css.slice(css.indexOf(theme));
+  const m = block.match(new RegExp(`--${name}:\\s*rgba\\(([\\d.,\\s]+)\\)`));
+  if (!m) return null;
+  const [r, g, b, a] = m[1].split(",").map((x) => Number(x.trim()));
+  return { r, g, b, a };
+};
+// What the wash actually becomes over a given surface. A translucent highlight
+// has no contrast of its own — only the pair it produces has.
+const flatten = ({ r, g, b, a }, bg) => {
+  const back = [1, 3, 5].map((i) => parseInt(bg.slice(i, i + 2), 16));
+  const mix = [r, g, b].map((c, i) => Math.round(c * a + back[i] * (1 - a)));
+  return `#${mix.map((c) => c.toString(16).padStart(2, "0")).join("")}`;
 };
 const srgb = (h) =>
   [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
@@ -152,29 +219,142 @@ for (const theme of [".app {", '.app[data-theme="dark"]']) {
 }
 // The canvas foot's own text, in all three pill states and on the trigger
 // line. Quietening a control is not a licence to drop it under AA.
-console.log("\nglobal.css — the canvas foot reads at AA in every state");
+console.log("\nglobal.css — the canvas chrome reads at AA in every state");
 for (const theme of [".app {", '.app[data-theme="dark"]']) {
   const label = theme.includes("dark") ? "dark" : "light";
   for (const [what, fg, bg, floor] of [
-    ["pill, idle", "ink-3", "bg-soft", 4.5],
-    ["pill, hovered", "ink", "line-2", 4.5],
-    ["pill, selected", "ink", "bg", 4.5],
-    // The selected pill's outline is a graphical object, so 3:1.
-    ["pill outline", "ink-3", "bg", 3],
+    // .ai-state-tab, the variant strip above the frame. Three states, and the
+    // pair was unchanged when the track it used to sit under was removed.
+    ["tab, idle", "ink-3", "bg-soft", 4.5],
+    ["tab, hovered", "ink", "line-2", 4.5],
+    ["tab, selected", "ink", "bg", 4.5],
+    // The selected tab's outline is a graphical object, so 3:1.
+    ["tab outline", "ink-3", "bg", 3],
     ["the trigger line", "ink-2", "bg-soft", 4.5],
-    // The state block sits on the panel background with no fill of its own.
-    ["the run's caption", "ink-3", "bg", 4.5],
-    ["a step number", "ink-3", "bg", 4.5],
-    ["a reachable state", "ink-2", "bg", 4.5],
-    ["a state this route can't reach", "ink-3", "bg", 4.5],
-    ["the state on the canvas", "ink", "blue-soft", 4.5],
-    ["what moved it here", "ink", "bg", 4.5],
-    ["what that state means", "ink-2", "bg", 4.5],
+    // .ai-state-name — the label a position shows when it doesn't fork.
+    ["the state's name", "ink", "bg", 4.5],
+    ["what moved it here", "ink-2", "bg", 4.5],
+    // .ai-restart, in the foot, on the tabs' idle rung.
+    ["start over", "ink-3", "bg", 4.5],
+    // .ai-now-text, in the properties column, on the blue-soft block it sits
+    // in — not on the panel background. The pair was wrong here while the
+    // readout had a fill: ink-2 is what is painted, blue-soft is what it is
+    // painted on, and the test was checking neither combination.
+    ["what that state means", "ink-2", "blue-soft", 4.5],
   ]) {
     const v = contrast(token(theme, fg), token(theme, bg));
     ok(`${label}: ${what}`, v >= floor, `${v.toFixed(2)}:1`);
   }
 }
+
+// ── The voice stage ────────────────────────────────────────────────────
+// This check used to assert the opposite. The stage was a near-black slab with
+// its own palette, on the argument that an ambient device sits in a room, and
+// it was an alien in the middle of a light page — a preview here is a wireframe
+// of our product, not a photograph of somebody's speaker. So the guard is
+// inverted: it may not carry a ground of its own, and its text has to be the
+// theme's rungs, which the pairs above already hold to AA in both themes.
+console.log("\nglobal.css — the voice stage is on the theme, not on its own dark");
+{
+  const rule = (sel) =>
+    (css.match(new RegExp(`(?:^|[}\\n])\\s*${sel}\\s*\\{([^}]*)\\}`, "m")) || [])[1] ?? "";
+  const stage = rule("\\.vc-stage");
+  ok(".vc-stage paints no ground of its own",
+    !!stage && !/(^|;)\s*background:/.test(stage) && !/--vc-(bg|ink)/.test(stage),
+    stage.slice(0, 60));
+  // Every colour the stage's own parts use, and each one has to be a token
+  // rather than a literal — a hex here is a value that won't follow the theme.
+  const parts = ["\\.vc-device", "\\.vc-mood", "\\.vc-heard", "\\.vc-caption",
+    "\\.vc-handoff-to", "\\.vc-handoff-note"];
+  const literal = parts.filter((sel) => /color:#[0-9A-Fa-f]{3,8}/.test(rule(sel)));
+  ok("…and its text runs on the theme's rungs", literal.length === 0, literal.join(", "));
+  // The orb is the exception and is allowed two tuned ends per theme, because
+  // a bloom that reads as warm on white disappears on near-black. Both have to
+  // exist, or dark mode gets the light values.
+  ok("the orb is tuned for both themes",
+    /\.app\[data-theme="dark"\] \.vc-stage\{[^}]*--orb-glow/.test(css));
+  // And it is lit with the brand's own blue rather than an invented one.
+  ok("…with the brand's blue, not an invented one", /--orb-lit|var\(--blue\)/.test(css));
+}
+
+// ── The part chips are grey ────────────────────────────────────────────
+// Composed from stacks up to a dozen of these in one block, so a hover that
+// took the accent lit the page up in the colour the system reserves for "this
+// matters" every time a cursor crossed the list. Blue is to be spent
+// deliberately; a list of parts is not the place. Asserted because reaching for
+// the accent is the instinct that put it there in the first place.
+console.log("\nglobal.css — Composed-from chips carry their states in grey");
+{
+  // Anchored to the start of a rule, or `.ai-chip` also matches inside
+  // `.ai-prin-applies .ai-chip` and reads the wrong body.
+  const body = (sel) =>
+    (css.match(new RegExp(`(?:^|[}\\n])\\s*${sel}\\s*\\{([^}]*)\\}`, "m")) || [])[1] ?? "";
+  const rest = body("\\.ai-chip");
+  const hover = body("\\.ai-chip:hover");
+  const dashed = body("\\.ai-chip\\[data-optional\\]:hover");
+  ok("the hover spends no blue", !!hover && !/--blue/.test(hover), hover);
+  ok("…nor does the optional one", !!dashed && !/--blue/.test(dashed), dashed);
+  // Focus is the one state blue is still for, and the one these had no styling
+  // for at all — they are buttons that navigate.
+  ok("focus is styled, and in the accent",
+    /\.ai-chip:focus-visible\{[^}]*--blue/.test(css));
+
+  // The state has to be legible without seeing colour, so the label carries it:
+  // hover must be a real step darker than rest, on both themes.
+  for (const theme of [".app {", '.app[data-theme="dark"]']) {
+    const label = theme.includes("dark") ? "dark" : "light";
+    // The last token named in the declaration — box-shadow puts its offsets
+    // first, so anchoring on `prop:var(` finds nothing.
+    const pick = (decls, prop) =>
+      (decls.match(new RegExp(`${prop}:[^;]*var\\(--([\\w-]+)\\)`)) || [])[1];
+    const bg = token(theme, "bg");
+    const restC = contrast(token(theme, pick(rest, "color")), bg);
+    const hoverC = contrast(token(theme, pick(hover, "color")), token(theme, pick(hover, "background")));
+    ok(`${label}: the label darkens on hover`, hoverC > restC + 2,
+      `${restC.toFixed(2)}:1 → ${hoverC.toFixed(2)}:1`);
+    // And the ring darkens with it rather than staying put, or the chip's edge
+    // contradicts its label.
+    const ringRest = token(theme, pick(rest, "box-shadow"));
+    const ringHover = token(theme, pick(hover, "box-shadow"));
+    ok(`${label}: …and so does the ring`, contrast(ringRest, ringHover) >= 2,
+      `${contrast(ringRest, ringHover).toFixed(2)}x`);
+  }
+}
+
+// ── Selected text ──────────────────────────────────────────────────────
+// A wash lowers the contrast of whatever it covers, so the rule pins selected
+// text to --ink and the pair to check is that one — on every surface a
+// selection can land on, which is every background the hub paints.
+//
+// The floor is 4.5 because this is running copy, and the second number is the
+// one that says the highlight is visible at all: a wash the same luminance as
+// its background is not a highlight. 1.3 is roughly where the platform
+// defaults sit, and below it a selection stops reading as one.
+console.log("\nglobal.css — selected text reads, and reads as selected");
+for (const theme of [".app {", '.app[data-theme="dark"]']) {
+  const label = theme.includes("dark") ? "dark" : "light";
+  const wash = rgbaToken(theme, "select");
+  ok(`${label}: --select is a wash, not a fill`, !!wash && wash.a > 0 && wash.a < 1,
+    wash ? `alpha ${wash.a}` : "missing");
+  const ink = token(theme, "ink");
+  for (const surface of ["bg", "bg-soft", "blue-soft", "line-2"]) {
+    const bg = token(theme, surface);
+    const on = flatten(wash, bg);
+    ok(`${label}: selected text on --${surface}`, contrast(ink, on) >= 4.5,
+      `${contrast(ink, on).toFixed(2)}:1`);
+    ok(`${label}: …and the selection is visible on --${surface}`,
+      contrast(on, bg) >= 1.3, `${contrast(on, bg).toFixed(2)}:1`);
+  }
+}
+// Every rung the hub paints running copy in, checked against the wash on the
+// plainest background — the selection sets the colour, so the rung it started
+// on must not matter. This is the assertion that would fail if the `color` were
+// ever dropped from the rule and the wash left to sit on --ink-3.
+console.log("\nSelected text is the same rung whatever it was painted in");
+ok("the rule sets a colour, not only a background",
+  /\.app ::selection\{[^}]*color:var\(--ink\)/.test(css));
+ok("…and the editor overlay is the one exception, in writing",
+  /\.mk-editor-input::selection\{[^}]*color:transparent/.test(css));
 
 ok("the source list's meta line is not on the failing --ink-4 rung",
   /\.mk-src-meta\{[^}]*color:var\(--ink-3\)/.test(css));

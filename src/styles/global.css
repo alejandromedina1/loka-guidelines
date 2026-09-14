@@ -8,6 +8,12 @@
 .app {
   --bg:#FFFFFF; --bg-soft:#FAFBFC; --ink:#010812; --ink-2:#2E3F5A; --ink-3:#5C6A82; --ink-4:#828FA5;
   --line:#E7ECF2; --line-2:#EFF1F5; --line-strong:#D6DCE6; --blue:#1957F4; --blue-soft:#EEF2FE;
+  /* Selected text. blue-100 at low opacity, not a fill: a wash tints whatever
+     it lands on, so one value works over white, over a grey canvas and over a
+     wireframe, where an opaque blue would need a different value for each.
+     Dark carries more of it because the same blue over near-black has further
+     to travel before it reads as a highlight. */
+  --select:rgba(24,107,243,.24);
   --danger:#D64545; --danger-soft:#FBEAEA;
   /* Red's text rung. --danger is a fill — a border, a dot, a diff row — and it
      was being spent on running copy too, where it is 4.38:1 on white and
@@ -34,12 +40,30 @@
 .app[data-theme="dark"] {
   --bg:#0A0F17; --bg-soft:#121821; --ink:#F4F6F9; --ink-2:#C3CCDA; --ink-3:#8E9AAE; --ink-4:#6B7688;
   --line:#222B38; --line-2:#1A222E; --line-strong:#2E3947; --blue:#4A85F5; --blue-soft:#16233D;
+  --select:rgba(24,107,243,.42);
   --danger:#F16565; --danger-soft:#3A1E22; --danger-text:#F16565;
   --success:#97D2B9; --success-soft:#0F2E21;  /* green-07 on green-12 */
   --topbar-bg:rgba(10,15,23,.82);
 }
+/* Visually hidden, still announced. The hub draws several states as colour and
+   shape — a step's dot, a diff row's fill — and the house rule is that colour is
+   never the only signal. Where a word would clutter the wireframe, it goes here
+   instead of being dropped. */
+.vh{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
+  clip:rect(0 0 0 0);white-space:nowrap;border:0;}
 .app *,.app *::before,.app *::after{box-sizing:border-box;}
 .app button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+
+/* Selected text, everywhere. The palette gives Blue "links, focus states,
+   selected items", and this was the one of the four left to the browser.
+   
+   It sets a colour as well as a wash, and that is the part that matters: the
+   wash alone lowers the contrast of whatever was underneath it, and secondary
+   copy on --ink-3 is close enough to the floor that any tint pushes it under.
+   Pinning selected text to --ink means the pair is always the strongest rung
+   against the wash — 14:1 light, 11:1 dark — so selecting text raises its
+   contrast rather than lowering it, whichever rung it was painted in. */
+.app::selection,.app ::selection{background:var(--select);color:var(--ink);}
 
 /* Topbar */
 /* Three columns rather than space-between, so search sits centred between the
@@ -2057,6 +2081,15 @@
   border-bottom:1px solid var(--line-2);}
 .ai-defs-row:first-child{border-top:1px solid var(--line-2);}
 .ai-defs dt{font-size:13px;font-weight:600;color:var(--ink);line-height:1.45;}
+/* The verdict, under the surface it belongs to rather than beside it. The whole
+   point of this rail is that the left column can be read on its own — here that
+   answers "is there anything in this pattern for me" before a single note gets
+   read — and a verdict sharing the line with the name makes it a sentence
+   instead of a column. Quieter than the name: you scan for the surface first,
+   then read what it says. No colour on any of the three; they are three facts
+   rather than a ramp, and the words carry them. */
+.ai-surf-verdict{display:block;margin-top:3px;font-size:12px;font-weight:500;
+  color:var(--ink-3);}
 .ai-defs dd{margin:0;font-size:13.5px;line-height:1.66;color:var(--ink-3);}
 
 /* ── Principles ─────────────────────────────────────────────────────────── */
@@ -2081,14 +2114,25 @@
 /* ── Pattern lab ────────────────────────────────────────────────────────── */
 
 /* The canvas holds prose being written rather than a control, so it needs more
-   height than a component preview and none of the centring. */
-.ai-lab{min-height:560px;}
+   height than a component preview.
 
-/* THE READOUT — the caption for whatever is on the canvas, and the panel's
-   focal element — the caption for whatever the track has landed on. */
-/* What the state on the canvas means. Not its name — the canvas captions that
-   and the foot's pills carry it, and three renderings of one string was the
-   duplication that started the rework. */
+   --ai-band is the height of both chrome rows, declared once because their
+   being *equal* is the whole point: the caption at the top and Start over at
+   the bottom are the only things in the canvas besides the wireframe, and a
+   tall top with a short bottom centres the wireframe in the leftover space
+   rather than in the canvas. Two matched bands make the middle the canvas's
+   true centre.
+
+   84px when the top band was two rows — a segmented run over the state it had
+   landed on — and 56 when the run went with Play and left one row. It is two
+   rows again now that the trigger sits under the state rather than beside it:
+   26px of tabs over a 16px line, and the rest is the breathing room a chrome
+   band needs to read as one. */
+.ai-lab{min-height:560px;--ai-band:72px;}
+
+/* THE READOUT — what the state on the canvas means, and the panel's focal
+   element. Not the state's name: the canvas captions that above the frame, and
+   three renderings of one string was the duplication that started the rework. */
 .ai-now{margin-top:0;padding:11px 13px;border-left:2px solid var(--blue);
   background:var(--blue-soft);margin-bottom:18px;}
 .ai-now-text{margin:0;font-size:12.5px;line-height:1.6;color:var(--ink-2);}
@@ -2224,14 +2268,41 @@
 .ai-parts-label{display:flex;align-items:center;gap:8px;
   font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4);}
 .ai-parts-group[data-kind="always"] .ai-parts-label{color:var(--ink-2);}
+/* An optional chip swaps the solid inset ring for a dashed border, so it has to
+   turn the ring off on hover as well — .ai-chip:hover sets one, and dropping it
+   there would take it away from the chips that are meant to have it. Without
+   this repeat, hovering an optional part drew two concentric strokes: a solid
+   line just inside the dashed one, which reads as a second chip rather than a
+   hovered one. Only the dashed stroke moves; the label and fill carry the rest. */
 .ai-chip[data-optional]{box-shadow:none;border:1px dashed var(--line-strong);padding:4px 11px;}
-.ai-chip[data-optional]:hover{border-color:var(--blue);}
+.ai-chip[data-optional]:hover{box-shadow:none;border-color:var(--ink-4);}
 
-/* Composed-from chips — the seam back to Product Hub. */
+/* Composed-from chips — the seam back to Product Hub, and the Principles page's
+   route into a pattern.
+
+   Grey, not blue. They used to take the accent on hover — label, ring and fill
+   all at once — and there are up to a dozen of them stacked in one block, so
+   running a cursor down the list lit the page up in the colour the system
+   reserves for "this matters". A part list is a list of parts: the chips are the
+   quietest thing on the page at rest and have no reason to be the loudest under
+   a pointer. The palette is explicit about it — blue is to be spent
+   deliberately, to guide attention rather than to decorate.
+
+   The hover is the neutral one the rest of the app already uses — --line-2
+   behind --ink, the same pair as .nav-item, .pg-code-tab, .canvas-variant-btn
+   and .ai-state-tab — with the ring stepping --line-strong to --ink-4 so the
+   edge darkens with the label rather than staying put. Label contrast goes
+   10.63:1 to 17.78:1 light and 11.86:1 to 14.78:1 dark, so the state is carried
+   by weight rather than by hue and doesn't depend on seeing colour at all.
+
+   Blue stays on focus, which is the job the palette gives it and the one state
+   these had no styling for at all — they are buttons that navigate, and a
+   keyboard was getting whatever the browser drew. */
 .ai-chips{display:flex;flex-wrap:wrap;gap:7px;}
 .ai-chip{padding:5px 12px;border-radius:999px;font-size:12.5px;font-weight:500;color:var(--ink-2);
   box-shadow:inset 0 0 0 1px var(--line-strong);transition:color .12s,box-shadow .12s,background .12s;}
-.ai-chip:hover{color:var(--blue);box-shadow:inset 0 0 0 1px var(--blue);background:var(--blue-soft);}
+.ai-chip:hover{color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink-4);background:var(--line-2);}
+.ai-chip:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
 
 /* ── Copy button, gated while the answer is still arriving ───────────── */
 
@@ -2301,6 +2372,40 @@
 /* The field's own 380px cap is a page measure; in a frame the frame is it. */
 .mk-sys-block .field-demo{max-width:none;}
 
+/* ── Live controls ─────────────────────────────────────────────────────── */
+
+/* A control inside a wireframe that moves the canvas — see kit.jsx. Buttons and
+   checkboxes carry their own states and need nothing here; this is for what a
+   preview makes clickable that isn't already a control: a citation marker, a
+   list row, a value in a table.
+
+   Deliberately almost nothing. The rule these previews are held to is that a
+   frame has to read as a product screen, and a product does not outline the
+   parts of itself that respond — so liveness shows on the pointer and on
+   contact, the way it does in the product being illustrated, rather than as a
+   permanent annotation over the illustration. */
+.mk-hot{display:inline;cursor:pointer;}
+/* A row is a block in a column, and blockifying it in a flex parent would be
+   the wrapper deciding the layout instead of the thing it wraps. */
+.mk-hot[data-block]{display:block;}
+.mk-xf > .mk-hot{flex:1;min-width:0;}
+.mk-hot:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+/* On contact, each of the three says it can be taken in its own terms: the
+   marker fills the way it does when it's open, the row lifts the way a list
+   row does, and the suggestion's underline goes blue. Nothing changes the
+   suggestion's *colour* — that grey is the one thing Inline Suggestion is
+   about, and a hover that repaired the distinction would undo the pattern. */
+.mk-hot:hover .mk-cite{background:var(--blue);color:#fff;}
+.mk-hot:hover .mk-row{background:var(--line-2);}
+.mk-hot:hover .mk-ghost-text{box-shadow:inset 0 -1px 0 var(--blue);}
+/* A tint, not an underline: .mk-xf-val already underlines to mark a value the
+   model was unsure of, so a hover that drew one would say "uncertain" about
+   whichever value the cursor happened to be over. */
+.mk-hot:hover .mk-xf-val{background:var(--line-2);}
+/* A field somebody actually types in, rather than a picture of one. Field
+   renders readOnly without an onChange, so this marks the ones that got one. */
+.mk-sys-block[data-live]{cursor:text;}
+
 .ai-preview{padding:32px 28px;align-content:center;}
 
 /* ── Frame chrome ──────────────────────────────────────────────────────── */
@@ -2351,7 +2456,17 @@
    limit is the exact mistake Graceful Refusal warns about. */
 .mk-note{display:flex;flex-direction:column;gap:3px;padding:calc(var(--pv-pad) * .7) var(--pv-pad);
   box-shadow:inset 0 0 0 1px var(--line-strong);background:var(--bg-soft);}
+/* Title and kind on one line, the chip pushed to the far edge. `baseline`
+   rather than `center`: the chip is a 20px box beside 13px type, and centring
+   it against a title that wraps to two lines floats it off the first one. */
+.mk-note-head{display:flex;align-items:baseline;justify-content:space-between;
+  gap:var(--pv-gap);}
 .mk-note-title{font-size:var(--pv-body);font-weight:600;color:var(--ink);}
+/* The way out, inside the box rather than loose underneath it. It gets the
+   note's own gap rather than the 3px between title and body, because those two
+   are one sentence and this is the answer to it. */
+.mk-note-act{display:flex;justify-content:flex-end;
+  margin-top:calc(var(--pv-gap) * .5);}
 .mk-note-body{font-size:var(--pv-meta);line-height:1.45;color:var(--ink-3);}
 .mk-note-body strong{color:var(--ink);font-weight:600;}
 .mk-note[data-tone="warn"]{background:var(--bg);
@@ -2456,13 +2571,21 @@
 /* A raw literal the interface leaked to the user — a function call, an id. */
 
 /* Scoped Context and No-Answer: a name against its status, on one baseline. */
-/* The already-built report, carrying the scope it was made under. Greyed
-   rather than removed: a result that silently outlives its inputs is the thing
-   this pattern exists to prevent, so it has to still be on screen and still
-   look wrong. */
+/* The already-built report, carrying the scope it was made under. It is on
+   screen from the moment somebody builds one, and the two versions of it are
+   the pattern: a current result is quiet furniture, and one whose scope has
+   moved under it is marked. Greyed rather than removed — a result that
+   silently outlives its inputs is the thing this pattern exists to prevent, so
+   it has to still be there and still look wrong. */
 .mk-stamp{display:flex;flex-direction:column;gap:7px;
   padding:calc(var(--pv-pad) * .7) var(--pv-pad);background:var(--bg-soft);
   box-shadow:inset 0 0 0 1px var(--line);}
+/* Out of date. The rail is --ink-4 rather than a hue for the reason the whole
+   hub spends colour carefully: a stale result is not an error, it is a result
+   that no longer matches the question, and red here would leave nothing for
+   the states that really fail. */
+.mk-stamp[data-stale]{box-shadow:inset 2px 0 0 var(--ink-4),inset 0 0 0 1px var(--line-strong);}
+.mk-stamp[data-stale] .mk-ghosts{opacity:.55;}
 .mk-stamp-head{display:flex;align-items:center;justify-content:space-between;gap:var(--pv-gap);}
 
 /* A source row with its control. The checkbox is the on/off signal, so the
@@ -2490,12 +2613,11 @@
 .mk-pick > .mk-sys-inline{flex:none;}
 .mk-pick > .mk-src{flex:1;min-width:0;}
 
-/* The row the user just touched. Faint on purpose: it marks where the move
-   happened without competing with the tick that *is* the move. Same box as
-   every other row now, so the tint is even on both sides and the rule above
-   it is the same length as its neighbours'. */
-.mk-pick[data-touched]{background:var(--blue-soft);
-  box-shadow:inset 2px 0 0 var(--blue);}
+/* A row highlight for "the one you just touched" used to sit here. It went
+   with the canned states that needed it: when each state was a fixed picture,
+   something had to say which tick had moved between two of them. Now you move
+   it, so the tick moving *is* the signal — and a lingering tint on the last row
+   you clicked is a second, slower answer to a question already settled. */
 
 /* The row nobody can switch, set below a rule rather than mixed in with the
    ones they can. The break is the distinction: above it is what you choose
@@ -2599,10 +2721,34 @@
 /* Inline Suggestion's editor. The two spans are the pattern: .mk-typed is
    theirs and .mk-ghost-text is the model's, and they must never be mistakable
    for each other. */
-.mk-editor{padding:10px 12px;border:1px solid var(--line-strong);background:var(--bg);
-  border-radius:10px;min-height:72px;}
-.mk-editor[data-focus]{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
-.mk-typed{font-size:var(--pv-body);line-height:1.55;color:var(--ink);}
+/* Inline Suggestion's editor is a mirror under a transparent textarea. The
+   mirror paints the two kinds of words and sets the height; the textarea sits
+   exactly on top of it carrying the caret and the keystrokes. Every property
+   that affects where a glyph lands has to match between the two or the caret
+   drifts off the text it belongs to — so font, size, line-height, padding and
+   wrapping are shared rather than restated. */
+.mk-editor{position:relative;padding:10px 12px;border:1px solid var(--line-strong);
+  background:var(--bg);border-radius:10px;min-height:72px;
+  font-size:var(--pv-body);line-height:1.55;}
+.mk-editor[data-focus]:focus-within{border-color:var(--blue);box-shadow:0 0 0 3px var(--blue-soft);}
+.mk-typed{font:inherit;color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere;}
+.mk-editor-input{position:absolute;inset:0;width:100%;height:100%;resize:none;
+  padding:inherit;border:0;background:none;font:inherit;
+  white-space:pre-wrap;overflow-wrap:anywhere;
+  /* The glyphs live in the mirror; only the caret and the selection come from
+     here. `transparent` rather than opacity, so the selection stays visible. */
+  color:transparent;caret-color:var(--ink);}
+.mk-editor-input:focus{outline:none;}
+.mk-editor-input::placeholder{color:var(--ink-4);}
+/* The one place selected text must stay colourless. The glyphs here belong to
+   the mirror underneath; this element is a transparent sheet over it, so a
+   selection that painted its own text would draw a second copy of the same
+   words a sub-pixel out of register with the first.
+   
+   It is also why the wash has to be translucent at all: this used to be an
+   opaque --blue-soft, which covered the mirror's words with a near-white block
+   and made selecting them the same as deleting them. */
+.mk-editor-input::selection{background:var(--select);color:transparent;}
 .mk-ghost-text{color:var(--ink-4);background:var(--line-2);
   box-shadow:inset 0 -1px 0 var(--line-strong);}
 
@@ -2621,109 +2767,117 @@
   background-size:280% 100%;animation:ai-shimmer 1.5s linear infinite;}
 @keyframes ai-shimmer{from{background-position:120% 0;}to{background-position:-120% 0;}}
 
-/* THE TRACK. A pattern is one thing unfolding, so the canvas is built to be
-   watched and the control reads as a timeline rather than a row of tabs.
+/* THE CANVAS CAPTION. A pattern is one thing unfolding, and the canvas is now
+   the thing you unfold it with — the controls inside the wireframe are live, so
+   the band above it only has to name where the frame has got to.
 
-   This replaced a pill strip. Pills model alternatives — Primary or Secondary,
-   Focus or Error — which is right in the Product Hub and wrong here, and five
-   of them carrying labels like "Awaiting approval" ran out of foot before they
-   ran out of states. A track holds any number, because only the state you're
-   on is named. */
-/* The run, in the properties column. A list of named things with a current
-   one is what that column is for, and it is the only place with the vertical
-   room to show every step's label at once — the horizontal strip under the
-   canvas could only ever name the step you were standing on, so learning a
-   three-step pattern meant clicking through it. It also had to share a line
-   with Play, which is what kept crowding both. */
-/* The AI lab's foot is a grid rather than the shared flex row, because it
-   carries three levels and the Product Hub's carries one. Play holds the
-   top-right cell — the slot the Product Hub gives its canvas action — and the
-   three rows stack down the left, so nothing competes with it for the end of
-   a line. */
-.ai-lab .pg-canvas-foot{display:grid;grid-template-columns:minmax(0,1fr) auto;
-  align-items:start;gap:10px 16px;}
-.ai-lab .ai-play{grid-column:2;grid-row:1;}
+   Two earlier answers sat here. A pill strip laid every state out as a menu,
+   which models alternatives — Primary or Secondary, Focus or Error — and five
+   labels like "Awaiting approval" ran out of foot before they ran out of
+   states. A segmented track replaced it and asserted the opposite: an order,
+   on the nine patterns of fourteen that branch. What's left is the part both
+   were carrying correctly — the variants at *this* position, as tabs, and only
+   where there is more than one. */
+/* The AI lab's nav is a grid rather than the shared right-aligned flex row,
+   because it carries the caption for the frame. Three columns with the caption
+   in the middle one and prev/next pinned to the third: centring by
+   `justify-content` instead would put the caption wherever the arrows left
+   room, so it would drift sideways as the state labels changed length. The
+   side columns take minmax(0,…) so a long label steals from them rather than
+   pushing the arrows out of the canvas. */
+.ai-lab .pg-canvas-nav{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;min-height:var(--ai-band);}
+.ai-canvas-arrows{display:flex;gap:6px;grid-column:3;justify-self:end;}
 
-/* Row 1: where you are. Row 2: which way it goes. Row 3: what moved it here.
-   Rows 2 and 3 sit closer to each other than to row 1 — the state and its
-   cause are one thought, and proximity is what says so without a label. */
-.ai-track{display:flex;flex-direction:column;align-items:flex-start;gap:6px;
-  min-width:0;grid-column:1;}
-.ai-track-run{display:flex;align-items:center;gap:11px;min-width:0;margin-bottom:3px;}
-
-/* One segment per slot. A branch is an alternative *inside* a slot, offered by
-   .ai-track-alt, so it never has to be drawn as a segment apart from the run —
-   which is what used to put a hole in the middle of the bar.
-   30x24, not 26x22: these are controls, and 22px missed the 24x24 minimum a
-   pointer target has to clear. The painted bar stays 4px. */
-.ai-track-bar{display:flex;align-items:center;gap:4px;flex:none;}
-.ai-track-seg{width:30px;height:24px;background:none;position:relative;}
-.ai-track-seg::before{content:"";position:absolute;inset:10px 0;background:var(--line-strong);
-  border-radius:2px;transition:background .18s ease,transform .18s ease;}
-.ai-track-seg:hover::before{background:var(--ink-4);}
-/* Filled up to the slot you're in, and because there is one segment per slot
-   that fill is a prefix — holes are impossible. */
-.ai-track-seg[data-on]::before{background:var(--blue);}
-.ai-track-seg[data-active]::before{transform:scaleY(2);box-shadow:0 0 0 3px var(--blue-soft);}
-/* Three states, not two: filled is behind you, solid grey is ahead of you, and
-   hollow is a step this route never reaches. */
-.ai-track-seg[data-unreached]::before{background:none;
-  box-shadow:inset 0 0 0 1px var(--line-strong);}
-
-/* The alternatives at this position — never more than four, and only ever the
-   current slot's, which is what separates this from the pill strip that was
-   cut: that one laid a whole five-state lifecycle out as a menu.
+/* Start over alone, right, in the slot the Product Hub gives its canvas action
+   — and held to the nav's height, which is what keeps the wireframe on the
+   canvas's centre line. */
+/* The surface strip left, Start over right. One is a selector and one is an
+   action, and putting them at opposite ends is what stops the foot reading as a
+   row of equal buttons.
    
-   Three states that stay quiet. The near-black fill the variant strip uses is
-   right there, but under a blue step bar inside a grey wireframe it became the
+   Held by one auto margin on Start over rather than by `space-between`, because
+   either can be absent: the strip is only there when the pattern has a second
+   drawing, and Start over only once there is a road behind you. With
+   `space-between` a lone strip was pushed to the right — which is where the
+   opening state of every pattern that has one put it. An auto margin on the
+   action alone is the arrangement that holds in all four combinations. */
+.ai-lab .pg-canvas-foot{justify-content:flex-start;align-items:center;
+  min-height:var(--ai-band);gap:16px;}
+.ai-lab .pg-canvas-foot .ai-restart{margin-left:auto;}
+
+/* Where you are, then what put you there — stacked, not side by side. They are
+   one thought, but they are not one line: on a fork the first row is a strip of
+   tabs, and hanging a sentence off the end of a row of controls made the
+   sentence look like another one. Under them it reads as what it is, a caption
+   under a caption.
+   
+   Centred on the canvas's axis, the same axis the wireframe sits on — this is
+   the caption for the frame below it, so the two share an edge or they read as
+   two unrelated things. */
+.ai-state{display:flex;flex-direction:column;align-items:center;gap:5px;
+  min-width:0;grid-column:2;}
+
+/* The variants at this position — never more than four, and only ever this
+   position's, which is what separates them from the pill strip that was cut:
+   that one laid a whole five-state lifecycle out as a menu.
+
+   Three states that stay quiet. The near-black fill the Product Hub's variant
+   strip uses is right there, but inside a grey wireframe canvas it became the
    loudest thing on the page. Selected is an outlined chip instead: same three
    states, a third of the weight. It still can't be a --line-2 fill, which is
-   the *hover* value here — that made a chosen alternative read as merely
-   hovered. Selected is ordered after hover, the rule .tab-pill sets. */
-.ai-track-alts{display:flex;align-items:center;gap:2px;min-width:0;flex-wrap:wrap;
-  margin-left:-12px;}
-.ai-track-alt{display:inline-flex;align-items:center;min-height:26px;
+   the *hover* value here — that made a chosen variant read as merely hovered.
+   Selected is ordered after hover, the rule .tab-pill sets. */
+.ai-state-tabs{display:flex;align-items:center;gap:2px;min-width:0;flex-wrap:wrap;
+  justify-content:center;}
+.ai-state-tab{display:inline-flex;align-items:center;min-height:26px;
   padding:5px 12px;border-radius:999px;font-size:12.5px;font-weight:500;
   color:var(--ink-3);white-space:nowrap;transition:background .14s,color .14s;}
-.ai-track-alt:hover{background:var(--line-2);color:var(--ink);}
-.ai-track-alt[aria-current]{background:var(--bg);color:var(--ink);
+.ai-state-tab:hover{background:var(--line-2);color:var(--ink);}
+.ai-state-tab[aria-current]{background:var(--bg);color:var(--ink);
   box-shadow:inset 0 0 0 1px var(--ink-3);}
-/* A slot holding one state has nothing to pick, so it reads as a label at the
-   same weight rather than as a selector with one option in it. */
-.ai-track-only{font-size:12.5px;font-weight:600;color:var(--ink);}
-.ai-track-pos{font-family:var(--mono);font-size:10.5px;color:var(--ink-3);
-  font-variant-numeric:tabular-nums;white-space:nowrap;line-height:1;}
-/* What moved the system into this state — on a hub about behaviour, the most
-   interesting line in the foot, so it reads at the pills' size rather than
-   11px behind a hairline-coloured arrow. */
-.ai-track-by{font-size:12px;color:var(--ink-2);white-space:nowrap;
-  overflow:hidden;text-overflow:ellipsis;}
-.ai-track-by::before{content:"\21B3\A0";color:var(--ink-4);}
+/* A position holding one state has nothing to pick, so it reads as a label at
+   the same weight rather than as a selector with one option in it. */
+.ai-state-name{font-size:12.5px;font-weight:600;color:var(--ink);}
+/* What moved the system into this state — on a hub about behaviour, and on a
+   canvas you operate, half of these name something you just did.
+   
+   No arrow. It was carrying "this followed from that" while the two sat on one
+   line; stacked, the position says that already, and a glyph that repeats what
+   the layout has established is one more thing to read. */
+.ai-state-by{font-size:12px;color:var(--ink-2);white-space:nowrap;
+  overflow:hidden;text-overflow:ellipsis;max-width:100%;}
 
-/* Keyboard focus. A 4px bar is the last thing that can rely on a browser
-   default. */
-.ai-track-seg:focus-visible,.ai-track-alt:focus-visible,.ai-play:focus-visible{
-  outline:2px solid var(--blue);outline-offset:2px;border-radius:3px;}
-.ai-track-alt:focus-visible{border-radius:999px;}
+.ai-state-tab:focus-visible{outline:2px solid var(--blue);outline-offset:2px;
+  border-radius:999px;}
 
-/* Play, bottom right, in the slot the Product Hub gives its canvas action —
-   and the primary gesture on this page rather than an afterthought beside the
-   states. */
-.ai-play{display:inline-flex;align-items:center;gap:7px;flex:none;
+/* Start over, bottom right. Quiet: it is the way back rather than the gesture
+   the page is for — the gesture is now the frame itself. */
+.ai-restart{display:inline-flex;align-items:center;gap:7px;flex:none;
   padding:5px 13px 5px 11px;border-radius:999px;font-size:12.5px;font-weight:500;
   color:var(--ink-3);box-shadow:inset 0 0 0 1px var(--line-strong);
   transition:color .12s,background .12s,box-shadow .12s;}
-.ai-play:hover{color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink-4);}
-.ai-play[data-on]{background:var(--blue);color:#fff;box-shadow:none;}
-.ai-play[data-on]:hover{background:var(--ink);color:#fff;}
-.ai-play:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
+.ai-restart:hover{color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink-4);}
+.ai-restart:focus-visible{outline:2px solid var(--blue);outline-offset:2px;}
 
 /* Each state arrives rather than snapping in. Watching a pattern move from
    Waiting to Streaming to Complete is what this page is for, and a hard swap
    reads as five unrelated screenshots. Fading the incoming frame only — the
    outgoing one is already unmounted — which is enough to carry the change
    without holding two wireframes on the canvas at once. */
-.ai-swap{width:100%;animation:ai-swap-in .3s cubic-bezier(.22,.61,.36,1);}
+/* Every preview is one Frame with a max-width of its own — 540 to 570 — inside
+   a canvas far wider than that, so without this it sat against the left edge
+   while the run above it was centred. Flex rather than margin:auto on .mk-frame
+   itself: the anti-pattern figures use the same frame in a column where left is
+   correct, and this is the lab's call to make, not the frame's. */
+.ai-swap{width:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  animation:ai-swap-in .3s cubic-bezier(.22,.61,.36,1);}
+/* Focus lands here after a control inside the frame moves the canvas, so the
+   next Tab carries on from the frame instead of the top of the document. It is
+   a place to stand rather than a control, so it draws no ring of its own — the
+   control that took the focus is gone, and outlining the whole wireframe would
+   read as a selection. */
+.ai-swap:focus{outline:none;}
 @keyframes ai-swap-in{
   from{opacity:0;transform:translateY(4px);}
   to{opacity:1;transform:translateY(0);}
@@ -2734,12 +2888,249 @@
    stay — the caret holds solid rather than vanishing with its animation. */
 @media (prefers-reduced-motion: reduce){
   .ai-swap{animation:none;}
-  .ai-track-seg::before{transition:none;}
-  .ai-track-alt{transition:none;}
+  .ai-state-tab{transition:none;}
+  /* The orb is the one element on the page whose whole subject is being alive.
+     Its moods still differ frozen — each one changes size, brightness or ring —
+     and the caption under it says the word regardless, so nothing is lost but
+     the movement. */
+  .vc-orb-core,.vc-orb-ring,.vc-orb::after{animation:none;}
+  .cv-fidelity > span{transition:none;}
   .ai-caret{animation:none;}
   .ai-skel-line{animation:none;}
   .mk-spin{animation:none;}
 }
+
+/* ── The voice kit: one living indicator, in the state it is in ────────── */
+
+/* On the theme, not on its own dark. The stage was a near-black slab for a
+   pass, on the argument that an ambient device sits in a room — and it was an
+   alien in the middle of a light page. A preview here is a wireframe of *our*
+   product, not a photograph of somebody's speaker, so it is --bg and
+   --line-strong like every other frame and inherits the same --pv-* ramp.
+   
+   Only the orb's two ends are local, because they are the one thing that has to
+   be tuned per theme: the same bloom that reads as warm on white disappears on
+   near-black. They are the brand's own — .ccard blooms rgba(25,87,244,…) on
+   hover and this is that glow, held rather than triggered. */
+.vc-stage{--orb-lit:#5495F4;                       /* blue-60 */
+  --orb-glow:rgba(25,87,244,.20);                  /* NewBlue, the .ccard bloom */
+  --orb-ring:rgba(25,87,244,.22);
+  padding:var(--pv-pad);gap:var(--pv-gap);align-items:center;text-align:center;}
+.app[data-theme="dark"] .vc-stage{--orb-lit:#84AAF3;   /* blue-40 */
+  --orb-glow:rgba(74,133,245,.30);
+  --orb-ring:rgba(132,170,243,.26);}
+.vc-head{width:100%;display:flex;justify-content:center;}
+/* Named for what it is — a speaker, a car — never for a character. */
+.vc-device{font-size:var(--pv-micro);font-weight:600;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ink-4);}
+
+.vc-field{display:flex;flex-direction:column;align-items:center;gap:14px;
+  padding:26px 0 8px;}
+
+/* THE ORB. Three layers, because one body pulsing on its own reads as a
+   loading spinner and three read as something breathing:
+   
+     .vc-orb-core   the body, and the only thing with the gradient on it
+     .vc-orb-ring   a ripple that leaves the body — what "I am hearing you"
+                    looks like on every device that has ever done it
+     ::after        the bloom, which moves at its own rate so the light lags
+                    the body slightly, the way light does
+   
+   The gradient runs var(--blue) into blue-60, both out of the Loka ramp, with a
+   white specular high and left. --blue is theme-bound, so the orb follows the
+   app into dark without a second set of values. */
+.vc-orb{position:relative;width:88px;height:88px;display:grid;place-items:center;}
+.vc-orb::after{content:"";position:absolute;inset:-14px;border-radius:999px;
+  background:radial-gradient(circle,var(--orb-glow) 0%,transparent 66%);
+  opacity:.9;}
+.vc-orb-core{position:relative;z-index:1;width:64px;height:64px;border-radius:999px;
+  background:
+    radial-gradient(circle at 34% 30%,rgba(255,255,255,.95) 0%,rgba(255,255,255,.34) 17%,transparent 46%),
+    radial-gradient(circle at 64% 70%,var(--blue) 0%,var(--orb-lit) 100%);
+  box-shadow:0 6px 18px -6px var(--orb-glow);}
+.vc-orb-ring{position:absolute;width:64px;height:64px;border-radius:999px;
+  box-shadow:0 0 0 1px var(--orb-ring);opacity:0;}
+
+/* Each mood differs with the motion turned OFF as well as on — size, brightness
+   or ring, never rate alone. Otherwise the state is an animation, which is a
+   screenshot that says nothing, a reduced-motion setting that says nothing, and
+   the colour-is-never-the-only-signal rule broken in a new place. The caption
+   under the orb says the word regardless. */
+
+/* Listening: a slow breath, and a ripple that leaves. */
+.vc-orb[data-mood="listening"] .vc-orb-core{animation:vc-breathe 3s ease-in-out infinite;}
+.vc-orb[data-mood="listening"] .vc-orb-ring{animation:vc-ripple 3s ease-out infinite;}
+.vc-orb[data-mood="listening"]::after{animation:vc-bloom 3s ease-in-out infinite;}
+
+/* Thinking: smaller and dimmer — holding, not working outward — with the
+   highlight orbiting rather than the body moving, so it reads as turning
+   something over rather than as breathing. */
+.vc-orb[data-mood="thinking"] .vc-orb-core{width:52px;height:52px;
+  animation:vc-turn 3.6s linear infinite;}
+.vc-orb[data-mood="thinking"]::after{inset:-8px;opacity:.55;}
+
+/* Speaking: bigger, brighter, and deliberately uneven. Speech has syllables;
+   a sine wave reads as a progress indicator. */
+.vc-orb[data-mood="speaking"] .vc-orb-core{width:70px;height:70px;
+  box-shadow:0 8px 26px -6px var(--orb-glow);
+  animation:vc-speak 1.6s ease-in-out infinite;}
+.vc-orb[data-mood="speaking"]::after{inset:-20px;animation:vc-bloom 1.6s ease-in-out infinite;}
+
+/* At rest it settles. An indicator still moving when nothing is happening is
+   the stalled spinner this hub spends a pattern arguing against. */
+.vc-orb[data-mood="rest"] .vc-orb-core{width:48px;height:48px;}
+.vc-orb[data-mood="rest"]::after{inset:-6px;opacity:.4;}
+
+/* Stopped and Lost are the two ways a run doesn't finish, so neither may look
+   like the way it does: the body goes hollow and the ring stays, which is the
+   opposite of rest. */
+.vc-orb[data-mood="stopped"] .vc-orb-core,
+.vc-orb[data-mood="lost"] .vc-orb-core{width:46px;height:46px;background:var(--bg);
+  box-shadow:inset 0 0 0 1px var(--line-strong);}
+.vc-orb[data-mood="stopped"] .vc-orb-ring,
+.vc-orb[data-mood="lost"] .vc-orb-ring{width:46px;height:46px;opacity:1;
+  box-shadow:0 0 0 1px var(--line-strong);}
+.vc-orb[data-mood="stopped"]::after,
+.vc-orb[data-mood="lost"]::after{opacity:0;}
+/* Lost adds the only thing that separates it from a stop somebody chose: it is
+   broken open rather than closed. */
+.vc-orb[data-mood="lost"] .vc-orb-ring{box-shadow:0 0 0 1px var(--line-strong);
+  mask:conic-gradient(from 210deg,transparent 0 62deg,#000 62deg);}
+
+@keyframes vc-breathe{0%,100%{transform:scale(1);}50%{transform:scale(1.06);}}
+@keyframes vc-bloom{0%,100%{opacity:.55;}50%{opacity:1;}}
+/* Out and gone, which is what a ripple is. */
+@keyframes vc-ripple{
+  0%{transform:scale(1);opacity:.85;}
+  70%{transform:scale(1.42);opacity:0;}
+  100%{transform:scale(1.42);opacity:0;}
+}
+/* The highlight goes round; the body doesn't. */
+@keyframes vc-turn{to{transform:rotate(360deg);}}
+/* Four uneven beats to the cycle. The numbers are not a wave — they are what
+   stops it reading as a metronome, which is the one thing speech is not. */
+@keyframes vc-speak{
+  0%{transform:scale(1);}
+  14%{transform:scale(1.10);}
+  30%{transform:scale(1.02);}
+  46%{transform:scale(1.13);}
+  62%{transform:scale(1.01);}
+  78%{transform:scale(1.06);}
+  100%{transform:scale(1);}
+}
+
+/* The state in words, under the orb, where a device really prints it. The one
+   thing carrying the state once motion is off. */
+.vc-mood{font-size:var(--pv-meta);letter-spacing:.02em;color:var(--ink-3);}
+
+/* What was heard, above what is being said. A voice product shows this so
+   somebody can tell a wrong answer from a misheard question — the commonest
+   failure on this surface, and one no screen pattern has to handle. */
+.vc-heard{margin:0;font-size:var(--pv-meta);line-height:1.5;color:var(--ink-4);}
+.vc-caption{margin:0;font-size:var(--pv-body);line-height:1.6;color:var(--ink);
+  max-width:34ch;}
+
+.vc-acts{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;
+  padding-top:4px;width:100%;}
+
+/* Where the exchange leaves this surface. */
+.vc-handoff{display:flex;flex-direction:column;gap:3px;width:100%;
+  padding:calc(var(--pv-pad) * .7) var(--pv-pad);text-align:left;
+  background:var(--bg-soft);box-shadow:inset 2px 0 0 var(--blue),inset 0 0 0 1px var(--line);}
+.vc-handoff-to{font-size:var(--pv-micro);font-weight:600;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ink-4);}
+.vc-handoff-note{font-size:var(--pv-meta);line-height:1.45;color:var(--ink-3);}
+
+/* ── The canvas kit: an artboard with objects on it ─────────────────────── */
+
+.cv-frame{padding:0;}
+/* A bounded board, and the bound matters: a canvas pattern's empty state is
+   empty *space*, which only reads as empty if the space has an edge. */
+.cv-board{position:relative;display:flex;flex-direction:column;gap:var(--pv-gap);
+  padding:var(--pv-pad);min-height:180px;
+  background:
+    radial-gradient(circle at 1px 1px,var(--line) 1px,transparent 0) 0 0 / 14px 14px;}
+.cv-pair{display:grid;grid-template-columns:1fr 1fr;gap:var(--pv-gap);}
+.cv-obj{position:relative;display:flex;flex-direction:column;gap:7px;
+  padding:calc(var(--pv-pad) * .7);background:var(--bg);
+  box-shadow:inset 0 0 0 1px var(--line-strong);}
+.cv-obj[data-wide]{grid-column:1 / -1;}
+/* Selection handles, because on this surface "which one am I acting on" is a
+   question the page cannot answer any other way. */
+.cv-obj[data-selected]{box-shadow:inset 0 0 0 1px var(--blue);}
+.cv-handles{position:absolute;inset:-3px;pointer-events:none;
+  background:
+    linear-gradient(var(--blue),var(--blue)) 0 0 / 5px 5px no-repeat,
+    linear-gradient(var(--blue),var(--blue)) 100% 0 / 5px 5px no-repeat,
+    linear-gradient(var(--blue),var(--blue)) 0 100% / 5px 5px no-repeat,
+    linear-gradient(var(--blue),var(--blue)) 100% 100% / 5px 5px no-repeat;}
+.cv-obj-body{display:flex;flex-direction:column;gap:4px;}
+.cv-obj-head{display:flex;align-items:baseline;justify-content:space-between;
+  gap:var(--pv-gap);}
+.cv-obj-label{font-size:var(--pv-micro);font-weight:600;letter-spacing:.07em;
+  text-transform:uppercase;color:var(--ink-4);}
+.cv-obj-meta{font-size:var(--pv-meta);color:var(--ink-3);}
+/* The before and the after as the object, stacked — the comparison this surface
+   can make that a column of text cannot. Same two tones the diff rows use, so a
+   reader who has seen the screen version recognises them. */
+.cv-stack{display:flex;flex-direction:column;gap:3px;}
+.cv-layer{font-size:var(--pv-meta);line-height:1.6;padding:3px 8px;}
+.cv-layer[data-tone="now"]{background:var(--danger-soft);color:var(--danger-text);}
+.cv-layer[data-tone="next"]{background:var(--blue-soft);color:var(--blue);}
+/* Controls that belong to the selection rather than to the page. A footer bar
+   would put "use this" the same distance from both objects, which is the one
+   thing Change Review says not to do. */
+.cv-on-object{display:flex;flex-wrap:wrap;gap:5px;}
+.cv-foot{display:flex;align-items:center;justify-content:space-between;
+  gap:var(--pv-gap);margin-top:auto;}
+/* Something the system placed but is not standing behind: a low-confidence
+   result, a suggestion not yet taken, a near miss. Dashed, which is the same
+   "this is a slot, not a fixture" reading the optional part chips use — and on
+   this surface it is doing more work, because an object is either placed or it
+   is not, and provisional is the only third thing. */
+.cv-layer[data-provisional]{background:none;color:var(--ink-3);
+  border:1px dashed var(--line-strong);padding:2px 7px;}
+
+/* Streaming on a canvas: an object that arrives rough and sharpens. The bars
+   are the object's content at each pass, blurred by how far through it is —
+   which is the honest drawing, because what moves on this surface is fidelity
+   rather than length. The box never changes size, so nothing reflows. */
+.cv-fidelity{display:flex;flex-direction:column;gap:6px;padding:4px 0;}
+.cv-fidelity > span{height:11px;border-radius:2px;
+  background:linear-gradient(90deg,var(--blue) 0%,var(--blue-soft) 100%);
+  transition:filter .3s ease,opacity .3s ease;}
+.cv-fidelity > span:nth-child(2){width:84%;}
+.cv-fidelity > span:nth-child(3){width:62%;}
+/* Nothing yet: the shape is reserved and empty, which is the one thing a
+   canvas placeholder can be certain about — it knows the size. */
+.cv-fidelity[data-pass="none"] > span{background:var(--line-2);}
+.cv-fidelity[data-pass="rough"] > span{filter:blur(3px);opacity:.75;}
+.cv-fidelity[data-pass="better"] > span{filter:blur(1.2px);opacity:.9;}
+
+/* The regions of a source a field was read off. Lit when its field is open,
+   dashed when there is nothing to light — which is the whole of Structured
+   Output's argument drawn: the value the model worked out rather than read is
+   the one with no part of the paper to point at. */
+.cv-regions{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
+.cv-region{padding:7px 9px;font-size:var(--pv-micro);font-weight:600;
+  letter-spacing:.07em;text-transform:uppercase;color:var(--ink-4);
+  box-shadow:inset 0 0 0 1px var(--line);transition:color .12s,background .12s;}
+.cv-region[data-on]{color:var(--blue);background:var(--blue-soft);
+  box-shadow:inset 0 0 0 1px var(--blue);}
+.cv-region[data-none]{box-shadow:none;border:1px dashed var(--line-strong);}
+
+/* Nothing, said where the object would have been. */
+.cv-nothing{display:flex;align-items:center;justify-content:center;flex:1;
+  min-height:120px;padding:var(--pv-pad);text-align:center;
+  font-size:var(--pv-meta);line-height:1.5;color:var(--ink-3);
+  box-shadow:inset 0 0 0 1px var(--line);}
+
+/* The verdict, under the frame on a switched surface. It answers the question
+   somebody asked by switching, so it sits with the drawing rather than only in
+   the block below the lab. */
+.ai-surf-say{display:block;max-width:560px;margin-top:14px;
+  font-size:12.5px;line-height:1.6;color:var(--ink-3);text-align:center;}
+.ai-surf-say strong{color:var(--ink);font-weight:600;}
 
 /* ── Anti-patterns ─────────────────────────────────────────────────────── */
 
