@@ -8,14 +8,22 @@ import { GRAPHICS } from "../data/graphics.js";
 import { PATTERNS } from "../data/patterns.js";
 import { IMAGERY_PROJECT, IMAGERY_STYLES, IMAGERY_USAGE } from "../data/imagery.js";
 import { LOGO_COLORS, LOGO_LOCKUPS } from "../data/logo.js";
+import { AI_CAPABILITIES, AI_UI_PATTERNS, SURFACE_LABEL } from "../data/aiUiPatterns.js";
+import { AI_UI_GUIDES } from "../data/aiUiPatternGuides.js";
 
 // Builds a flat, searchable index spanning every part of the system: nav
 // sections, color/type/spacing tokens, icons, and graphics. Computed once.
+const guideText = (g) =>
+  g ? [g.what, ...g.anatomy.map((a) => a.name), ...g.states.map((x) => x.name), ...(g.seenIn ?? [])].join(" ") : "";
+
 function buildSearchIndex() {
   const idx = [];
 
   NAV.forEach((group) =>
     group.items.forEach((it) => {
+      // The AI hub's capabilities and patterns are indexed from the data below,
+      // with their copy as keywords.
+      if ("aiCap" in it || it.sub?.some((s) => "aiPattern" in s)) return;
       // A `toggleOnly` item (the Components category headers — Actions, Inputs,
       // ...) is a pure dropdown with nothing of its own to jump to, so it's left
       // out of the index; its children are indexed below same as any other sub.
@@ -101,6 +109,31 @@ function buildSearchIndex() {
     })
   );
 
+  AI_UI_PATTERNS.forEach((p) =>
+    idx.push({
+      label: p.name,
+      kind: "AI pattern",
+      sub: SURFACE_LABEL[p.s],
+      // The page's own words too, so "stop button" or "tracked changes" finds
+      // the pattern that draws one.
+      keywords: [p.use, p.avoid, guideText(AI_UI_GUIDES[p.id])].join(" "),
+      target: "ai-patterns",
+      setAiPattern: p.id,
+    })
+  );
+
+  // A capability opens the Overview filtered to it.
+  AI_CAPABILITIES.forEach((c) =>
+    idx.push({
+      label: c.name,
+      kind: "AI capability",
+      keywords: `${c.desc} ${c.ex}`,
+      target: "ai-patterns",
+      setAiPattern: null,
+      setAiCap: c.id,
+    })
+  );
+
   return idx;
 }
 
@@ -128,13 +161,19 @@ export function useSearch(onRun) {
         find("Component", "Button"),
       ].filter(Boolean);
     }
+    // Name matches first: an AI pattern's keywords are its whole guidance,
+    // so "Extract" would otherwise land on a pattern that mentions extracted
+    // data before the Extract capability itself. The sort is stable, so each
+    // half keeps the index's order.
+    const named = (e) => e.label.toLowerCase().includes(q);
     return index
       .filter(
         (e) =>
-          e.label.toLowerCase().includes(q) ||
+          named(e) ||
           (e.keywords || "").toLowerCase().includes(q) ||
           (e.sub || "").toLowerCase().includes(q)
       )
+      .sort((a, b) => named(b) - named(a))
       .slice(0, 40);
   }, [query, index]);
 

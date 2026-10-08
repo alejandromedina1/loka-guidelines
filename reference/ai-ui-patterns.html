@@ -1,0 +1,538 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI capabilities to UI patterns</title>
+<style>
+:root{
+  --bg:#ffffff;--ink:#1d1d1f;--muted:#6e6e73;--line:#e6e6eb;--stage:#f5f5f7;
+  --ai:#6b4eff;--ai-tint:#efebff;--ok:#1f8f4e;--warn:#b45309;--warn-tint:#fff4e5;--bad:#c62828;
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Inter","Segoe UI",system-ui,sans-serif;
+  color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;
+}
+*{box-sizing:border-box}
+body{margin:0}
+button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;padding:0}
+:focus-visible{outline:2px solid var(--ai);outline-offset:2px;border-radius:6px}
+
+/* Shell */
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;flex-wrap:wrap;padding:28px 40px 22px;border-bottom:1px solid var(--line)}
+.top h1{font-size:20px;font-weight:600;letter-spacing:-.01em;margin:0}
+.top p{margin:4px 0 0;color:var(--muted);font-size:14px}
+.legend{display:inline-flex;align-items:center;gap:6px;margin-left:10px;font-size:13px;color:var(--muted)}
+.legend i{width:10px;height:10px;border-radius:3px;background:var(--ai-tint);box-shadow:inset 0 0 0 1px var(--ai)}
+.seg{display:inline-flex;background:var(--stage);border-radius:10px;padding:3px}
+.seg button{padding:6px 14px;border-radius:8px;font-size:13px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+
+.app{display:grid;grid-template-columns:232px 1fr}
+.rail{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:24px 16px 40px 28px;border-right:1px solid var(--line)}
+.rail h2{font-size:12px;font-weight:500;color:var(--muted);margin:0 0 8px 10px}
+.rail ul{list-style:none;margin:0 0 20px;padding:0}
+.rail button{width:100%;display:flex;justify-content:space-between;align-items:center;padding:7px 10px;border-radius:8px;font-size:14px;text-align:left}
+.rail button:hover{background:var(--stage)}
+.rail button[aria-current="true"]{background:var(--ink);color:#fff}
+.rail button span{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.rail button[aria-current="true"] span{color:#c7c7cc}
+
+main{padding:40px 40px 80px;min-width:0}
+.cap-name{font-size:44px;line-height:1.05;font-weight:600;letter-spacing:-.025em;margin:0}
+.cap-desc{font-size:19px;color:var(--ink);margin:12px 0 4px;max-width:60ch}
+.cap-ex{font-size:14px;color:var(--muted);margin:0;max-width:70ch}
+.layer{margin-top:44px}
+.layer h3{font-size:17px;font-weight:600;margin:0}
+.layer > p{font-size:14px;color:var(--muted);margin:2px 0 20px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:36px 28px}
+.empty{font-size:14px;color:var(--muted);padding:18px 0}
+
+.card .stage{height:220px}
+.stage{position:relative;background:var(--stage);border-radius:18px;padding:18px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.stage .replay,.stage .try{position:absolute;top:10px;right:10px;font-size:11px;color:var(--muted);background:rgba(255,255,255,.85);border-radius:999px;padding:3px 9px}
+.stage .replay:hover{color:var(--ink)}
+.meta{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-top:12px}
+.meta .name{font-size:16px;font-weight:600;text-align:left}
+.meta .name:hover{text-decoration:underline;text-underline-offset:3px}
+.badge{font-size:12px;color:var(--muted);white-space:nowrap}
+.card .use{font-size:14px;color:var(--muted);margin:3px 0 0;line-height:1.45}
+
+/* Sheet */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.18);opacity:0;pointer-events:none;transition:opacity .2s}
+.scrim.on{opacity:1;pointer-events:auto}
+.sheet{position:fixed;top:0;right:0;height:100%;width:min(540px,100%);background:#fff;box-shadow:-12px 0 40px rgba(0,0,0,.08);transform:translateX(100%);transition:transform .28s cubic-bezier(.2,.8,.2,1);overflow:auto;padding:28px 32px 48px}
+.sheet.on{transform:none}
+.sheet .close{position:absolute;top:18px;right:20px;font-size:14px;color:var(--muted)}
+.sheet h2{font-size:28px;font-weight:600;letter-spacing:-.02em;margin:18px 0 2px}
+.sheet .stage{height:280px;margin:20px 0 8px}
+.sheet dl{margin:24px 0 0}
+.sheet dt{font-size:13px;color:var(--muted);margin-top:18px}
+.sheet dd{margin:4px 0 0;font-size:15px;line-height:1.5}
+.links{display:flex;flex-wrap:wrap;gap:6px}
+.links button{border:1px solid var(--line);border-radius:999px;padding:4px 12px;font-size:13px}
+.links button:hover{border-color:var(--ink)}
+
+@media (max-width:760px){
+  .top{padding:20px}
+  .app{grid-template-columns:1fr}
+  .rail{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:12px 20px}
+  .rail h2{display:none}
+  .rail ul{display:flex;gap:6px;overflow-x:auto;margin:0}
+  .rail ul + h2 + ul{margin-top:6px}
+  .rail button{white-space:nowrap;gap:8px}
+  main{padding:28px 20px 60px}
+  .cap-name{font-size:34px}
+}
+
+/* Demo vocabulary */
+.d{width:100%;max-width:300px;font-size:13px;line-height:1.4}
+.col{display:flex;flex-direction:column;gap:8px}
+.bub{padding:8px 11px;border-radius:14px;max-width:88%}
+.bub.me{align-self:flex-end;background:var(--ink);color:#fff;border-bottom-right-radius:4px}
+.bub.ai{align-self:flex-start;background:var(--ai-tint);border-bottom-left-radius:4px}
+.ai-box{background:var(--ai-tint);border-radius:10px;padding:10px 12px}
+.caret{display:inline-block;width:6px;height:13px;background:var(--ai);vertical-align:-2px;margin-left:1px;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+.mini,.chip,.btn{border:1px solid var(--line);background:#fff;border-radius:999px;padding:3px 10px;font-size:12px}
+.chip{padding:5px 11px}
+.chip:hover,.mini:hover,.btn:hover{border-color:#b9b9c0}
+.btn{border-radius:8px;padding:6px 12px}
+.btn.primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.field{background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-height:36px}
+.ph{color:#a1a1a6}
+.sk{height:7px;border-radius:4px;background:#e2e2e8}
+.lbl{font-size:11px;color:var(--muted)}
+.acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.row{display:flex;gap:8px;align-items:center}
+.fade{animation:fade .3s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.ghost{color:var(--ai);opacity:.55}
+.accepted{background:var(--ai-tint);border-radius:3px}
+kbd{font:inherit;font-size:11px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:#fff}
+.tint{background:var(--ai-tint);border-radius:3px;padding:0 2px}
+.sel{background:#cfe0ff;border-radius:2px}
+.panel{background:#fff;border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.check{color:var(--ok)}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1>AI capabilities to UI patterns</h1>
+    <p>Pick what the AI does. See the patterns that bring it to the interface.<span class="legend"><i></i>AI-produced content</span></p>
+  </div>
+  <div class="seg" role="group" aria-label="Surface">
+    <button data-s="all" aria-pressed="true">All surfaces</button>
+    <button data-s="chat" aria-pressed="false">Chat</button>
+    <button data-s="embedded" aria-pressed="false">Embedded in product</button>
+  </div>
+</header>
+
+<div class="app">
+  <nav class="rail" aria-label="Capabilities">
+    <h2>Browse</h2>
+    <ul id="railAll"></ul>
+    <h2>What the AI does</h2>
+    <ul id="railCaps"></ul>
+  </nav>
+  <main id="main"></main>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<aside class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle" tabindex="-1"></aside>
+
+<script>
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const wait = ms => new Promise(r => setTimeout(r, RM ? 0 : ms));
+async function type(el, text, root, speed = 26){
+  for (const ch of text){ if (!root.isConnected) return false; el.textContent += ch; await wait(speed); }
+  return root.isConnected;
+}
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+/* ---------- Capabilities ---------- */
+const CAPS = [
+  {id:'gen',  name:'Generate',          desc:'Create new text, images or code from a prompt.', ex:'Draft an email, write product copy, produce a first version of a design.'},
+  {id:'sum',  name:'Summarize',         desc:'Condense long content into what matters.', ex:'Meeting recaps, thread digests, document overviews.'},
+  {id:'rew',  name:'Rewrite & translate', desc:'Change the tone, length, language or format of existing content.', ex:'Shorten a paragraph, make a message friendlier, translate a comment.'},
+  {id:'cls',  name:'Classify & tag',    desc:'Sort, label and route items automatically.', ex:'Inbox triage, ticket routing, content moderation.'},
+  {id:'ext',  name:'Extract',           desc:'Pull structured data out of documents, images and messages.', ex:'Receipt scanning, contract fields, lead details from an email.'},
+  {id:'srch', name:'Search & answer',   desc:'Find information by meaning and answer questions about it.', ex:'Help centers, internal knowledge bases, product search.'},
+  {id:'rec',  name:'Recommend',         desc:'Suggest the next best item or action for each person.', ex:'Content feeds, related items, next steps in a workflow.'},
+  {id:'pred', name:'Predict & detect',  desc:'Forecast trends and flag what looks unusual.', ex:'Churn risk, anomaly alerts, demand forecasts.'},
+  {id:'conv', name:'Converse',          desc:'Hold a back-and-forth dialogue to help someone get something done.', ex:'Support assistants, onboarding guides, in-app copilots.'},
+  {id:'act',  name:'Act on your behalf', desc:'Plan and carry out multi-step tasks across tools.', ex:'Send follow-ups, book meetings, update records in bulk.'},
+  {id:'see',  name:'See',               desc:'Recognize objects, text and scenes in images and video.', ex:'Visual search, damage inspection, alt text, document scanning.'},
+  {id:'hear', name:'Hear & speak',      desc:'Turn speech into text and text into speech.', ex:'Dictation, call transcripts, voice commands, read-aloud.'},
+];
+
+/* ---------- Patterns ---------- */
+const P = [
+ {id:'stream', name:'Streaming response', s:'both', layer:'core', caps:['gen','sum','conv'],
+  use:'Output takes more than a second to finish, so people see progress right away.',
+  avoid:'The output is short, or it has to be validated as a whole before anyone sees it (like structured data).',
+  pairs:['regen','feedback']},
+ {id:'starters', name:'Starter prompts', s:'chat', layer:'core', caps:['gen','conv','srch'],
+  use:'An open-ended input is empty and people don\'t know what to ask.',
+  avoid:'The task is narrow and the input already explains itself.',
+  pairs:['clarify','copilot']},
+ {id:'ghost', name:'Inline suggestion', s:'embedded', layer:'core', caps:['gen','rew'],
+  use:'People write in context and the next words are predictable.',
+  avoid:'Suggestions are long or often wrong. They break the writer\'s flow.',
+  pairs:['undo','selbar']},
+ {id:'selbar', name:'Selection actions', s:'embedded', layer:'core', caps:['rew','sum','gen'],
+  use:'People want to act on one specific part of existing content.',
+  avoid:'Content isn\'t editable, or most use happens on touch where selecting text is awkward.',
+  pairs:['diff','variants']},
+ {id:'variants', name:'Multiple options', s:'both', layer:'core', caps:['gen','rew','rec'],
+  use:'Taste matters and there is no single right answer.',
+  avoid:'Comparing options costs more effort than editing one good draft.',
+  pairs:['feedback','regen']},
+ {id:'tldr', name:'Summary card', s:'embedded', layer:'core', caps:['sum'],
+  use:'Long content that people skim before deciding whether to read it.',
+  avoid:'The content is already short, or every detail matters (legal, medical).',
+  pairs:['cite','feedback']},
+ {id:'tags', name:'Suggested tags', s:'embedded', layer:'core', caps:['cls','see'],
+  use:'Items need consistent labels for sorting, filtering or routing.',
+  avoid:'A wrong label is costly and hard to spot. Use a review queue instead.',
+  pairs:['conf','why','undo']},
+ {id:'autofill', name:'Smart fill', s:'embedded', layer:'core', caps:['ext','see'],
+  use:'Data lives in a document or image and needs to land in a form.',
+  avoid:'Fields are few and faster to type than to review.',
+  pairs:['conf','approve']},
+ {id:'answer', name:'Answer above results', s:'embedded', layer:'core', caps:['srch'],
+  use:'Questions have a clear answer somewhere in your content.',
+  avoid:'Queries are navigational and people want a specific page, not an answer.',
+  pairs:['cite','clarify']},
+ {id:'because', name:'"Because you…" row', s:'embedded', layer:'core', caps:['rec'],
+  use:'Recommendations need a reason people recognize from their own behavior.',
+  avoid:'The signal is sensitive or would feel invasive when shown back.',
+  pairs:['why','feedback']},
+ {id:'anomaly', name:'Insight callout', s:'embedded', layer:'core', caps:['pred'],
+  use:'A chart or dashboard hides something worth acting on.',
+  avoid:'Callouts fire often. People learn to ignore them.',
+  pairs:['why','nudge']},
+ {id:'nudge', name:'Proactive suggestion', s:'embedded', layer:'core', caps:['rec','pred','cls'],
+  use:'The AI notices something useful before people ask, and acting on it is one click.',
+  avoid:'It interrupts focused work or can\'t be dismissed for good.',
+  pairs:['why','undo']},
+ {id:'plan', name:'Plan & progress', s:'both', layer:'core', caps:['act'],
+  use:'A task has several steps and people need to see what is happening.',
+  avoid:'The task is a single fast action. Just show the result.',
+  pairs:['approve','undo']},
+ {id:'clarify', name:'Clarifying question', s:'chat', layer:'core', caps:['conv','srch','act'],
+  use:'A request is ambiguous and guessing wrong would waste time.',
+  avoid:'A sensible default exists. Act on it and let people change it.',
+  pairs:['starters','plan']},
+ {id:'copilot', name:'Side-panel assistant', s:'chat', layer:'core', caps:['conv','gen','srch'],
+  use:'People need help with what\'s on screen without leaving it.',
+  avoid:'Screen space is tight, or a single inline action would do.',
+  pairs:['cite','starters']},
+ {id:'voice', name:'Live transcript', s:'both', layer:'core', caps:['hear'],
+  use:'People speak instead of type and need to see they were understood.',
+  avoid:'The environment is noisy or private, with no typing fallback.',
+  pairs:['translate','stream']},
+ {id:'detect', name:'Object highlights', s:'embedded', layer:'core', caps:['see'],
+  use:'People need to see what the AI found and where in an image.',
+  avoid:'The image is small or crowded and boxes would hide what matters.',
+  pairs:['conf','tags']},
+ {id:'translate', name:'Translation toggle', s:'embedded', layer:'core', caps:['rew','hear'],
+  use:'Content arrives in another language and people may want the original.',
+  avoid:'Nuance or legal meaning depends on exact wording.',
+  pairs:['feedback','conf']},
+
+ {id:'regen', name:'Regenerate & versions', s:'both', layer:'trust', caps:['gen','conv','sum'],
+  use:'Output varies run to run and people may prefer an earlier take.',
+  avoid:'Results should be deterministic, like calculations or extracted data.',
+  pairs:['feedback','variants']},
+ {id:'cite', name:'Citations', s:'both', layer:'trust', caps:['sum','srch','ext','conv'],
+  use:'Answers come from sources that people may need to verify.',
+  avoid:'The output is creative and has no source to point to.',
+  pairs:['answer','conf']},
+ {id:'conf', name:'Confidence signal', s:'both', layer:'trust', caps:['cls','ext','pred','see'],
+  use:'Accuracy varies and people should know when to double-check.',
+  avoid:'Showing raw percentages to people who can\'t act on them. Use plain words.',
+  pairs:['cite','approve']},
+ {id:'approve', name:'Approval step', s:'both', layer:'trust', caps:['act','ext'],
+  use:'The AI is about to do something hard to undo: send, pay, delete, publish.',
+  avoid:'The action is low risk and reversible. Confirming every step adds friction.',
+  pairs:['diff','undo']},
+ {id:'feedback', name:'Rate the result', s:'both', layer:'trust', caps:['gen','sum','rec','conv','srch'],
+  use:'You need signal to improve quality, and people want to say something was off.',
+  avoid:'Nobody reads the feedback. Then it\'s decoration.',
+  pairs:['regen','why']},
+ {id:'diff', name:'Review changes', s:'embedded', layer:'trust', caps:['rew','act'],
+  use:'The AI edits existing content and people must see exactly what changed.',
+  avoid:'The rewrite is total. A before and after view works better.',
+  pairs:['undo','approve']},
+ {id:'why', name:'"Why this?" explanation', s:'both', layer:'trust', caps:['rec','cls','pred'],
+  use:'A decision affects people and they deserve to know the main reason.',
+  avoid:'The explanation would be vague ("based on your activity") and add nothing.',
+  pairs:['feedback','conf']},
+ {id:'undo', name:'Undo AI action', s:'both', layer:'trust', caps:['act','rew','cls'],
+  use:'The AI changed something for people and they need a fast way back.',
+  avoid:'The action can\'t be reversed. Ask for approval before, instead.',
+  pairs:['approve','diff']},
+];
+const byId = Object.fromEntries(P.map(p => [p.id, p]));
+const SURF = {chat:'Chat', embedded:'Embedded', both:'Chat & embedded'};
+
+/* ---------- Demos ---------- */
+const D = {
+ stream:{html:`<div class="d col">
+   <div class="bub me">Write a tagline for a running app</div>
+   <div class="bub ai"><span class="t"></span><span class="caret"></span></div>
+   <div class="acts"><button class="mini">Stop</button></div></div>`,
+  async run(r){
+    const ok = await type($('.t',r),'Every mile, a little more you. Built for the runs you almost skipped.',r,30);
+    if(!ok) return; $('.caret',r).remove();
+    $('.acts',r).innerHTML='<button class="mini fade">Copy</button><button class="mini fade">Regenerate</button>';
+  }},
+ starters:{try:true, html:`<div class="d col" style="align-items:center;text-align:center">
+   <div style="font-size:16px;font-weight:600">What can I help with?</div>
+   <div class="acts" style="justify-content:center">
+     <button class="chip">Plan a sprint review</button><button class="chip">Summarize this week</button><button class="chip">Draft release notes</button></div>
+   <div class="field" style="width:100%;text-align:left"><span class="in ph">Ask anything</span></div></div>`,
+  init(r){ $$('.chip',r).forEach(c=>c.onclick=()=>{const i=$('.in',r);i.textContent=c.textContent;i.classList.remove('ph');}); }},
+ ghost:{try:true, html:`<div class="d col">
+   <div class="field" tabindex="0" style="min-height:76px"><span class="typed"></span><span class="ghost"></span></div>
+   <div class="lbl hint" style="visibility:hidden"><kbd>Tab</kbd> or click to accept</div></div>`,
+  async run(r){
+    const ok = await type($('.typed',r),"Thanks for the update. I'll review the deck",r,35); if(!ok) return;
+    await wait(300); $('.ghost',r).textContent=' and send notes by Friday.'; $('.hint',r).style.visibility='visible';
+  },
+  init(r){
+    const accept=()=>{const g=$('.ghost',r); if(!g.textContent) return; const s=document.createElement('span'); s.className='accepted'; s.textContent=g.textContent; $('.typed',r).after(s); g.textContent=''; $('.hint',r).style.visibility='hidden';};
+    const f=$('.field',r); f.addEventListener('keydown',e=>{if(e.key==='Tab'&&$('.ghost',r).textContent){e.preventDefault();accept();}}); $('.ghost',r).onclick=accept;
+  }},
+ selbar:{try:true, html:`<div class="d col">
+   <div class="panel acts" style="align-self:flex-start;padding:4px;gap:2px;border-radius:10px">
+     <button class="mini" data-v="will launch the feature" style="border:0">Shorten</button>
+     <button class="mini" data-v="is excited to launch the feature" style="border:0">Friendlier</button>
+     <button class="mini" data-v="ha decidido lanzar la función" style="border:0">Translate</button></div>
+   <p style="margin:0;font-size:14px">Our team <span class="sel">has made the decision to move forward with launching the feature</span> next week.</p></div>`,
+  init(r){ $$('[data-v]',r).forEach(b=>b.onclick=()=>{const s=$('.sel,.tint',r); s.className='tint fade'; s.textContent=b.dataset.v;}); }},
+ variants:{try:true, html:`<div class="d col"><div class="lbl">Subject line, pick one</div>
+   ${['Your March report is ready','3 things that changed in March','March, in one minute'].map(t=>`<button class="ai-box opt" style="text-align:left;display:flex;justify-content:space-between;border:1.5px solid transparent">${t}<span class="check" hidden>✓</span></button>`).join('')}</div>`,
+  init(r){ $$('.opt',r).forEach(o=>o.onclick=()=>{ $$('.opt',r).forEach(x=>{x.style.borderColor='transparent';$('.check',x).hidden=true;}); o.style.borderColor='var(--ink)'; $('.check',o).hidden=false; }); }},
+ regen:{try:true, html:`<div class="d col">
+   <div class="bub ai t" style="max-width:100%;min-height:58px"></div>
+   <div class="acts"><button class="mini prev" aria-label="Previous version">‹</button><span class="ver lbl"></span><button class="mini next" aria-label="Next version">›</button><button class="mini regen">Regenerate</button></div></div>`,
+  init(r){
+    const v=['Welcome aboard. Here\'s what to set up first.','Glad you\'re here. Three quick steps to get going.'];let i=1;
+    const show=()=>{$('.t',r).textContent=v[i];$('.ver',r).textContent=`${i+1} / ${v.length}`;};
+    $('.prev',r).onclick=()=>{i=Math.max(0,i-1);show();}; $('.next',r).onclick=()=>{i=Math.min(v.length-1,i+1);show();};
+    $('.regen',r).onclick=async()=>{ if(v.length>=4) return; $('.t',r).textContent='…'; await wait(500); v.push(['You\'re in. Let\'s make your first project together.','Hi there. Start with your profile, then invite your team.'][v.length-2]); i=v.length-1; show(); };
+    show();
+  }},
+ tldr:{html:`<div class="d col">
+   <button class="ai-box head" style="display:flex;justify-content:space-between;font-weight:600;border-radius:10px 10px 0 0"><span>Summary</span><span class="arrow">Show</span></button>
+   <ul class="ai-box sum" style="margin:-8px 0 0;padding:4px 12px 10px 28px;border-radius:0 0 10px 10px;display:none"></ul>
+   <div class="sk" style="width:92%"></div><div class="sk" style="width:80%"></div><div class="sk" style="width:86%"></div><div class="sk" style="width:60%"></div></div>`,
+  async run(r){
+    const ul=$('.sum',r), items=['Launch moved to May 12','Onboarding design needs two more weeks','Budget approved, no changes'];
+    await wait(500); if(!r.isConnected) return; ul.style.display='block'; $('.arrow',r).textContent='Hide';
+    for(const t of items){ if(!r.isConnected) return; const li=document.createElement('li'); li.className='fade'; li.textContent=t; ul.append(li); await wait(350); }
+  },
+  init(r){ $('.head',r).onclick=()=>{const u=$('.sum',r);const open=u.style.display!=='none';u.style.display=open?'none':'block';$('.arrow',r).textContent=open?'Show':'Hide';}; }},
+ cite:{try:true, html:`<div class="d col">
+   <div class="ai-box">Q3 revenue grew 12%<button class="mini c" data-s="Q3 financial report, page 4" style="padding:0 6px;margin:0 2px;font-size:10px;vertical-align:2px">1</button>, mostly from enterprise renewals<button class="mini c" data-s="Sales review deck, slide 9" style="padding:0 6px;margin:0 2px;font-size:10px;vertical-align:2px">2</button>.</div>
+   <div class="panel src lbl" style="font-size:12px">Select a number to see its source</div></div>`,
+  init(r){ $$('.c',r).forEach(c=>c.onclick=()=>{ $$('.c',r).forEach(x=>x.style.borderColor=''); c.style.borderColor='var(--ai)'; const s=$('.src',r); s.innerHTML=`<div style="color:var(--ink);font-weight:600">${c.dataset.s}</div><div class="sk" style="width:90%;margin-top:6px"></div><div class="sk" style="width:70%;margin-top:4px;background:var(--ai-tint)"></div>`; }); }},
+ tags:{try:true, html:`<div class="d"><div class="panel col">
+   <div class="lbl">Acme Billing</div><div style="font-weight:600">Invoice #4821 is 15 days overdue</div>
+   <div class="acts">${['Billing','Urgent'].map(t=>`<span class="tg" style="display:inline-flex;align-items:center;gap:4px;border:1px dashed var(--ai);background:var(--ai-tint);border-radius:999px;padding:2px 4px 2px 10px;font-size:12px">${t}<button class="ok" aria-label="Accept ${t}" style="padding:0 4px">✓</button><button class="no" aria-label="Remove ${t}" style="padding:0 4px;color:var(--muted)">✕</button></span>`).join('')}<span class="lbl">Suggested</span></div></div></div>`,
+  init(r){ $$('.tg',r).forEach(t=>{ $('.ok',t).onclick=()=>{t.style.border='1px solid var(--ink)';t.style.background='#fff';t.style.paddingRight='10px';$$('button',t).forEach(b=>b.remove());}; $('.no',t).onclick=()=>t.remove(); }); }},
+ autofill:{html:`<div class="d row" style="align-items:stretch;max-width:320px">
+   <div class="panel col" style="width:42%;gap:6px;font-size:11px"><b>Blue Bottle</b><div class="sk"></div><div class="sk" style="width:70%"></div><span>Mar 4, 2026</span><div class="sk" style="width:80%"></div><b>Total $18.40</b></div>
+   <div class="col" style="flex:1;gap:6px">${['Merchant','Date','Amount'].map(l=>`<div><div class="lbl">${l}</div><div class="field f" style="min-height:28px;padding:5px 9px"></div></div>`).join('')}<div class="lbl note" style="visibility:hidden">Filled from receipt. Check before saving.</div></div></div>`,
+  async run(r){
+    const v=['Blue Bottle','Mar 4, 2026','$18.40'], f=$$('.f',r); await wait(400);
+    for(let i=0;i<3;i++){ if(!r.isConnected) return; f[i].style.background='var(--ai-tint)'; f[i].style.borderColor='transparent'; f[i].textContent=v[i]; f[i].classList.add('fade'); await wait(450); }
+    if(r.isConnected) $('.note',r).style.visibility='visible';
+  }},
+ answer:{html:`<div class="d col">
+   <div class="field"><span class="q"></span></div>
+   <div class="ai-box ans" style="visibility:hidden"><b>25 days a year</b>, plus public holidays where you work.<div class="lbl" style="margin-top:4px">From: Time-off policy</div></div>
+   <div class="res col" style="gap:5px;visibility:hidden"><div class="sk" style="width:60%;background:#cfcfd6"></div><div class="sk" style="width:90%"></div><div class="sk" style="width:55%;background:#cfcfd6;margin-top:4px"></div><div class="sk" style="width:84%"></div></div></div>`,
+  async run(r){
+    if(!await type($('.q',r),'how many vacation days do I get?',r,32)) return; await wait(400); if(!r.isConnected) return;
+    $('.ans',r).style.visibility='visible'; $('.ans',r).classList.add('fade'); await wait(300); $('.res',r).style.visibility='visible';
+  }},
+ because:{html:`<div class="d col"><div style="font-weight:600">Because you saved “Ceramics 101”</div>
+   <div class="row">${[['Glazing basics','#d8cfc4'],['Wheel throwing','#c9d3cf'],['Kiln safety','#d6d0dc']].map(([t,c])=>`<div style="flex:1"><div style="height:64px;border-radius:10px;background:${c}"></div><div style="font-size:12px;margin-top:4px">${t}</div></div>`).join('')}</div></div>`},
+ anomaly:{html:`<div class="d col"><div class="panel">
+   <div class="lbl">Daily sign-ups</div>
+   <svg viewBox="0 0 280 80" width="100%" aria-hidden="true"><polyline class="ln" fill="none" stroke="var(--ink)" stroke-width="2" stroke-linejoin="round"/><circle class="dot" r="9" fill="none" stroke="var(--ai)" stroke-width="2" opacity="0"/></svg></div>
+   <div class="ai-box co" style="visibility:hidden">Sign-ups fell 38% on Tuesday. Checkout errors spiked at the same time.</div></div>`,
+  async run(r){
+    const v=[40,43,45,44,48,50,29,46,49,52], pts=v.map((y,i)=>[10+i*29,92-y*1.5]);
+    const ln=$('.ln',r); ln.setAttribute('points',pts.map(p=>p.join(',')).join(' '));
+    const len=ln.getTotalLength?ln.getTotalLength():600; ln.style.strokeDasharray=len; ln.style.strokeDashoffset=len;
+    ln.style.transition=RM?'none':'stroke-dashoffset 1s ease'; await wait(50); ln.style.strokeDashoffset=0; await wait(1000); if(!r.isConnected) return;
+    const d=$('.dot',r); d.setAttribute('cx',pts[6][0]); d.setAttribute('cy',pts[6][1]); d.setAttribute('opacity',1);
+    await wait(300); const c=$('.co',r); c.style.visibility='visible'; c.classList.add('fade');
+  }},
+ nudge:{try:true, html:`<div class="d col">
+   <div class="ai-box nb" style="visibility:hidden"><div>3 tickets describe the same login bug.</div><div class="acts" style="margin-top:8px"><button class="btn primary m">Merge tickets</button><button class="btn x">Dismiss</button></div></div>
+   ${['#212 Can\'t sign in on Safari','#215 Login loops back','#218 Stuck after password'].map(t=>`<div class="panel tk" style="padding:8px 10px;font-size:12px">${t}</div>`).join('')}</div>`,
+  async run(r){ await wait(600); if(!r.isConnected) return; const b=$('.nb',r); b.style.visibility='visible'; b.classList.add('fade'); },
+  init(r){ $('.m',r).onclick=()=>{ $$('.tk',r).slice(1).forEach(t=>t.remove()); $('.nb',r).innerHTML='Merged into #212. <button class="mini">Undo</button>'; }; $('.x',r).onclick=()=>$('.nb',r).style.visibility='hidden'; }},
+ plan:{html:`<div class="d"><div class="panel col">
+   <div style="font-weight:600">Sending payment reminders</div>
+   ${['Find overdue invoices','Draft 12 reminder emails','Schedule for Monday 9 am'].map(t=>`<div class="row st" style="color:var(--muted)"><span class="ic" style="width:16px;text-align:center">○</span>${t}</div>`).join('')}</div></div>`,
+  async run(r){
+    for(const s of $$('.st',r)){ if(!r.isConnected) return; s.style.color='var(--ink)'; $('.ic',s).textContent='◌'; $('.ic',s).style.color='var(--ai)'; await wait(900); if(!r.isConnected) return; $('.ic',s).textContent='✓'; $('.ic',s).style.color='var(--ok)'; }
+  }},
+ approve:{try:true, html:`<div class="d"><div class="panel col">
+   <div style="font-weight:600">Ready to send 12 reminder emails</div><div class="lbl">To overdue accounts, from billing@loka.com</div>
+   <div class="ai-box" style="font-size:12px">Hi Dana, a quick reminder that invoice #4821 is now 15 days overdue…</div>
+   <div class="acts out"><button class="btn">Edit emails</button><button class="btn primary go">Send emails</button></div></div></div>`,
+  init(r){ $('.go',r).onclick=()=>{ $('.out',r).innerHTML='<span class="check fade">✓ Sent 12 emails</span>'; }; }},
+ clarify:{try:true, html:`<div class="d col">
+   <div class="bub me">Book a room for the design review</div>
+   <div class="bub ai">Sure. Which day works?</div>
+   <div class="acts ch"><button class="chip">Today</button><button class="chip">Tomorrow</button><button class="chip">Pick a date</button></div></div>`,
+  init(r){ $$('.ch .chip',r).forEach(c=>c.onclick=async()=>{ const box=$('.ch',r); box.outerHTML=`<div class="bub me fade">${c.textContent}</div>`; await wait(400); const a=document.createElement('div'); a.className='bub ai fade'; a.textContent=`Booked Room 4 for ${c.textContent.toLowerCase()==='pick a date'?'Thursday':c.textContent.toLowerCase()}, 2 to 3 pm.`; ($('.d',r)||r).append(a); }); }},
+ copilot:{html:`<div class="d row" style="max-width:330px;align-items:stretch;height:170px">
+   <div class="col" style="flex:1;gap:6px;padding-top:6px"><div style="font-weight:600;font-size:12px">Q3 plan</div><div class="sk"></div><div class="sk" style="width:80%"></div><div class="sk" style="width:90%"></div><div class="sk" style="width:60%"></div></div>
+   <div class="panel col" style="width:58%;gap:6px;padding:8px"><div class="lbl">Assistant · using Q3 plan</div>
+   <div class="bub me" style="font-size:12px">What are the risks?</div><div class="bub ai a" style="font-size:12px;visibility:hidden">Two: hiring delays and the API migration.</div>
+   <div class="field" style="margin-top:auto;min-height:26px;padding:4px 8px"><span class="ph" style="font-size:11px">Ask about this doc</span></div></div></div>`,
+  async run(r){ await wait(700); if(!r.isConnected) return; const a=$('.a',r); a.style.visibility='visible'; a.classList.add('fade'); }},
+ voice:{html:`<div class="d col" style="align-items:center;text-align:center">
+   <div style="position:relative;width:52px;height:52px"><span class="ring" style="position:absolute;inset:0;border-radius:50%;background:var(--ai-tint);animation:pulse 1.4s ease-out infinite"></span><span style="position:absolute;inset:8px;border-radius:50%;background:var(--ai);display:grid;place-items:center;color:#fff;font-size:16px">●</span></div>
+   <div class="tr" style="font-size:15px;min-height:44px"></div><div class="lbl st">Listening…</div></div>
+   <style>@keyframes pulse{from{transform:scale(.8);opacity:1}to{transform:scale(1.5);opacity:0}}</style>`,
+  async run(r){
+    const w='Remind me to call Ana after the standup tomorrow'.split(' '), tr=$('.tr',r);
+    for(let i=0;i<w.length;i++){ if(!r.isConnected) return; tr.innerHTML=w.slice(0,i).join(' ')+` <span style="color:var(--muted)">${w[i]}</span>`; await wait(260); }
+    tr.textContent=w.join(' '); $('.st',r).textContent='Done'; $('.ring',r).style.animation='none';
+  }},
+ detect:{html:`<div class="d" style="max-width:320px"><svg viewBox="0 0 280 150" width="100%" aria-label="Room photo with detected objects">
+   <rect width="280" height="150" rx="10" fill="#e9e6e1"/><rect y="128" width="280" height="22" fill="#d9d4cc"/>
+   <rect x="44" y="48" width="8" height="52" fill="#8a7a68"/><rect x="44" y="88" width="48" height="10" fill="#8a7a68"/><rect x="48" y="98" width="5" height="30" fill="#8a7a68"/><rect x="84" y="98" width="5" height="30" fill="#8a7a68"/>
+   <rect x="150" y="100" width="30" height="28" fill="#b98b6b"/><circle cx="158" cy="86" r="14" fill="#7d9a7b"/><circle cx="172" cy="80" r="16" fill="#6c8a6a"/>
+   <rect x="236" y="48" width="4" height="80" fill="#555"/><polygon points="224,48 252,48 246,30 230,30" fill="#e0c36a"/>
+   <g class="bx"></g></svg></div>`,
+  async run(r){
+    const g=$('.bx',r), b=[['Chair',38,40,60,92],['Plant',138,60,48,70],['Lamp',218,24,40,106]];
+    for(const [t,x,y,w,h] of b){ if(!r.isConnected) return; g.insertAdjacentHTML('beforeend',`<g class="fade"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="4" fill="none" stroke="#6b4eff" stroke-width="2"/><rect x="${x}" y="${y-14}" width="${t.length*6+10}" height="14" rx="3" fill="#6b4eff"/><text x="${x+5}" y="${y-4}" font-size="10" fill="#fff" font-family="-apple-system,system-ui,sans-serif">${t}</text></g>`); await wait(450); }
+  }},
+ translate:{try:true, html:`<div class="d"><div class="panel col">
+   <div class="row"><span style="width:24px;height:24px;border-radius:50%;background:#d6d0dc;display:grid;place-items:center;font-size:11px">L</span><b>Lucía</b></div>
+   <div class="txt">Me encanta la nueva navegación, pero el botón de guardar es difícil de encontrar.</div>
+   <div class="row"><button class="mini tg">Show translation</button><span class="lbl info"></span></div></div></div>`,
+  init(r){ let on=false; const es='Me encanta la nueva navegación, pero el botón de guardar es difícil de encontrar.', en='I love the new navigation, but the save button is hard to find.';
+    $('.tg',r).onclick=()=>{ on=!on; const t=$('.txt',r); t.textContent=on?en:es; t.className=on?'txt ai-box fade':'txt'; $('.tg',r).textContent=on?'Show original':'Show translation'; $('.info',r).textContent=on?'Translated from Spanish':''; }; }},
+
+ conf:{html:`<div class="d"><div class="panel col" style="gap:0">
+   ${[['Vendor','Acme Inc.',1],['Amount','$1,240.00',1],['Due date','Mar 3?',0]].map(([k,v,ok])=>`<div class="row" style="justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--line)"><span class="lbl" style="width:60px">${k}</span><span class="tint" style="flex:1">${v}</span><span style="font-size:11px;color:${ok?'var(--ok)':'var(--warn)'};${ok?'':'background:var(--warn-tint);border-radius:999px;padding:1px 8px'}">${ok?'● Sure':'● Check this'}</span></div>`).join('')}
+   <div class="lbl" style="padding-top:8px">The date was smudged on the scan.</div></div></div>`},
+ feedback:{try:true, html:`<div class="d col">
+   <div class="ai-box">To reduce churn, start with a check-in at day 30, when most cancellations happen.</div>
+   <div class="acts fb"><button class="mini up" aria-label="Good response">👍</button><button class="mini down" aria-label="Bad response">👎</button></div></div>`,
+  init(r){ $('.up',r).onclick=()=>$('.fb',r).innerHTML='<span class="lbl fade">Thanks for the feedback</span>';
+    $('.down',r).onclick=()=>{ $('.fb',r).innerHTML='<span class="lbl">What went wrong?</span>'+['Not accurate','Too long','Off topic'].map(t=>`<button class="chip fade">${t}</button>`).join(''); $$('.fb .chip',r).forEach(c=>c.onclick=()=>$('.fb',r).innerHTML='<span class="lbl fade">Thanks. This helps improve answers.</span>'); }; }},
+ diff:{try:true, html:`<div class="d col"><div class="panel tx" style="font-size:14px">We <del style="color:var(--bad)">will be able to</del> <ins style="text-decoration:none" class="tint">can</ins> ship the update <del style="color:var(--bad)">in the near future</del> <ins style="text-decoration:none" class="tint">next week</ins>.</div>
+   <div class="acts ac"><button class="btn primary y">Accept all</button><button class="btn n">Reject</button></div></div>`,
+  init(r){ $('.y',r).onclick=()=>{ $$('del',r).forEach(d=>d.remove()); $('.ac',r).innerHTML='<span class="check">✓ Changes applied</span> <button class="mini">Undo</button>'; };
+    $('.n',r).onclick=()=>{ $$('ins',r).forEach(d=>d.remove()); $$('del',r).forEach(d=>{d.style.color='';d.style.textDecoration='none';}); $('.ac',r).innerHTML='<span class="lbl">Kept your original</span>'; }; }},
+ why:{try:true, html:`<div class="d col"><div class="panel">
+   <div class="lbl">Recommended</div><div style="font-weight:600;margin:2px 0 6px">Design critique template</div>
+   <button class="mini w">Why this?</button><div class="ex"></div></div></div>`,
+  init(r){ $('.w',r).onclick=()=>{ $('.ex',r).innerHTML='<div class="ai-box fade" style="margin-top:8px">You opened 4 critique docs this month.<div style="margin-top:6px"><button class="mini">Show fewer like this</button></div></div>'; }; }},
+ undo:{try:true, html:`<div class="d col" style="height:170px">
+   ${['Receipts','Newsletters','Team'].map((t,i)=>`<div class="row" style="justify-content:space-between;font-size:12px"><span>📁 ${t}</span><span class="lbl n">${[9,11,4][i]}</span></div>`).join('')}
+   <div class="toast" style="margin-top:auto;background:var(--ink);color:#fff;border-radius:10px;padding:9px 12px;display:flex;justify-content:space-between;align-items:center;visibility:hidden"><span class="m">Sorted 24 emails into 3 folders</span><button class="u" style="color:#b9a8ff;font-weight:600">Undo</button></div></div>`,
+  async run(r){ await wait(500); if(!r.isConnected) return; const t=$('.toast',r); t.style.visibility='visible'; t.classList.add('fade'); },
+  init(r){ $('.u',r).onclick=()=>{ $$('.n',r).forEach(n=>n.textContent='0'); $('.m',r).textContent='Moved 24 emails back to Inbox'; $('.u',r).remove(); }; }},
+};
+
+/* ---------- Rendering ---------- */
+const state = { cap:'gen', surface:'all' };
+function readHash(){ const h=new URLSearchParams(location.hash.slice(1)); if(h.get('cap')) state.cap=h.get('cap'); if(h.get('surface')) state.surface=h.get('surface'); }
+function writeHash(){ history.replaceState(null,'',`#cap=${state.cap}&surface=${state.surface}`); }
+
+const fits = p => state.surface==='all' || p.s===state.surface || p.s==='both';
+const patternsFor = cap => P.filter(p => (cap==='all' || p.caps.includes(cap)) && fits(p));
+
+function mountDemo(stage, id){
+  const demo = D[id]; stage.innerHTML='';
+  const box=document.createElement('div'); box.style.cssText='width:100%;display:flex;justify-content:center';
+  box.innerHTML=demo.html; stage.append(box);
+  demo.init && demo.init(box);
+  if(demo.run){
+    const b=document.createElement('button'); b.className='replay'; b.textContent='Replay'; b.setAttribute('aria-label','Replay demo');
+    b.onclick=e=>{e.stopPropagation(); mountDemo(stage,id); startDemo(stage,id);}; stage.append(b);
+  } else if(demo.try){
+    const t=document.createElement('span'); t.className='try'; t.textContent='Try it'; stage.append(t);
+  }
+  stage._box=box;
+}
+function startDemo(stage,id){ const d=D[id]; if(d.run && stage._box && !stage._started){ stage._started=true; d.run(stage._box); } }
+
+const io = new IntersectionObserver(es=>es.forEach(e=>{ if(e.isIntersecting){ startDemo(e.target,e.target.dataset.id); io.unobserve(e.target);} }),{threshold:.5});
+
+function card(p){
+  const el=document.createElement('article'); el.className='card';
+  el.innerHTML=`<div class="stage" data-id="${p.id}"></div>
+    <div class="meta"><button class="name">${p.name}</button><span class="badge">${SURF[p.s]}</span></div>
+    <p class="use">${p.use}</p>`;
+  const st=$('.stage',el); mountDemo(st,p.id); io.observe(st);
+  $('.name',el).onclick=()=>openSheet(p.id);
+  return el;
+}
+
+function renderRail(){
+  const item=(id,name)=>`<li><button data-cap="${id}" aria-current="${state.cap===id}">${name}<span>${patternsFor(id).length}</span></button></li>`;
+  $('#railAll').innerHTML=item('all','All patterns');
+  $('#railCaps').innerHTML=CAPS.map(c=>item(c.id,c.name)).join('');
+  $$('.rail [data-cap]').forEach(b=>b.onclick=()=>{ state.cap=b.dataset.cap; render(); window.scrollTo({top:0}); });
+}
+
+function renderMain(){
+  const cap = CAPS.find(c=>c.id===state.cap) || {name:'All patterns', desc:'Every pattern in the hub, across all capabilities.', ex:'Use the list on the left to see only the patterns for one capability.'};
+  const list = patternsFor(state.cap);
+  const m=$('#main'); m.innerHTML=`<h1 class="cap-name">${cap.name}</h1><p class="cap-desc">${cap.desc}</p><p class="cap-ex">Typical features: ${cap.ex}</p>`;
+  [['core','Core interaction','How people trigger the AI and receive what it produces.'],['trust','Trust and control','How people check, steer and recover from what the AI did.']].forEach(([k,h,d])=>{
+    const sec=document.createElement('section'); sec.className='layer';
+    sec.innerHTML=`<h3>${h}</h3><p>${d}</p>`;
+    const items=list.filter(p=>p.layer===k);
+    if(!items.length){ sec.insertAdjacentHTML('beforeend',`<div class="empty">No ${k==='core'?'core':'trust'} patterns for this capability on this surface. Switch to All surfaces to see the rest.</div>`); }
+    else { const g=document.createElement('div'); g.className='grid'; items.forEach(p=>g.append(card(p))); sec.append(g); }
+    m.append(sec);
+  });
+}
+
+function render(){ $$('.seg button').forEach(b=>b.setAttribute('aria-pressed',b.dataset.s===state.surface)); renderRail(); renderMain(); writeHash(); }
+
+/* ---------- Sheet ---------- */
+let lastFocus=null;
+function openSheet(id){
+  const p=byId[id], s=$('#sheet'); lastFocus=lastFocus||document.activeElement;
+  s.innerHTML=`<button class="close">Close</button>
+    <div class="badge">${SURF[p.s]} · ${p.layer==='core'?'Core interaction':'Trust and control'}</div>
+    <h2 id="sheetTitle">${p.name}</h2>
+    <div class="stage" data-id="${p.id}"></div>
+    <dl><dt>Use it when</dt><dd>${p.use}</dd>
+    <dt>Avoid it when</dt><dd>${p.avoid}</dd>
+    <dt>Pair it with</dt><dd class="links">${p.pairs.map(x=>`<button data-p="${x}">${byId[x].name}</button>`).join('')}</dd>
+    <dt>Serves these capabilities</dt><dd class="links">${p.caps.map(c=>`<button data-c="${c}">${CAPS.find(x=>x.id===c).name}</button>`).join('')}</dd></dl>`;
+  const st=$('.stage',s); mountDemo(st,id); startDemo(st,id);
+  $('.close',s).onclick=closeSheet;
+  $$('[data-p]',s).forEach(b=>b.onclick=()=>openSheet(b.dataset.p));
+  $$('[data-c]',s).forEach(b=>b.onclick=()=>{ state.cap=b.dataset.c; closeSheet(); render(); window.scrollTo({top:0}); });
+  s.classList.add('on'); $('#scrim').classList.add('on'); s.scrollTop=0; s.focus();
+}
+function closeSheet(){ $('#sheet').classList.remove('on'); $('#scrim').classList.remove('on'); lastFocus&&lastFocus.focus&&lastFocus.focus(); lastFocus=null; }
+$('#scrim').onclick=closeSheet;
+document.addEventListener('keydown',e=>{ if(e.key==='Escape' && $('#sheet').classList.contains('on')) closeSheet(); });
+
+$$('.seg button').forEach(b=>b.onclick=()=>{ state.surface=b.dataset.s; render(); });
+readHash(); render();
+</script>
+</body>
+</html>

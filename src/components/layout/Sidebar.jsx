@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { AI_UI_PATTERN_BY_ID, patternsFor } from "../../data/aiUiPatterns.js";
 import { HUBS, HUB_NAV } from "../../data/navigation.js";
 import { ArrowLeft, CaretRight } from "../common/Icon.jsx";
 
@@ -15,6 +16,11 @@ export function Sidebar({
   selectedComponent,
   componentVariant,
   onSelectComponent,
+  selectedAiPattern,
+  onSelectAiPattern,
+  aiCap,
+  aiSurface,
+  onSelectAiCap,
   onNavigate,
   open,
 }) {
@@ -22,14 +28,26 @@ export function Sidebar({
 
   const toggleGroup = (id) => setExpandedGroups((g) => ({ ...g, [id]: !g[id] }));
 
+  // An AI pattern can be opened from outside the nav (an Overview card, a
+  // "Pair it with" chip, search), so its category opens to show where it is.
+  useEffect(() => {
+    const layer = AI_UI_PATTERN_BY_ID.get(selectedAiPattern)?.layer;
+    if (layer) setExpandedGroups((g) => ({ ...g, [`ai-cat-${layer}`]: true }));
+  }, [selectedAiPattern]);
+
   // One item row, whatever list it belongs to.
   const renderItem = (item) => {
     const hasSub = !!item.sub;
     const groupOpen = expandedGroups[item.id];
     const isComponent = !!item.component;
+    const isAiCap = "aiCap" in item;
+    // A capability is current while the Overview is showing it — not while a
+    // pattern is open, since the pattern's own leaf is the current one then.
     const isActiveTop = isComponent
       ? active === "components" && selectedComponent === item.component
-      : activeTop === item.id;
+      : isAiCap
+        ? active === "ai-patterns" && selectedAiPattern === null && aiCap === item.aiCap
+        : activeTop === item.id;
 
     // Opening a parent reveals its children either way; a component parent also
     // puts itself on the canvas, keeping whichever variant is already selected.
@@ -42,6 +60,7 @@ export function Sidebar({
         return;
       }
       if (isComponent) onSelectComponent(item.component);
+      else if (isAiCap) onSelectAiCap(item.aiCap);
       else onNavigate(item.id);
       if (hasSub) setExpandedGroups((g) => ({ ...g, [item.id]: true }));
     };
@@ -50,6 +69,10 @@ export function Sidebar({
       <div key={item.id}>
         <button className="nav-item" data-active={isActiveTop} onClick={handleClick}>
           <span className="nav-item-label">{item.label}</span>
+          {/* How many patterns it has on the surface the Overview is filtered
+              to, so the list and the nav agree. */}
+          {isAiCap && <span className="nav-item-count">{patternsFor(item.aiCap, aiSurface).length}</span>}
+          {item.count !== undefined && <span className="nav-item-count">{item.count}</span>}
           {hasSub && (
             <span
               className="nav-caret"
@@ -80,9 +103,17 @@ export function Sidebar({
                     ? active === "components" &&
                       selectedComponent === s.component &&
                       (s.variant === undefined || componentVariant === s.variant)
-                    : active === s.id
+                    : "aiPattern" in s
+                      ? active === "ai-patterns" && selectedAiPattern === s.aiPattern
+                      : active === s.id
                 }
-                onClick={() => (s.component ? onSelectComponent(s.component, s.variant) : onNavigate(s.id))}
+                onClick={() =>
+                  s.component
+                    ? onSelectComponent(s.component, s.variant)
+                    : "aiPattern" in s
+                      ? onSelectAiPattern(s.aiPattern)
+                      : onNavigate(s.id)
+                }
               >
                 {s.label}
               </button>

@@ -1,6 +1,7 @@
 // Navigation model — mirrors the documentation page architecture.
 
 import { FIELD_TYPES } from "./components.js";
+import { AI_CAPABILITIES, AI_LAYERS, AI_UI_PATTERNS, ALL_CAPABILITY } from "./aiUiPatterns.js";
 
 // Turns a component name into its section id, e.g. "Input Field" -> "component-input-field".
 export const componentId = (name) =>
@@ -179,15 +180,54 @@ const COMPONENTS = {
   })),
 };
 
+// The AI Patterns Hub is one section, like the Product Hub's playground, and its
+// nav entries put something on it rather than scrolling anywhere. Three levels,
+// broad to narrow: everything, a capability (each opens the Overview filtered to
+// it, `aiCap`), and the patterns themselves, grouped by layer (`aiPattern`) —
+// see data/aiUiPatterns.js for why the patterns aren't grouped by capability.
+// "All patterns" gets a group of its own because it isn't a capability: filed
+// among them, it read as a thirteenth thing the AI does.
+const AI_BROWSE = {
+  group: "Browse",
+  items: [{ id: `ai-cap-${ALL_CAPABILITY.id}`, label: ALL_CAPABILITY.name, aiCap: ALL_CAPABILITY.id }],
+};
+
+const AI_CAPABILITY_NAV = {
+  group: "What the AI does",
+  items: AI_CAPABILITIES.map((c) => ({
+    id: `ai-cap-${c.id}`,
+    label: c.name,
+    aiCap: c.id,
+  })),
+};
+
+const AI_PATTERNS = {
+  group: "Patterns",
+  items: [
+    ...AI_LAYERS.map((layer) => ({
+      id: `ai-cat-${layer.id}`,
+      label: layer.label,
+      toggleOnly: true,
+      count: AI_UI_PATTERNS.filter((p) => p.layer === layer.id).length,
+      sub: AI_UI_PATTERNS.filter((p) => p.layer === layer.id).map((p) => ({
+        id: `ai-pattern-${p.id}`,
+        label: p.name,
+        aiPattern: p.id,
+      })),
+    })),
+  ],
+};
+
 export const HUBS = [
   { id: "brand", label: "Brand Hub" },
   { id: "product", label: "Product Hub" },
+  { id: "ai", label: "AI Patterns Hub" },
 ];
 
 // Every group, in document order. This is the search index's source — search
 // spans the whole system regardless of which hub is open, so it can't be built
 // from one hub's slice.
-export const NAV = [GETTING_STARTED, FOUNDATIONS, COMPONENTS];
+export const NAV = [GETTING_STARTED, FOUNDATIONS, COMPONENTS, AI_BROWSE, AI_CAPABILITY_NAV, AI_PATTERNS];
 
 // What the sidebar renders inside a hub — that hub's list and nothing else. The
 // landing has no sidebar at all, so GETTING_STARTED above is only in NAV, for
@@ -196,6 +236,7 @@ export const NAV = [GETTING_STARTED, FOUNDATIONS, COMPONENTS];
 export const HUB_NAV = {
   brand: [FOUNDATIONS],
   product: [COMPONENTS],
+  ai: [AI_BROWSE, AI_CAPABILITY_NAV, AI_PATTERNS],
 };
 
 // Scroll-spy targets per hub, in document order. The Components hub is one
@@ -221,6 +262,7 @@ export const HUB_SPY_IDS = {
     "imagery-project",
   ],
   product: ["components"],
+  ai: ["ai-patterns"],
 };
 
 // The landing's own targets, and the union the scroll-spy hook walks — only one
@@ -228,7 +270,7 @@ export const HUB_SPY_IDS = {
 // element for, so one list covers every view.
 const LANDING_SPY_IDS = ["introduction", "figma-library"];
 
-export const SPY_IDS = [...LANDING_SPY_IDS, ...HUB_SPY_IDS.brand, ...HUB_SPY_IDS.product];
+export const SPY_IDS = [...LANDING_SPY_IDS, ...HUB_SPY_IDS.brand, ...HUB_SPY_IDS.product, ...HUB_SPY_IDS.ai];
 
 // Which hub owns a given scroll target, so a search result can enter the hub it
 // lives in before scrolling to it — searching "Neutral" from the Product Hub
@@ -239,14 +281,15 @@ const HUB_BY_SECTION = new Map();
 for (const [hub, groups] of Object.entries(HUB_NAV)) {
   for (const group of groups) {
     for (const item of group.items) {
-      if (!item.toggleOnly) HUB_BY_SECTION.set(item.id, hub);
-      for (const s of item.sub ?? []) if (!s.component) HUB_BY_SECTION.set(s.id, hub);
+      if (!item.toggleOnly && !("aiCap" in item)) HUB_BY_SECTION.set(item.id, hub);
+      for (const s of item.sub ?? []) if (!s.component && !("aiPattern" in s)) HUB_BY_SECTION.set(s.id, hub);
     }
   }
 }
 // The playground's own target isn't a nav id — every component leaf resolves to
 // this one section — so it's mapped by hand.
 HUB_BY_SECTION.set("components", "product");
+HUB_BY_SECTION.set("ai-patterns", "ai");
 
 // null for the landing's own sections, which sit outside both hubs.
 export function hubForSection(id) {

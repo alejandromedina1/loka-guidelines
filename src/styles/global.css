@@ -103,6 +103,9 @@
 .nav-item:hover{background:var(--line-2);color:var(--ink);}
 .nav-item[data-active="true"]{color:var(--blue);font-weight:600;}
 .nav-item-label{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+/* A count beside a nav label — the AI hub's patterns per capability. */
+.nav-item-count{flex:none;font-family:var(--mono);font-size:11px;font-weight:400;color:var(--ink-4);
+  font-variant-numeric:tabular-nums;}
 .nav-caret{display:grid;place-items:center;width:14px;height:14px;color:var(--ink-4);transition:transform .16s;flex:none;border-radius:0;}
 .nav-caret[data-open="true"]{transform:rotate(90deg);}
 .nav-caret:hover{background:var(--line);color:var(--ink-2);}
@@ -192,7 +195,7 @@
    app instead, so the two panels don't sit in a glaring white surround. */
 .app[data-theme="dark"] .brand-hero{background:var(--bg-soft);}
 
-.hub-split{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.hub-split{position:relative;display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
 
 /* Each half is one button: the pill is a label inside it, not the hit target, so
    the whole surface is clickable the way a split screen implies. */
@@ -265,11 +268,11 @@
   font-family:var(--display);font-size:24px;font-weight:400;
   line-height:.727;letter-spacing:-.005em;white-space:nowrap;}
 
-/* Side by side is the comparison the landing is asking for, so the halves only
-   turn into a stack when two columns stop being readable. It stays a 50/50
-   split either way — top and bottom instead of left and right. */
-@media (max-width: 700px){
-  .hub-split{grid-template-columns:1fr;grid-template-rows:1fr 1fr;}
+/* Side by side is the comparison the landing is asking for, so the panels only
+   turn into a stack when three columns stop being readable. They stay equal
+   either way — top to bottom instead of left to right. */
+@media (max-width: 900px){
+  .hub-split{grid-template-columns:1fr;grid-template-rows:repeat(3,1fr);}
 }
 
 .intro-block{
@@ -1941,4 +1944,209 @@
   .intro-heading{font-size:26px;}
   .contents-grid{grid-template-columns:1fr;}
   .ico-grid{grid-template-columns:repeat(3,1fr);}
+}
+
+/* ══ AI Patterns Hub ═══════════════════════════════════════════════════════════
+   The third hub. The Overview and the playground are built on the house's own
+   section head, group head and .pg frame; what's new here is the demo look,
+   ported from reference/ai-ui-patterns.html.
+
+   Violet means AI-produced content and nothing else, so it's a token of its
+   own rather than the brand blue: on a demo, blue would read as "this is UI",
+   and the whole point of the tint is to say "the AI wrote this". */
+.app{
+  --ai:#6B4EFF; --ai-tint:#EFEBFF; --ai-on-ink:#B9A8FF;
+  --stage:var(--line-2); --surface:#FFFFFF; --on-ink:#FFFFFF;
+  --muted:var(--ink-3); --ph:var(--ink-4); --sel:#CFE0FF;
+  --ok:#1F8F4E; --bad:var(--danger); --warn:#B45309; --warn-tint:#FFF4E5;
+  --sk:#E2E2E8; --sk-2:#CFCFD6;
+}
+.app[data-theme="dark"]{
+  --ai:#A190FF; --ai-tint:#272052; --ai-on-ink:#5A3FE0;
+  --stage:var(--bg-soft); --surface:#1A222E; --on-ink:#0A0F17;
+  --sel:#1E3A6B;
+  --ok:#4CC38A; --warn:#F0A54A; --warn-tint:#3A2A14;
+  --sk:#2A3442; --sk-2:#364152;
+}
+
+/* The landing's third panel — the AI Patterns Hub: a violet glow on the same
+   near-black the Brand half falls to. */
+.hubcard[data-hub="ai"]{
+  background:radial-gradient(ellipse 90% 60% at 50% 42%,
+    #6B57E8 0%, #4B3BB8 22%, #2E2475 45%, #17123F 68%, #0A0920 85%, #050517 100%);
+}
+/* ── Overview ───────────────────────────────────────────────────────────────── */
+.ai-head-ex{display:block;margin-top:6px;font-size:13.5px;color:var(--ink-4);}
+/* Neutral, not violet: violet is reserved for what the AI produced. */
+.ai-head-tag{display:inline-block;margin-right:4px;padding:1px 9px;border-radius:999px;vertical-align:1px;
+  font-size:12px;font-weight:500;color:var(--ink-2);background:var(--line-2);}
+
+.ai-crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:12px;font-size:13px;color:var(--ink-4);}
+.ai-crumb{display:inline-flex;align-items:center;gap:6px;}
+.ai-crumb-sep{color:var(--line-strong);}
+.app .ai-crumbs button{padding:0;color:var(--ink-3);transition:color .12s;}
+.app .ai-crumbs button:hover{color:var(--blue);}
+.ai-crumbs [aria-current="page"]{color:var(--ink-2);}
+
+/* Text for assistive tech only — the word a glyph or a colour stands for. */
+.vh{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;}
+
+/* The active capability, shown in the sticky bar with a way to clear it. */
+.app button.ai-filter-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 8px 5px 12px;border-radius:999px;
+  font-size:12.5px;font-weight:500;color:var(--ink);background:var(--line-2);transition:background .14s;}
+.app button.ai-filter-chip:hover{background:var(--line);}
+.app button.ai-filter-chip svg{color:var(--ink-3);}
+.ai-foot{display:flex;justify-content:center;margin-top:48px;}
+
+/* Everything that changes the list on one line, held under the topbar while
+   the grid scrolls. It bleeds to the content edges so it reads as a bar, not a
+   floating row. */
+.ai-toolbar{position:sticky;top:56px;z-index:5;display:flex;align-items:center;flex-wrap:wrap;gap:12px 20px;
+  margin:0 -16px 32px;padding:10px 16px;border-block:1px solid var(--line);
+  background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);}
+.ai-result{margin-right:auto;font-size:13px;color:var(--ink-3);}
+.ai-result strong{font-weight:600;color:var(--ink);}
+.ai-seg{display:inline-flex;padding:3px;border-radius:999px;background:var(--line-2);}
+.app .ai-seg button{padding:6px 14px;border-radius:999px;font-size:13px;color:var(--ink-3);transition:color .12s,background .12s;}
+.app .ai-seg button:hover{color:var(--ink);}
+.app .ai-seg button[aria-pressed="true"]{background:var(--bg);color:var(--ink);box-shadow:0 1px 2px rgba(1,8,18,.1);}
+.ai-legend{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-3);white-space:nowrap;}
+.ai-legend i{width:10px;height:10px;border-radius:3px;background:var(--ai-tint);box-shadow:inset 0 0 0 1px var(--ai);}
+
+.ai-layer + .ai-layer{margin-top:48px;}
+.ai-count{margin-left:6px;font-family:var(--mono);font-size:12px;font-weight:400;color:var(--ink-4);}
+.ai-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:36px 24px;}
+.ai-card{min-width:0;}
+/* The text block is the card's link: the name's hit area is stretched over it
+   with ::after, so the whole block opens the pattern with one control. */
+.ai-card-text{position:relative;margin-top:12px;}
+.ai-card-meta{display:flex;justify-content:space-between;align-items:baseline;gap:12px;}
+.app button.ai-card-name{padding:0;text-align:left;font-family:var(--display);font-size:16px;font-weight:600;
+  color:var(--ink);transition:color .12s;}
+.ai-card-name::after{content:"";position:absolute;inset:-8px -10px;border-radius:12px;}
+.ai-card-name:focus-visible{outline:none;}
+.ai-card-name:focus-visible::after{outline:2px solid var(--blue);outline-offset:0;}
+.ai-card-text:hover .ai-card-name{color:var(--blue);}
+.ai-card-surface{flex:none;font-size:12px;color:var(--ink-4);white-space:nowrap;}
+.ai-card-use{margin:4px 0 0;font-size:13.5px;line-height:1.5;color:var(--ink-3);}
+.ai-card-open{display:inline-flex;align-items:center;gap:4px;margin-top:8px;font-size:12.5px;font-weight:500;color:var(--blue);
+  opacity:0;transform:translateX(-4px);transition:opacity .16s,transform .16s;}
+.ai-card-text:hover .ai-card-open,.ai-card-text:focus-within .ai-card-open{opacity:1;transform:none;}
+/* No hover on touch, so the cue is simply always there. */
+@media (hover: none){.ai-card-open{opacity:1;transform:none;}}
+
+.ai-empty{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:18px 20px;border-radius:14px;
+  border:1px dashed var(--line-strong);font-size:13px;color:var(--ink-3);}
+.app button.ai-empty-btn{padding:6px 12px;border-radius:999px;font-size:12.5px;font-weight:500;color:var(--bg);background:var(--ink);}
+
+/* A pattern's facts, under its head: layer, surface, and the capabilities it
+   serves as links back to the Overview. */
+.ai-meta{display:flex;flex-wrap:wrap;align-items:center;gap:10px 24px;margin:-14px 0 20px;font-size:13px;color:var(--ink-2);}
+.ai-meta-fact{display:inline-flex;align-items:center;flex-wrap:wrap;gap:6px;}
+.ai-meta-k{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4);}
+
+/* Build it — the designer's half of the page: anatomy and states side by side,
+   then Do and Don't, then the accessibility call. */
+.ai-build{margin-top:48px;}
+.ai-build-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}
+.ai-build-card{padding:18px 20px;border-radius:14px;box-shadow:inset 0 0 0 1px var(--line);}
+.ai-build-h{margin:0 0 12px;font-family:var(--display);font-size:14px;font-weight:600;color:var(--ink);}
+.ai-parts,.ai-states,.ai-rules{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;}
+.ai-parts li{display:grid;grid-template-columns:22px 1fr;column-gap:10px;row-gap:2px;}
+.ai-parts-no{grid-row:span 2;display:grid;place-items:center;width:22px;height:22px;border-radius:999px;
+  font-size:11px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink-2);background:var(--line-2);}
+.ai-parts-name,.ai-states-name{font-size:13.5px;font-weight:600;color:var(--ink);}
+.ai-parts-note,.ai-states-note{font-size:13px;line-height:1.5;color:var(--ink-3);}
+.ai-states li{display:flex;flex-direction:column;gap:2px;padding-left:12px;border-left:2px solid var(--line);}
+.ai-rules li{display:grid;grid-template-columns:18px 1fr;gap:8px;font-size:13.5px;line-height:1.55;color:var(--ink-2);}
+.ai-rule-ic{display:grid;place-items:center;height:21px;color:var(--ink-3);}
+.ai-a11y{display:grid;grid-template-columns:190px 1fr;gap:24px;margin-top:16px;padding:16px 20px;border-radius:14px;background:var(--bg-soft);
+  box-shadow:inset 0 0 0 1px var(--line);}
+.ai-a11y-k{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-4);padding-top:3px;}
+.ai-a11y p{margin:0;font-size:13.5px;line-height:1.55;color:var(--ink-2);max-width:72ch;}
+
+/* After a pattern: what pairs with it, then the next one by name. */
+.ai-pairs{margin-top:56px;}
+.ai-pager{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:56px;padding-top:24px;border-top:1px solid var(--line);}
+.app button.ai-pager-btn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:16px 18px;border-radius:14px;
+  text-align:left;box-shadow:inset 0 0 0 1px var(--line);transition:background .14s,box-shadow .14s;}
+.app button.ai-pager-btn[data-next]{align-items:flex-end;text-align:right;}
+.app button.ai-pager-btn:hover{background:var(--bg-soft);box-shadow:inset 0 0 0 1px var(--line-strong);}
+.ai-pager-dir{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--ink-4);}
+.ai-pager-name{font-family:var(--display);font-size:17px;font-weight:600;color:var(--ink);}
+
+/* ── Playground ─────────────────────────────────────────────────────────────── */
+#ai-patterns .pg{min-height:540px;}
+.ai-pg .pg-canvas-center{padding:16px 40px;}
+.ai-pg .pg-canvas-foot{gap:16px;}
+.ai-pg-title{display:block;margin-bottom:4px;font-family:var(--display);font-size:15px;font-weight:600;color:var(--ink);}
+.ai-pg-hint{margin-right:auto;font-size:12px;color:var(--ink-3);}
+.ai-props{margin:0;display:flex;flex-direction:column;}
+.ai-prop{padding:12px 0;border-top:1px solid var(--line-2);}
+.ai-prop dt{margin-bottom:6px;font-size:11px;font-weight:600;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--ink-4);}
+.ai-prop dd{margin:0;font-size:13.5px;line-height:1.55;color:var(--ink-2);}
+.ai-chips{display:flex;flex-wrap:wrap;gap:6px;}
+.app button.ai-chip{padding:4px 10px;border-radius:999px;font-size:12.5px;color:var(--ink-2);
+  box-shadow:inset 0 0 0 1px var(--line-strong);transition:background .14s,color .14s;}
+.app button.ai-chip:hover{background:var(--line-2);color:var(--ink);}
+
+@media (max-width: 760px){
+  /* It wraps to three rows here, too much to hold over a phone's viewport. */
+  .ai-toolbar{position:static;}
+  .ai-pager{grid-template-columns:1fr;}
+  .ai-pg .pg-canvas-center{padding:12px 16px;}
+  .ai-meta{margin-top:-6px;}
+  .ai-build-grid{grid-template-columns:1fr;}
+  .ai-a11y{grid-template-columns:1fr;gap:6px;}
+}
+
+/* ── Demo stage ─────────────────────────────────────────────────────────────── */
+.ai-demo.dm-stage{position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;
+  height:220px;padding:18px;border-radius:18px;background:var(--stage);color:var(--ink);}
+.ai-demo.dm-stage[data-size="page"]{width:100%;max-width:560px;height:340px;}
+.ai-demo .dm-replay,.ai-demo .dm-try{position:absolute;top:10px;right:10px;z-index:1;padding:3px 9px;border-radius:999px;
+  font-size:11px;color:var(--muted);background:color-mix(in srgb,var(--surface) 85%,transparent);}
+.ai-demo .dm-replay:hover{color:var(--ink);}
+
+/* ── Demo vocabulary ────────────────────────────────────────────────────────────
+   The source's own classes, each `dm-` prefixed and scoped under .ai-demo: the
+   scope keeps a demo rule from getting out, the prefix keeps a house rule (the
+   global .row and .field) from getting in. */
+.ai-demo button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;padding:0;}
+.ai-demo :focus-visible{outline:2px solid var(--ai);outline-offset:2px;border-radius:6px;}
+.ai-demo .dm-d{width:100%;max-width:300px;font-size:13px;line-height:1.4;}
+.ai-demo .dm-col{display:flex;flex-direction:column;gap:8px;}
+.ai-demo .dm-row{display:flex;gap:8px;align-items:center;}
+.ai-demo .dm-acts{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.ai-demo .dm-bub{padding:8px 11px;border-radius:14px;max-width:88%;}
+.ai-demo .dm-bub.dm-me{align-self:flex-end;background:var(--ink);color:var(--on-ink);border-bottom-right-radius:4px;}
+.ai-demo .dm-bub.dm-ai{align-self:flex-start;background:var(--ai-tint);border-bottom-left-radius:4px;}
+.ai-demo .dm-ai-box{background:var(--ai-tint);border-radius:10px;padding:10px 12px;}
+.ai-demo .dm-caret{display:inline-block;width:6px;height:13px;margin-left:1px;vertical-align:-2px;
+  background:var(--ai);animation:dm-blink 1s steps(2) infinite;}
+.ai-demo .dm-mini,.ai-demo .dm-chip,.ai-demo .dm-btn{border:1px solid var(--line);background:var(--surface);
+  border-radius:999px;padding:3px 10px;font-size:12px;}
+.ai-demo .dm-chip{padding:5px 11px;}
+.ai-demo .dm-btn{border-radius:8px;padding:6px 12px;}
+.ai-demo .dm-chip:hover,.ai-demo .dm-mini:hover,.ai-demo .dm-btn:hover{border-color:var(--line-strong);}
+.ai-demo .dm-btn.dm-primary{background:var(--ink);color:var(--on-ink);border-color:var(--ink);}
+.ai-demo .dm-field{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-height:36px;}
+.ai-demo .dm-ph{color:var(--ph);}
+.ai-demo .dm-sk{height:7px;border-radius:4px;background:var(--sk);}
+.ai-demo .dm-lbl{font-size:11px;color:var(--muted);}
+.ai-demo .dm-fade{animation:dm-fade .3s ease both;}
+.ai-demo .dm-ghost{color:var(--ai);opacity:.55;}
+.ai-demo .dm-accepted{background:var(--ai-tint);border-radius:3px;}
+.ai-demo .dm-tint{background:var(--ai-tint);border-radius:3px;padding:0 2px;}
+.ai-demo .dm-sel{background:var(--sel);border-radius:2px;}
+.ai-demo .dm-panel{background:var(--surface);border-radius:12px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+.ai-demo .dm-check{color:var(--ok);}
+.ai-demo kbd{font:inherit;font-size:11px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;
+  padding:0 5px;background:var(--surface);}
+@keyframes dm-blink{50%{opacity:0;}}
+@keyframes dm-fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+@keyframes dm-pulse{from{transform:scale(.8);opacity:1;}to{transform:scale(1.5);opacity:0;}}
+@media (prefers-reduced-motion: reduce){
+  .ai-demo *{animation:none !important;transition:none !important;}
 }

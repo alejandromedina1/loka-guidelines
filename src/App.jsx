@@ -16,6 +16,7 @@ import { GraphicsSection } from "./components/sections/GraphicsSection.jsx";
 import { PatternsSection } from "./components/sections/PatternsSection.jsx";
 import { ImagerySection } from "./components/sections/ImagerySection.jsx";
 import { ComponentsSection } from "./components/sections/ComponentsSection.jsx";
+import { AiPatternsSection } from "./components/sections/AiPatternsSection.jsx";
 import { hubForSection } from "./data/navigation.js";
 
 // Which top-level nav item owns each sub-section. Hoisted to a module-level Map:
@@ -43,7 +44,7 @@ function toActiveTop(active) {
 
 // Which section is current when a view is scrolled to the top. Each hub mounts
 // its own run of sections, so "the first one" differs per hub — see useScrollSpy.
-const TOP_SECTION = { brand: "logo", product: "components" };
+const TOP_SECTION = { brand: "logo", product: "components", ai: "ai-patterns" };
 
 // Sentinel for "the top of this view" as a scroll destination — see pendingScroll.
 const TOP = Symbol("top");
@@ -77,6 +78,12 @@ export default function App() {
   const [selectedUsage, setSelectedUsage] = useState("gray-container");
   const [selectedProject, setSelectedProject] = useState("desktop");
   const [expandedRow, setExpandedRow] = useState(null);
+  // The AI Patterns Hub: which pattern is in the playground (null is the
+  // Overview), and the Overview's two filters — kept here so they survive a
+  // trip into a pattern and back.
+  const [selectedAiPattern, setSelectedAiPattern] = useState(null);
+  const [aiCap, setAiCap] = useState("all");
+  const [aiSurface, setAiSurface] = useState("all");
 
   const toggleRow = useCallback((id) => setExpandedRow((c) => (c === id ? null : id)), []);
 
@@ -133,6 +140,26 @@ export default function App() {
     [navigate]
   );
 
+  // Opening an AI pattern (or the Overview, with null) from anywhere — the
+  // sidebar, a card, a "Pair it with" chip, search. It always lands at the top
+  // of the section, since the playground replaces whatever was there.
+  const selectAiPattern = useCallback(
+    (id) => {
+      setSelectedAiPattern(id);
+      navigate("ai-patterns");
+    },
+    [navigate]
+  );
+
+  // A capability from the sidebar: the Overview, filtered to it.
+  const selectAiCap = useCallback(
+    (id) => {
+      setAiCap(id);
+      selectAiPattern(null);
+    },
+    [selectAiPattern]
+  );
+
   const runSearchResult = useCallback(
     (r) => {
       if (r.setComponent) setSelectedComponent(r.setComponent);
@@ -142,6 +169,11 @@ export default function App() {
       if (r.setImagery) setSelectedImagery(r.setImagery);
       if (r.setUsage) setSelectedUsage(r.setUsage);
       if (r.setProject) setSelectedProject(r.setProject);
+      if (r.setAiPattern !== undefined) setSelectedAiPattern(r.setAiPattern);
+      if (r.setAiCap) {
+        setAiCap(r.setAiCap);
+        setAiSurface("all");
+      }
       navigate(r.target);
     },
     [navigate]
@@ -185,6 +217,11 @@ export default function App() {
             selectedComponent={selectedComponent}
             componentVariant={componentVariant}
             onSelectComponent={selectComponent}
+            selectedAiPattern={selectedAiPattern}
+            onSelectAiPattern={selectAiPattern}
+            aiCap={aiCap}
+            aiSurface={aiSurface}
+            onSelectAiCap={selectAiCap}
             onNavigate={navigate}
             open={mobileNav}
           />
@@ -261,6 +298,18 @@ export default function App() {
               componentVariant={componentVariant}
               setComponentVariant={setComponentVariant}
               theme={theme}
+            />
+          )}
+
+          {hub === "ai" && (
+            <AiPatternsSection
+              registerRef={registerRef}
+              patternId={selectedAiPattern}
+              onSelectPattern={selectAiPattern}
+              cap={aiCap}
+              setCap={setAiCap}
+              surface={aiSurface}
+              setSurface={setAiSurface}
             />
           )}
         </main>
